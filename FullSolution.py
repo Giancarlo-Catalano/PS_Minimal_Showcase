@@ -1,14 +1,14 @@
 from typing import Iterable
 import numpy as np
-from types import ParameterValue, ArrayOfInts
+from custom_types import ArrayOfInts
 
 
 class FullSolution:
     # a wrapper for a tuple
     values: ArrayOfInts
 
-    def __init__(self, values: Iterable[ParameterValue]):
-        self.values = np.array(values)
+    def __init__(self, values: Iterable[int]):
+        self.values = np.fromiter(values, dtype=int)
         self.values.setflags(write=False)
 
     def __repr__(self):
