@@ -1,9 +1,9 @@
-from typing import Iterable
+from typing import Iterable, Sized
 import numpy as np
 from custom_types import ArrayOfInts
 
 
-class FullSolution:
+class FullSolution(Sized):
     # a wrapper for a tuple
     values: ArrayOfInts
 
@@ -19,3 +19,7 @@ class FullSolution:
 
     def __hash__(self):
         return self.values.__hash__()
+
+
+    def __len__(self):
+        return len(self.values)

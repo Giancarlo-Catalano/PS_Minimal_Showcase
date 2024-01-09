@@ -1,5 +1,5 @@
 import random
-from typing import Iterable
+from typing import Iterable, Sized
 import numpy as np
 
 from custom_types import ArrayOfInts
@@ -7,7 +7,7 @@ from custom_types import ArrayOfInts
 from FullSolution import FullSolution
 
 
-class SearchSpace:
+class SearchSpace(Sized):
     cardinalities: ArrayOfInts
     precomputed_offsets: ArrayOfInts
 
@@ -22,6 +22,9 @@ class SearchSpace:
     @property
     def dimensions(self) -> int:
         return len(self.cardinalities)
+
+    def __len__(self) -> int:
+        return self.dimensions
 
     @property
     def amount_of_parameters(self) -> int:
