@@ -1,9 +1,9 @@
-from typing import Iterable, Sized
+from typing import Iterable
 import numpy as np
 from custom_types import ArrayOfInts
 
 
-class FullSolution(Sized):
+class FullSolution:
     # a wrapper for a tuple
     values: ArrayOfInts
 

@@ -11,16 +11,15 @@ from SearchSpace import SearchSpace
 class TestPS(unittest.TestCase):
     def test_init(self):
 
-        mask = bitarray([True, False, True])
-        init_tuple = (0, 1, 2)
+        init_tuple = (0, -1, 2)
         init_list = list(init_tuple)
         init_ndarray = np.array(init_tuple)
         init_gen = range(3)
 
-        from_tuple = PS(mask, init_tuple)
+        from_tuple = PS(init_tuple)
 
         def assertCorrect(initialiser, msg):
-            new_ps = PS(mask, initialiser)
+            new_ps = PS(initialiser)
             self.assertEqual(from_tuple, new_ps, msg)
 
         assertCorrect(init_list, 'Initialiser from list did not match')
