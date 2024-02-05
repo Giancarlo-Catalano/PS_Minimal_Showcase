@@ -1,8 +1,8 @@
 import unittest
 
 from FullSolution import FullSolution
-from Metric.MeanFitness import MeanFitness
-from Metric.Simplicity import Simplicity
+from PSMetric.MeanFitness import MeanFitness
+from PSMetric.Simplicity import Simplicity
 from PRef import PRef
 from PS import PS
 from SearchSpace import SearchSpace

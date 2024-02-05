@@ -21,10 +21,10 @@ def remap_array_in_zero_one(input_array: np.ndarray):
 class Metric:
     def __repr__(self):
         """ Return a string which describes the Criterion, eg 'Robustness' """
-        raise Exception("Error: a realisation of Metric does not implement __repr__")
+        raise Exception("Error: a realisation of PSMetric does not implement __repr__")
 
     def get_single_unnormalised_score(self, PS: PS, pRef: PRef) -> float:
-        raise Exception("Error: a realisation of Metric does not implement get_single_score_for_PS")
+        raise Exception("Error: a realisation of PSMetric does not implement get_single_score_for_PS")
 
     def get_normalised_scores(self, pss: Iterable[PS], pRef: PRef) -> ArrayOfFloats:
         """ Returns the scores which correlate with the criterion

@@ -1,6 +1,6 @@
 import numpy as np
 
-from Metric.Metric import Metric
+from PSMetric.Metric import Metric
 from PS import PS
 from PRef import PRef
 
