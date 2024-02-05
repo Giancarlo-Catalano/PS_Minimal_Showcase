@@ -1,4 +1,27 @@
+from typing import Any
+
 import numpy as np
+
+
+def first(pair: (Any, Any)) -> Any:
+    return pair[0]
+
+
+def second(pair: (Any, Any)) -> Any:
+    return pair[1]
+
+
+
+def unzip(zipped):
+    if (len(zipped) == 0):
+        return []
+
+    group_amount = len(zipped[0])
+
+    def get_nth_group(n):
+        return [elem[n] for elem in zipped]
+
+    return tuple(get_nth_group(n) for n in range(group_amount))
 
 
 def remap_array_in_zero_one(input_array: np.ndarray):

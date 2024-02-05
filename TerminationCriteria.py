@@ -1,6 +1,7 @@
 from enum import Enum, auto
 from typing import Iterable, Any
 
+import utils
 from custom_types import Fitness
 
 
@@ -12,7 +13,7 @@ class TerminationCriteria:
     def __repr__(self):
         raise Exception("Implementation of TerminationCriteria does not implement __repr__")
 
-    def termination_condition_met(self, **kwargs):
+    def met(self, **kwargs):
         raise Exception("Implementation of TerminationCriteria does not implement termination_criteria_met")
 
 class EvaluationBudgetLimit(TerminationCriteria):
@@ -25,7 +26,7 @@ class EvaluationBudgetLimit(TerminationCriteria):
     def __repr__(self):
         return f"EvaluationBudget({self.max_evaluations})"
 
-    def termination_condition_met(self, **kwargs):
+    def met(self, **kwargs):
         return kwargs["evaluations"] >= self.max_evaluations
 
 
@@ -40,7 +41,7 @@ class TimeLimit(TerminationCriteria):
     def __repr__(self):
         return f"TimeLimit({self.max_time})"
 
-    def termination_condition_met(self, **kwargs):
+    def met(self, **kwargs):
         return kwargs["time"] >= self.max_time
 
 
@@ -55,7 +56,7 @@ class IterationLimit(TerminationCriteria):
     def __repr__(self):
         return f"TimeLimit({self.max_iterations})"
 
-    def termination_condition_met(self, **kwargs):
+    def met(self, **kwargs):
         return kwargs["iterations"] >= self.max_iterations
 
 
@@ -71,10 +72,11 @@ class UntilAllTargetsFound(TerminationCriteria):
     def __repr__(self):
         return f"Targets({self.targets})"
 
-    def termination_condition_met(self, **kwargs):
-        would_be_returned = kwargs["return"]
+    def met(self, **kwargs):
+        would_be_returned = kwargs["evaluated_population"]
+        population = utils.unzip(would_be_returned)[1]
 
-        return all(target in would_be_returned for target in self.targets)
+        return all(target in population for target in self.targets)
 
 
 
@@ -88,10 +90,10 @@ class UntilGlobalOptimaReached(TerminationCriteria):
     def __repr__(self):
         return f"UntilGlobalOptima({self.global_optima_fitness})"
 
-    def termination_condition_met(self, **kwargs):
-        would_be_returned = kwargs["returned_fitnesses"]
+    def met(self, **kwargs):
+        would_be_returned = kwargs["evaluated_population"]
 
-        return self.global_optima_fitness in would_be_returned
+        return self.global_optima_fitness in utils.unzip(would_be_returned)[1]
 
 
 
@@ -106,6 +108,6 @@ class UnionOfCriteria(TerminationCriteria):
         return "Union("+", ".join(f"{sc}" for sc in self.subcriteria)+")"
 
 
-    def termination_condition_met(self, **kwargs):
+    def met(self, **kwargs):
         return any(sc.termination_criteria_met(**kwargs) for sc in self.subcriteria)
 
