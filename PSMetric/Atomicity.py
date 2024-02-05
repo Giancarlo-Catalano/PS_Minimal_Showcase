@@ -28,7 +28,7 @@ class Atomicity(Metric):
     def get_normalised_pRef(self, pRef: PRef) -> PRef:
         min_fitness = np.min(pRef.fitness_array)
         normalised_fitnesses = pRef.fitness_array - min_fitness
-        sum_fitness = np.sum(normalised_fitnesses)
+        sum_fitness = np.sum(normalised_fitnesses, dtype=float)
 
         if sum_fitness == 0:
             raise Exception(f"The sum of fitnesses for {pRef} is 0, could not normalise")

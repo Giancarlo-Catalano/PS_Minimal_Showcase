@@ -1,6 +1,7 @@
 import unittest
 
 from FullSolution import FullSolution
+from PSMetric.Atomicity import Atomicity
 from PSMetric.MeanFitness import MeanFitness
 from PSMetric.Simplicity import Simplicity
 from PRef import PRef
@@ -15,18 +16,22 @@ if __name__ == '__main__':
 
     search_space = SearchSpace([2, 2, 2, 2])
     def fitness_function(fs: FullSolution) -> Fitness:
-        return fs.values.sum()
+        return fs.values.sum(dtype=float)
 
 
-    pRef: PRef = PRef.sample_from_search_space(search_space, fitness_function, 4)
+    pRef: PRef = PRef.sample_from_search_space(search_space, fitness_function, 400)
 
-    print(f"The pRef is {pRef.long_repr()}")
+    # print(f"The pRef is {pRef.long_repr()}")
 
     simplicity = Simplicity()
-    #mean_fitness = MeanFitness()
+    mean_fitness = MeanFitness()
+    atomicity = Atomicity()
 
 
     simplicity_score = simplicity.get_single_unnormalised_score(ps, pRef)
-    #mean_fitness_score = mean_fitness.get_single_unnormalised_score(ps, pRef)
+    mean_fitness_score = mean_fitness.get_single_unnormalised_score(ps, pRef)
+    atomicity_score = atomicity.get_unnormalised_scores([ps], pRef)
 
-    print(f"The obtained scores for the PS are simplicity = {simplicity_score}")# and mean_fitness = {mean_fitness_score}")
+    print(f"The obtained scores for the PS are simplicity = {simplicity_score},"
+          f"\nand mean_fitness = {mean_fitness_score},"
+          f"\nand atomicity = {atomicity_score}")
