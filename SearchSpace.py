@@ -44,3 +44,4 @@ class SearchSpace(Sized):
     def concatenate_search_spaces(cls, to_concat: Iterable):
         cardinalities: tuple[ArrayOfInts] = tuple(ss.cardinalities for ss in to_concat)
         return cls(np.concatenate(cardinalities))
+

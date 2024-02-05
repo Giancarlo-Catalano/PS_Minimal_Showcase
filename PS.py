@@ -22,16 +22,17 @@ class PS:
 
     def __repr__(self) -> str:
         def repr_single(cell_value: int) -> str:
-            return f'{cell_value}' if cell_value >=0 else '*'
+            return f'{cell_value}' if cell_value != STAR else '*'
 
         return "[" + " ".join(map(repr_single, self.values))+"]"
 
     @classmethod
     def empty(cls, search_space: SearchSpace):
-        values = np.full(search_space.amount_of_parameters, -1)
+        values = np.full(search_space.amount_of_parameters, STAR)
+        return cls(values)
 
     def is_fully_fixed(self) -> bool:
-        return np.all(self.values == -1)
+        return np.all(self.values == STAR)
 
     def to_FS(self) -> FullSolution:
         return FullSolution(self.values)
@@ -51,7 +52,7 @@ class PS:
         return PS(new_values)
 
     def get_fixed_variable_positions(self) -> list[int]:
-        return [position for position, value in enumerate(self.values) if value >= 0]
+        return [position for position, value in enumerate(self.values) if value != STAR]
 
     def get_unfixed_variable_positions(self) -> list[int]:
         return [position for position, value in enumerate(self.values) if value == STAR]
@@ -73,7 +74,7 @@ class PS:
     def mergeable(cls, a, b) -> bool:
         """In the places where both PSs have fixed params, the values are the same"""
         for v_a, v_b in zip(a.values, b.values):
-            if (v_a >= 0 and v_b >= 0) and (v_a != v_b):
+            if (v_a != STAR and v_b != STAR) and (v_a != v_b):
                 return False
         return True
 
