@@ -8,8 +8,11 @@ from SearchSpace import SearchSpace
 from custom_types import ArrayOfInts
 
 
+STAR = -1
+
 class PS:
     values: ArrayOfInts
+
 
     def __init__(self, values: Iterable[int]):
         self.values = np.fromiter(values, dtype=int)
@@ -39,7 +42,7 @@ class PS:
 
     def with_unfixed_value(self, variable_position: int):
         new_values = np.copy(self.values)
-        new_values[variable_position] = -1
+        new_values[variable_position] = STAR
         return PS(new_values)
 
     def with_fixed_value(self, variable_position: int, fixed_value: int):
@@ -51,7 +54,7 @@ class PS:
         return [position for position, value in enumerate(self.values) if value >= 0]
 
     def get_unfixed_variable_positions(self) -> list[int]:
-        return [position for position, value in enumerate(self.values) if value == -1]
+        return [position for position, value in enumerate(self.values) if value == STAR]
 
     def simplifications(self):
         return [self.with_unfixed_value(i) for i in self.get_fixed_variable_positions()]
