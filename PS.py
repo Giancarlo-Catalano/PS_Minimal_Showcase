@@ -21,7 +21,7 @@ class PS:
         def repr_single(cell_value: int) -> str:
             return f'{cell_value}' if cell_value >=0 else '*'
 
-        return "[" + "".join(map(repr_single, self.values))
+        return "[" + " ".join(map(repr_single, self.values))+"]"
 
     @classmethod
     def empty(cls, search_space: SearchSpace):

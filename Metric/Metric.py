@@ -1,3 +1,5 @@
+from typing import Iterable
+
 import numpy as np
 
 from PRef import PRef
@@ -19,13 +21,13 @@ def remap_array_in_zero_one(input_array: np.ndarray):
 class Metric:
     def __repr__(self):
         """ Return a string which describes the Criterion, eg 'Robustness' """
-        raise Exception("Error: a realisation of MeasurableCriterion does not implement __repr__")
+        raise Exception("Error: a realisation of Metric does not implement __repr__")
 
-    def get_unnormalised_score_for_PS(self, PS: PS, pRef: PRef) -> float:
-        pass
+    def get_single_unnormalised_score(self, PS: PS, pRef: PRef) -> float:
+        raise Exception("Error: a realisation of Metric does not implement get_single_score_for_PS")
 
-    def get_normalised_scores_for_PSs(self, pss: Iterable[PS], pRef: PRef) -> ArrayOfFloats:
+    def get_normalised_scores(self, pss: Iterable[PS], pRef: PRef) -> ArrayOfFloats:
         """ Returns the scores which correlate with the criterion
             And they will all be in the range [0, 1]"""
-        scores = [self.get_unnormalised_score_for_PS(ps, pRef) for ps in pss]
+        scores = [self.get_single_unnormalised_score(ps, pRef) for ps in pss]
         return remap_array_in_zero_one(scores)
