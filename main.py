@@ -8,6 +8,7 @@ from FullSolution import FullSolution
 from PRef import PRef
 from PS import PS
 from PSMetric.Atomicity import Atomicity
+from PSMetric.KindaAtomicity import KindaAtomicity
 from PSMetric.MeanFitness import MeanFitness
 from PSMetric.Simplicity import Simplicity
 from PSMiners.ArchiveBasedSpecialisationMiner import ABSM
@@ -50,7 +51,7 @@ if __name__ == '__main__':
 
     simplicity = Simplicity()
     mean_fitness = MeanFitness()
-    atomicity = Atomicity()
+    atomicity = KindaAtomicity()
 
     ps_evaluator = PSEvaluator([simplicity, mean_fitness, atomicity], pRef)
 
@@ -74,3 +75,6 @@ if __name__ == '__main__':
     print("The results are:")
     for ps, fitness in results:
         print(f"PS: {ps}, fitness = {fitness}")
+
+
+    print(f"The used budget is {absm.ps_evaluator.used_evaluations}")
