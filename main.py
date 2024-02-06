@@ -32,7 +32,9 @@ if __name__ == '__main__':
 
     ps_evaluator = PSEvaluator([simplicity, mean_fitness, atomicity], pRef)
 
-    termination_criteria = TerminationCriteria.EvaluationBudgetLimit(10000)
+    budget_limit = TerminationCriteria.EvaluationBudgetLimit(10000)
+    found_global = TerminationCriteria.UntilGlobalOptimaReached(3)
+    termination_criteria = TerminationCriteria.UnionOfCriteria(budget_limit, found_global)
 
     fs_ga = FullSolutionGA(search_space=search_space,
                            crossover_rate=0.5,
@@ -43,3 +45,8 @@ if __name__ == '__main__':
                            fitness_function=fitness_function)
 
     fs_ga.run(termination_criteria)
+
+    results = fs_ga.get_best_of_population(amount=3)
+    print("The results are:")
+    for fs, fitness in results:
+        print(f"PS: {fs}, fitness = {fitness}")

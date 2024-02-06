@@ -36,7 +36,7 @@ class GA:
         self.evaluator = evaluator
 
         if starting_population is None:
-            self.last_evaluated_population = self.get_initial_population()
+            self.last_evaluated_population = self.evaluator.evaluate_population(self.get_initial_population())
         else:
             self.last_evaluated_population = starting_population
 
@@ -87,7 +87,6 @@ class GA:
         return self.evaluator.evaluate_population(elite + children)
 
     def run(self, termination_criteria: TerminationCriteria):
-        self.last_evaluated_population = self.evaluator.evaluate_population(self.last_evaluated_population)
         iteration = 0
 
         def termination_criteria_met():
@@ -100,3 +99,8 @@ class GA:
 
     def get_current_best(self) -> EvaluatedIndividual:
         return max(self.last_evaluated_population, key=utils.second)
+
+
+
+    def get_best_of_population(self, amount=1) -> EvaluatedPopulation:
+        return heapq.nlargest(amount, self.last_evaluated_population, key=utils.second)

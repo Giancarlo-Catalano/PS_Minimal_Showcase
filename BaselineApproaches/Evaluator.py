@@ -23,7 +23,7 @@ class Evaluator:
 
     def evaluate_population(self, population: Population) -> EvaluatedPopulation:
         self.used_evaluations += len(population)
-        return [(individual, self.fitness_function(individual) for individual in population)]
+        return [(individual, self.fitness_function(individual)) for individual in population]
 
 
 class FullSolutionEvaluator(Evaluator):
@@ -35,7 +35,7 @@ class FullSolutionEvaluator(Evaluator):
 
     def evaluate_population(self, population: Population) -> EvaluatedPopulation:
         self.used_evaluations += len(population)
-        return [(individual, self.fitness_function(individual) for individual in population)]
+        return [(individual, self.fitness_function(individual)) for individual in population]
 
 
 MetricValues: TypeAlias = np.ndarray

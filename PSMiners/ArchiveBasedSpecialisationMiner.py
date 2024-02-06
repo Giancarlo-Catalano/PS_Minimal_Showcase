@@ -74,7 +74,7 @@ class ABSM:
 
         def termination_criteria_met():
             return termination_criteria.met(iteration=iteration,
-                                            used_evaluations=self.ps_evaluator.used_evaluations,
+                                            evaluations=self.ps_evaluator.used_evaluations,
                                             evaluated_population=self.current_population)
 
         while not termination_criteria_met():

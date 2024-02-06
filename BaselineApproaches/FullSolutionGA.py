@@ -1,9 +1,9 @@
 import random
 from typing import Callable
 
-from Evaluator import Individual, FullSolutionEvaluator
+from BaselineApproaches.Evaluator import Individual, FullSolutionEvaluator
 from FullSolution import FullSolution
-from GA import GA
+from BaselineApproaches.GA import GA
 from SearchSpace import SearchSpace
 
 
@@ -18,6 +18,9 @@ class FullSolutionGA(GA):
                  population_size: int,
                  fitness_function: Callable,
                  starting_population=None):
+
+
+        self.search_space = search_space
         super().__init__(mutation_rate=mutation_rate,
                          crossover_rate=crossover_rate,
                          elite_size=elite_size,
@@ -26,17 +29,17 @@ class FullSolutionGA(GA):
                          evaluator=FullSolutionEvaluator(fitness_function),
                          starting_population=starting_population)
 
-        self.search_space = search_space
+
 
     def random_individual(self) -> FullSolution:
         return FullSolution.random(self.search_space)
 
     def mutated(self, individual: FullSolution) -> Individual:
-        result = FullSolution(individual.values)
+        result_values = individual.values.copy()
         for variable_index, cardinality in enumerate(self.search_space.cardinalities):
             if self.should_mutate():
-                result.values[variable_index] = random.randrange(cardinality)
-        return result
+                result_values[variable_index] = random.randrange(cardinality)
+        return FullSolution(result_values)
 
     def crossed(self, mother: FullSolution, father: FullSolution) -> FullSolution:
         last_index = len(mother)

@@ -2,7 +2,7 @@ import random
 
 from Evaluator import PSEvaluator
 from GA import GA
-from PS import PS
+from PS import PS, STAR
 from SearchSpace import SearchSpace
 
 
@@ -31,16 +31,15 @@ class PSGA(GA):
         return PS.random(self.search_space, half_chance_star=True)
 
     def mutated(self, individual: PS) -> PS:
-        result = PS(individual.values)
+        result_values = individual.values.copy()
 
         for variable_index, cardinality in enumerate(self.search_space.cardinalities):
             if self.should_mutate():
                 if random.random() < 0.5:
-                    result = result.with_unfixed_value(variable_index)
+                    result_values[variable_index] = STAR
                 else:
-                    new_value = random.randrange(cardinality)
-                    result = result.with_fixed_value(variable_index, new_value)
-        return result
+                    result_values[variable_index] = random.randrange(cardinality)
+        return PS(result_values)
 
     def crossed(self, mother: PS, father: PS) -> PS:
         last_index = len(mother)
