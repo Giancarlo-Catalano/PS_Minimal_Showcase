@@ -53,7 +53,7 @@ class PRef:
     def sample_from_search_space(cls, search_space: SearchSpace,
                                  fitness_function: Callable,
                                  amount_of_samples: int):
-        samples = [search_space.get_random_fs() for _ in range(amount_of_samples)]
+        samples = [FullSolution.random(search_space) for _ in range(amount_of_samples)]
         fitnesses = [fitness_function(fs) for fs in samples]
         return cls.from_full_solutions(samples, fitnesses, search_space)
 

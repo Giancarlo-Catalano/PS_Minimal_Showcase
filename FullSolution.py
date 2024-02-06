@@ -1,5 +1,8 @@
+import random
 from typing import Iterable
 import numpy as np
+
+from SearchSpace import SearchSpace
 from custom_types import ArrayOfInts
 
 
@@ -23,3 +26,7 @@ class FullSolution:
 
     def __len__(self):
         return len(self.values)
+
+    @classmethod
+    def random(cls, search_space: SearchSpace):
+        return cls(random.randrange(card) for card in search_space.cardinalities)

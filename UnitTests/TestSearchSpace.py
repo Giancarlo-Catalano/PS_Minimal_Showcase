@@ -42,6 +42,6 @@ class TestSearchSpace(unittest.TestCase):
             self.assertTrue(all(values_are_within_cardinalities), 'a sampled FS contains values > cardinalities')
 
         for _ in range(100):
-            verify_fs(search_space.get_random_fs())
+            verify_fs(FullSolution.random(search_space))
 
 

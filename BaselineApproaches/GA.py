@@ -4,6 +4,7 @@ from typing import Callable, TypeAlias, Any
 
 import utils
 from BaselineApproaches.Evaluator import Evaluator, Individual, Population, EvaluatedPopulation, EvaluatedIndividual
+from BaselineApproaches.Selection import tournament_select
 from TerminationCriteria import TerminationCriteria
 
 
@@ -27,7 +28,7 @@ class GA:
                  tournament_size: int,
                  population_size: int,
                  termination_criteria: TerminationCriteria,
-                 fitness_function: Callable,
+                 evaluator: Evaluator,
                  starting_population=None):
         self.mutation_rate = mutation_rate
         self.crossover_rate = crossover_rate
@@ -35,7 +36,7 @@ class GA:
         self.tournament_size = tournament_size
         self.population_size = population_size
         self.termination_criteria = termination_criteria
-        self.evaluator = Evaluator(fitness_function)
+        self.evaluator = evaluator
 
         if starting_population is None:
             self.last_evaluated_population = self.get_initial_population()
@@ -48,6 +49,9 @@ class GA:
     def get_initial_population(self) -> Population:
         return [self.random_individual() for _ in range(self.population_size)]
 
+    def should_mutate(self) -> bool:
+        return random.random() < self.mutation_rate
+
     def mutated(self, individual: Individual) -> Individual:
         raise Exception("An implementation of GA.mutated is not valid")
 
@@ -59,10 +63,8 @@ class GA:
             return []
         return utils.unzip(evaluated_population)[0]
 
-    def tournament_select(self) -> Individual:
-        tournament_pool = random.choices(self.last_evaluated_population, k=self.tournament_size)
-        winner = max(tournament_pool, key=utils.second)[0]
-        return winner
+    def select(self) -> Individual:
+        return tournament_select(self.last_evaluated_population, self.tournament_size)
 
     def get_elite(self) -> Population:
         top_evaluated = heapq.nlargest(self.elite_size, self.last_evaluated_population, key=utils.second)
@@ -74,14 +76,14 @@ class GA:
     def make_new_child(self) -> Individual:
         if random.random() < self.crossover_rate:
             # do crossover
-            mother = self.tournament_select()
-            father = self.tournament_select()
+            mother = self.select()
+            father = self.select()
 
             return self.mutated(self.crossed(mother, father))
         else:
-            return self.mutated(self.tournament_select())
+            return self.mutated(self.select())
 
-    def make_new_evaluated_population(self, evaluated_population: EvaluatedPopulation) -> EvaluatedPopulation:
+    def make_new_evaluated_population(self) -> EvaluatedPopulation:
         elite = self.get_elite()
         children = [self.make_new_child()
                     for _ in range(self.population_size - self.elite_size)]
@@ -97,7 +99,7 @@ class GA:
                                                  evaluated_population=self.last_evaluated_population)
 
         while not termination_criteria_met():
-            self.last_evaluated_population = self.make_new_evaluated_population(self.last_evaluated_population)
+            self.last_evaluated_population = self.make_new_evaluated_population()
 
     def get_current_best(self) -> EvaluatedIndividual:
         return max(self.last_evaluated_population, key=utils.second)

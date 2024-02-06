@@ -29,10 +29,6 @@ class SearchSpace(Sized):
     @property
     def amount_of_parameters(self) -> int:
         return self.dimensions
-
-    def get_random_fs(self) -> FullSolution:
-        return FullSolution(random.randrange(card) for card in self.cardinalities)
-
     def __repr__(self):
         return f"SearchSpace{tuple(self.cardinalities)}"
 

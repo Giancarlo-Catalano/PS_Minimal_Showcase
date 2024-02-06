@@ -33,3 +33,12 @@ def remap_array_in_zero_one(input_array: np.ndarray):
         return np.full(len(input_array), 0.5, dtype=float)  # all 0.5!
 
     return (input_array - min_value) / (max_value - min_value)
+
+
+
+def remap_each_column_in_zero_one(input_matrix: np.ndarray) -> np.ndarray:
+    min_for_each_column = np.min(input_matrix, axis=0)
+    result_matrix = input_matrix-min_for_each_column
+    max_for_each_column = np.max(result_matrix, axis=0)
+    result_matrix /= max_for_each_column
+    return result_matrix
