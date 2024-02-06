@@ -8,6 +8,7 @@ from BenchmarkProblems.BenchmarkProblem import BenchmarkProblem
 from BenchmarkProblems.BinVal import BinVal
 from BenchmarkProblems.OneMax import OneMax
 from BenchmarkProblems.RoyalRoad import RoyalRoad
+from BenchmarkProblems.Trapk import Trapk
 from FullSolution import FullSolution
 from PRef import PRef
 from PS import PS
@@ -67,6 +68,6 @@ def test_psabsm(problem: BenchmarkProblem):
 
 
 if __name__ == '__main__':
-    problem = RoyalRoad(2, 4)
+    problem = Trapk(2, 4)
     test_fsga(problem)
     test_psabsm(problem)
