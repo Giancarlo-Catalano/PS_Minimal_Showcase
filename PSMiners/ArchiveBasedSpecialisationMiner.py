@@ -68,7 +68,7 @@ class ABSM:
         old_population, _ = utils.unzip(self.current_population)
         new_population = old_population + localities
         new_population = [ps for ps in new_population if ps not in self.archive] # not using .difference because I don't want to create a set just yet
-        new_population = list(set(new_population))
+        new_population = list(set(new_population))  # removes duplicates
         evaluated_new_population = self.ps_evaluator.evaluate_population(new_population)
 
         return self.top(evaluated_new_population, self.population_size)

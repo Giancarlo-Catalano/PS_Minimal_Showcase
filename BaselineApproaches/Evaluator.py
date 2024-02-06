@@ -67,8 +67,7 @@ class PSEvaluator(Evaluator):
 
         return pss_with_tuples
 
-    def evaluate_population(self, pss: list[PS]) -> list[(PS, float)]:
-        with_raw_scores = self.evaluate_population_with_raw_scores(pss)
+    def obtain_simplified_score(self, with_raw_scores: list[(PS, MetricValues)]) -> list[(PS, float)]:
         if len(with_raw_scores) == 0:
             warnings.warn("An evaluated list of PSs appears to be empty")
         pss, metrics = utils.unzip(with_raw_scores)
@@ -76,3 +75,8 @@ class PSEvaluator(Evaluator):
         normalised_metric_array = utils.remap_each_column_in_zero_one(metric_array)
         averages_for_each_row = np.average(normalised_metric_array, axis=1)
         return list(zip(pss, averages_for_each_row))
+
+    def evaluate_population(self, pss: list[PS]) -> list[(PS, float)]:
+        with_raw_scores = self.evaluate_population_with_raw_scores(pss)
+        return self.obtain_simplified_score(with_raw_scores)
+
