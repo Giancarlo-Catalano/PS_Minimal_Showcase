@@ -15,16 +15,18 @@ class Trapk(BenchmarkProblem):
         amount_of_bits = self.amount_of_cliques * self.size_of_cliques
         super().__init__(SearchSpace([2 for _ in range(amount_of_bits)]))
 
+    def __repr__(self):
+        return (f"Trapk(amount_of_cliques = {self.amount_of_cliques}, "
+                f"size_of_cliques = {self.size_of_cliques}")
 
     def unitary_fitness_function(self, amount_of_ones: int) -> float:
         if amount_of_ones == self.size_of_cliques:
             return float(self.size_of_cliques)
         else:
-            return float(self.size_of_cliques-amount_of_ones-1)
+            return float(self.size_of_cliques - amount_of_ones - 1)
 
     def fitness_function(self, fs: FullSolution) -> float:
         values = fs.values.copy()
         values = values.reshape((-1, self.size_of_cliques))
         unities = np.sum(values, axis=1)
         return sum(map(self.unitary_fitness_function, unities))
-

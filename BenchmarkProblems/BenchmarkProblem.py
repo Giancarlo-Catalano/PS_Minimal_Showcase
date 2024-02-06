@@ -15,6 +15,11 @@ class BenchmarkProblem:
     def __repr__(self):
         raise Exception("An implementation of BenchmarkProblem does not implement __repr__")
 
+
+    def long_repr(self) -> str:
+        """default implementation"""
+        return self.__repr__()
+
     def get_pRef(self, sample_size: int) -> PRef:
         return PRef.sample_from_search_space(search_space=self.search_space,
                                              fitness_function=self.fitness_function,

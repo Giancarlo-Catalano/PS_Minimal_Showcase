@@ -75,6 +75,7 @@ class PSEvaluator(Evaluator):
 
     def evaluate_population_with_raw_scores(self, pss: list[PS]) -> list[(PS, MetricValues)]:
         """ Note that the partial solutions returned by this function are NOT in the same order as the input"""
+        #return self.evaluate_fresh_population_with_raw_scores(pss)  # EXPERIMENTAL
         fresh_pss: list[PS] = []
         stored_pss: list[(PS, MetricValues)] = []
         for ps in pss:

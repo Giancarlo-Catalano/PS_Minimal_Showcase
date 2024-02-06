@@ -101,3 +101,12 @@ class PS:
         """assumes that mergeable(a, b) == True"""
         new_values = np.max((a, b), axis=0)
         return cls(new_values)
+
+
+    def present_in(self, full_solution: FullSolution) -> bool:
+        same_fixed_value = self.values == full_solution.values
+        is_unfixed = self.values == STAR
+        matching_cells = np.logical_or(same_fixed_value, is_unfixed)
+        return np.all(matching_cells)
+
+
