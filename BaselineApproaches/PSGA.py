@@ -1,7 +1,7 @@
 import random
 
-from Evaluator import PSEvaluator
-from GA import GA
+from BaselineApproaches.Evaluator import PSEvaluator
+from BaselineApproaches.GA import GA
 from PS import PS, STAR
 from SearchSpace import SearchSpace
 
@@ -18,6 +18,7 @@ class PSGA(GA):
                  ps_evaluator: PSEvaluator,
                  starting_population=None):
 
+        self.search_space = search_space
         super().__init__(mutation_rate=mutation_rate,
                          crossover_rate=crossover_rate,
                          elite_size=elite_size,
@@ -25,7 +26,6 @@ class PSGA(GA):
                          population_size=population_size,
                          evaluator=ps_evaluator,
                          starting_population=starting_population)
-        self.search_space = search_space
 
     def random_individual(self) -> PS:
         return PS.random(self.search_space, half_chance_star=True)

@@ -1,3 +1,4 @@
+import warnings
 from typing import Callable, TypeAlias, Any
 
 import numpy as np
@@ -87,6 +88,8 @@ class PSEvaluator(Evaluator):
 
     def evaluate_population(self, pss: list[PS]) -> list[(PS, float)]:
         with_raw_scores = self.evaluate_population_with_raw_scores(pss)
+        if len(with_raw_scores) == 0:
+            warnings.warn("An evaluated list of PSs appears to be empty")
         pss, metrics = utils.unzip(with_raw_scores)
         metric_array = np.array(metrics)
         normalised_metric_array = utils.remap_each_column_in_zero_one(metric_array)

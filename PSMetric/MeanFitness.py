@@ -1,3 +1,5 @@
+import warnings
+
 import numpy as np
 
 from PSMetric.Metric import Metric
@@ -15,6 +17,7 @@ class MeanFitness(Metric):
     def get_single_unnormalised_score(self, ps: PS, pRef: PRef) -> float:
         observed_fitnesses = pRef.fitnesses_of_observations(ps)
         if len(observed_fitnesses) == 0:
-            raise Exception(f"The passed PS {ps} has no observations, and thus the MeanFitness could not be calculated")
+            warnings.warn(f"The passed PS {ps} has no observations, and thus the MeanFitness could not be calculated")
+            return -1
 
         return np.average(observed_fitnesses)

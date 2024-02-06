@@ -2,6 +2,7 @@ import heapq
 import random
 
 import utils
+from BaselineApproaches import Selection
 from BaselineApproaches.Evaluator import Evaluator, Individual, Population, EvaluatedPopulation, EvaluatedIndividual
 from BaselineApproaches.Selection import tournament_select
 from TerminationCriteria import TerminationCriteria
@@ -64,7 +65,7 @@ class GA:
         return tournament_select(self.last_evaluated_population, self.tournament_size)
 
     def get_elite(self) -> Population:
-        top_evaluated = heapq.nlargest(self.elite_size, self.last_evaluated_population, key=utils.second)
+        top_evaluated = Selection.top_evaluated(self.last_evaluated_population, self.elite_size)
         if len(top_evaluated) == 0:
             return []
         else:
@@ -90,17 +91,18 @@ class GA:
         iteration = 0
 
         def termination_criteria_met():
-            return termination_criteria.met(iteration=iteration,
+            return termination_criteria.met(iterations=iteration,
                                             evaluations=self.evaluator.used_evaluations,
                                             evaluated_population=self.last_evaluated_population)
 
         while not termination_criteria_met():
             self.last_evaluated_population = self.make_new_evaluated_population()
+            iteration += 1
 
     def get_current_best(self) -> EvaluatedIndividual:
         return max(self.last_evaluated_population, key=utils.second)
 
 
 
-    def get_best_of_population(self, amount=1) -> EvaluatedPopulation:
+    def get_best_of_last_run(self, amount=1) -> EvaluatedPopulation:
         return heapq.nlargest(amount, self.last_evaluated_population, key=utils.second)

@@ -1,8 +1,10 @@
 import heapq
+import warnings
 from math import ceil
 from typing import TypeAlias
 
 import utils
+from BaselineApproaches import Selection
 from BaselineApproaches.Evaluator import PSEvaluator
 from PRef import PRef
 from PS import PS
@@ -43,10 +45,7 @@ class ABSM:
     def make_initial_population(self) -> list[PS]:
         """ basically takes the elite of the PRef, and converts them into PSs """
         """this is called get_init in the paper"""
-        evaluated_fs_population = list(zip(self.pRef.full_solutions, self.pRef.fitness_array))
-        top_evaluated = heapq.nlargest(self.population_size, evaluated_fs_population, key=utils.second)
-
-        return [PS.from_FS(fs) for fs, _ in top_evaluated]
+        return [PS.empty(self.search_space)]
 
     def get_localities(self, ps: PS) -> list[PS]:
         return ps.specialisations(self.search_space)
@@ -73,9 +72,20 @@ class ABSM:
         iteration = 0
 
         def termination_criteria_met():
-            return termination_criteria.met(iteration=iteration,
+            if len(self.current_population) == 0:
+                warnings.warn("The run is ending because the population is empty!!!")
+                return True
+
+            return termination_criteria.met(iterations=iteration,
                                             evaluations=self.ps_evaluator.used_evaluations,
                                             evaluated_population=self.current_population)
 
         while not termination_criteria_met():
             self.current_population = self.make_new_evaluated_population()
+            iteration += 1
+
+
+    def get_best_of_last_run(self, quantity_returned: int) -> list[(PS, float)]:
+        archive_as_list = list(self.archive)
+        evaluated_archive = self.ps_evaluator.evaluate_population(archive_as_list)
+        return Selection.top_evaluated(evaluated_archive, quantity_returned)

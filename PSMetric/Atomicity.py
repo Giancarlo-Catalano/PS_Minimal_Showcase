@@ -68,12 +68,20 @@ class Atomicity(Metric):
 
         def get_single_score(ps: PS) -> float:
             pAB = self.get_benefit(ps, normalised_pRef)
+            if pAB == 0.0:
+                return pAB
 
             isolated = self.get_isolated_benefits(ps, global_isolated_benefits)
             excluded = self.get_excluded_benefits(ps, normalised_pRef)
 
+            if len(isolated) == 0: # ie we have the empty ps
+                return 0.5
+
             max_denominator = np.max(isolated * excluded)  # praying that they are always the same size!
 
-            return pAB * np.log(pAB / max_denominator)
+            result = pAB * np.log(pAB / max_denominator)
+            if np.isnan(result).any():
+                raise Exception("There is a nan value returned in atomicity")
+            return result
 
         return np.array([get_single_score(ps) for ps in pss])
