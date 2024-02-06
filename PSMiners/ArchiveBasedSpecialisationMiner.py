@@ -56,6 +56,9 @@ class ABSM:
     def top(self, evaluated_population: list[(PS, float)], amount: int) -> list[(PS, float)]:
         return heapq.nlargest(amount, evaluated_population, key=utils.second)
 
+    def without_features_in_archive(self, population: list[PS]) -> list[PS]:
+        return [ps for ps in population if ps not in self.archive]
+
     def make_new_evaluated_population(self):
         selected = [self.select_one() for _ in range(ceil(self.population_size * self.selection_proportion))]
         localities = [local for ps in selected
@@ -63,8 +66,10 @@ class ABSM:
         self.archive.update(selected)
 
         old_population, _ = utils.unzip(self.current_population)
-        new_population = set(old_population).union(localities).difference(self.archive)
-        evaluated_new_population = self.ps_evaluator.evaluate_population(list(new_population))
+        new_population = old_population + localities
+        new_population = [ps for ps in new_population if ps not in self.archive] # not using .difference because I don't want to create a set just yet
+        new_population = list(set(new_population))
+        evaluated_new_population = self.ps_evaluator.evaluate_population(new_population)
 
         return self.top(evaluated_new_population, self.population_size)
 

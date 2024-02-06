@@ -75,7 +75,7 @@ class Atomicity(Metric):
             excluded = self.get_excluded_benefits(ps, normalised_pRef)
 
             if len(isolated) == 0: # ie we have the empty ps
-                return 0.5
+                return 0
 
             max_denominator = np.max(isolated * excluded)  # praying that they are always the same size!
 

@@ -5,7 +5,9 @@ from BaselineApproaches.Evaluator import PSEvaluator
 from BaselineApproaches.FullSolutionGA import FullSolutionGA
 from BaselineApproaches.PSGA import PSGA
 from BenchmarkProblems.BenchmarkProblem import BenchmarkProblem
+from BenchmarkProblems.BinVal import BinVal
 from BenchmarkProblems.OneMax import OneMax
+from BenchmarkProblems.RoyalRoad import RoyalRoad
 from FullSolution import FullSolution
 from PRef import PRef
 from PS import PS
@@ -65,6 +67,6 @@ def test_psabsm(problem: BenchmarkProblem):
 
 
 if __name__ == '__main__':
-    problem = OneMax(6)
+    problem = RoyalRoad(2, 4)
     test_fsga(problem)
     test_psabsm(problem)
