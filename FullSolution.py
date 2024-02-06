@@ -23,7 +23,6 @@ class FullSolution:
     def __hash__(self):
         return self.values.__hash__()
 
-
     def __len__(self):
         return len(self.values)
 

@@ -1,12 +1,9 @@
 import random
-from typing import Callable
 
+from Evaluator import PSEvaluator
 from GA import GA
-from PS import PS, STAR
-from Evaluator import PSEvaluator, Individual
+from PS import PS
 from SearchSpace import SearchSpace
-from TerminationCriteria import TerminationCriteria
-from custom_types import Fitness
 
 
 class PSGA(GA):
@@ -18,7 +15,6 @@ class PSGA(GA):
                  elite_size: int,
                  tournament_size: int,
                  population_size: int,
-                 termination_criteria: TerminationCriteria,
                  ps_evaluator: PSEvaluator,
                  starting_population=None):
 
@@ -27,7 +23,6 @@ class PSGA(GA):
                          elite_size=elite_size,
                          tournament_size=tournament_size,
                          population_size=population_size,
-                         termination_criteria=termination_criteria,
                          evaluator=ps_evaluator,
                          starting_population=starting_population)
         self.search_space = search_space

@@ -10,7 +10,6 @@ from custom_types import Fitness
 
 Individual: TypeAlias = Any
 Population: TypeAlias = list[Individual]
-Fitness: TypeAlias = float
 EvaluatedIndividual: TypeAlias = (Individual, Fitness)
 EvaluatedPopulation = list[EvaluatedIndividual]
 

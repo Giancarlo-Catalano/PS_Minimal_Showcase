@@ -31,17 +31,17 @@ class TestSearchSpace(unittest.TestCase):
     def test_cumulative_offsets(self):
         search_space = SearchSpace((2, 3, 4))
         intended_offsets = np.array([0, 2, 5, 9])  # notice the inclusion of 0 and 9
-        self.assertTrue(all(search_space.precomputed_offsets == intended_offsets), 'invalid precomputed offsets')
+        self.assertTrue(np.array_equal(search_space.precomputed_offsets, intended_offsets),
+                        'invalid precomputed offsets')
 
     def test_random_full_solution(self):
         search_space = SearchSpace((2, 3, 4))
+
         def verify_fs(fs: FullSolution):
-            values_are_non_negative = fs.values >= 0
-            values_are_within_cardinalities = fs.values < search_space.cardinalities
+            values_are_non_negative: np.ndarray = fs.values >= 0
+            values_are_within_cardinalities: np.ndarray = fs.values < search_space.cardinalities
             self.assertTrue(all(values_are_non_negative), 'a sampled FS contains negative values')
             self.assertTrue(all(values_are_within_cardinalities), 'a sampled FS contains values > cardinalities')
 
         for _ in range(100):
             verify_fs(FullSolution.random(search_space))
-
-

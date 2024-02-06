@@ -1,10 +1,8 @@
-import random
 from typing import Iterable, Sized
+
 import numpy as np
 
 from custom_types import ArrayOfInts
-
-from FullSolution import FullSolution
 
 
 class SearchSpace(Sized):
@@ -17,7 +15,7 @@ class SearchSpace(Sized):
 
     @property
     def hot_encoded_length(self) -> int:
-        return np.sum(self.cardinalities)
+        return int(np.sum(self.cardinalities))
 
     @property
     def dimensions(self) -> int:
@@ -29,15 +27,14 @@ class SearchSpace(Sized):
     @property
     def amount_of_parameters(self) -> int:
         return self.dimensions
+
     def __repr__(self):
         return f"SearchSpace{tuple(self.cardinalities)}"
 
-
     def __eq__(self, other) -> bool:
-        return all(self.cardinalities == other.cardinalities)
+        return np.array_equal(self.cardinalities, other.cardinalities)
 
     @classmethod
     def concatenate_search_spaces(cls, to_concat: Iterable):
-        cardinalities: tuple[ArrayOfInts] = tuple(ss.cardinalities for ss in to_concat)
+        cardinalities = tuple(ss.cardinalities for ss in to_concat)
         return cls(np.concatenate(cardinalities))
-

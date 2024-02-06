@@ -7,6 +7,7 @@ from custom_types import Fitness, BooleanMatrix, ArrayOfFloats
 from SearchSpace import SearchSpace
 from PS import PS
 
+
 class PRef:
     full_solutions: list[FullSolution]
     fitness_array: ArrayOfFloats
@@ -22,10 +23,8 @@ class PRef:
         self.full_solution_matrix = full_solution_matrix
         self.search_space = search_space
 
-
     def __repr__(self):
         return f"PRef with {len(self.full_solutions)} samples"
-
 
     def long_repr(self):
         header_str = f"PRef with {len(self.full_solutions)} samples"
@@ -36,10 +35,7 @@ class PRef:
 
         matrix_str = f"The matrix has dimensions {self.full_solution_matrix.shape}"
 
-
         return "\n".join([header_str, fs_str, matrix_str])
-
-
 
     @classmethod
     def from_full_solutions(cls, full_solutions: Iterable[FullSolution],
@@ -47,7 +43,6 @@ class PRef:
                             search_space: SearchSpace):
         matrix = np.array([fs.values for fs in full_solutions])
         return cls(full_solutions, fitness_values, matrix, search_space)
-
 
     @classmethod
     def sample_from_search_space(cls, search_space: SearchSpace,
@@ -70,5 +65,3 @@ class PRef:
                 remaining_fitnesses = remaining_fitnesses[which_to_keep]
 
         return remaining_fitnesses
-
-

@@ -14,10 +14,10 @@ def encode_full_solutions(full_solutions: Iterable[FullSolution],
 
     full_solution_value_matrix = np.array([full_solution.values for full_solution in full_solutions])
 
-    for variable_index in search_space.amount_of_parameters:
-        for value in search_space.cardinalities[variable_index]:
+    for variable_index, cardinality in enumerate(search_space.cardinalities):
+        for value in range(cardinality):
             # this should be going in the expected order, 0, 1, 2, 3 etc.. but this is just to make sure
-            column = search_space.precomputed_offsets[variable_index]+value
+            column = search_space.precomputed_offsets[variable_index] + value
             resulting_matrix[:, column] = full_solution_value_matrix[:, variable_index] == value
 
     return resulting_matrix

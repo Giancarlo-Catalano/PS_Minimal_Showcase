@@ -2,7 +2,6 @@ import random
 from typing import Iterable
 
 import numpy as np
-from bitarray import bitarray, frozenbitarray
 
 from FullSolution import FullSolution
 from SearchSpace import SearchSpace

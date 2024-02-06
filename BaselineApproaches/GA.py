@@ -1,6 +1,5 @@
 import heapq
 import random
-from typing import Callable, TypeAlias, Any
 
 import utils
 from BaselineApproaches.Evaluator import Evaluator, Individual, Population, EvaluatedPopulation, EvaluatedIndividual
@@ -27,7 +26,6 @@ class GA:
                  elite_size: int,
                  tournament_size: int,
                  population_size: int,
-                 termination_criteria: TerminationCriteria,
                  evaluator: Evaluator,
                  starting_population=None):
         self.mutation_rate = mutation_rate
@@ -35,7 +33,6 @@ class GA:
         self.elite_size = elite_size
         self.tournament_size = tournament_size
         self.population_size = population_size
-        self.termination_criteria = termination_criteria
         self.evaluator = evaluator
 
         if starting_population is None:
@@ -89,14 +86,14 @@ class GA:
                     for _ in range(self.population_size - self.elite_size)]
         return self.evaluator.evaluate_population(elite + children)
 
-    def evolve_for_generations(self):
+    def run(self, termination_criteria: TerminationCriteria):
         self.last_evaluated_population = self.evaluator.evaluate_population(self.last_evaluated_population)
         iteration = 0
 
         def termination_criteria_met():
-            return self.termination_criteria.met(iteration=iteration,
-                                                 evaluations=self.evaluator.used_evaluations,
-                                                 evaluated_population=self.last_evaluated_population)
+            return termination_criteria.met(iteration=iteration,
+                                            evaluations=self.evaluator.used_evaluations,
+                                            evaluated_population=self.last_evaluated_population)
 
         while not termination_criteria_met():
             self.last_evaluated_population = self.make_new_evaluated_population()

@@ -1,4 +1,3 @@
-from enum import Enum, auto
 from typing import Iterable, Any
 
 import utils
@@ -9,26 +8,25 @@ class TerminationCriteria:
     def __init__(self):
         pass
 
-
     def __repr__(self):
         raise Exception("Implementation of TerminationCriteria does not implement __repr__")
 
     def met(self, **kwargs):
         raise Exception("Implementation of TerminationCriteria does not implement termination_criteria_met")
 
+
 class EvaluationBudgetLimit(TerminationCriteria):
     max_evaluations: int
+
     def __init__(self, max_evaluations: int):
         super().__init__()
         self.max_evaluations = max_evaluations
-
 
     def __repr__(self):
         return f"EvaluationBudget({self.max_evaluations})"
 
     def met(self, **kwargs):
         return kwargs["evaluations"] >= self.max_evaluations
-
 
 
 class TimeLimit(TerminationCriteria):
@@ -45,7 +43,6 @@ class TimeLimit(TerminationCriteria):
         return kwargs["time"] >= self.max_time
 
 
-
 class IterationLimit(TerminationCriteria):
     max_iterations: float
 
@@ -58,8 +55,6 @@ class IterationLimit(TerminationCriteria):
 
     def met(self, **kwargs):
         return kwargs["iterations"] >= self.max_iterations
-
-
 
 
 class UntilAllTargetsFound(TerminationCriteria):
@@ -79,7 +74,6 @@ class UntilAllTargetsFound(TerminationCriteria):
         return all(target in population for target in self.targets)
 
 
-
 class UntilGlobalOptimaReached(TerminationCriteria):
     global_optima_fitness: Fitness
 
@@ -96,18 +90,15 @@ class UntilGlobalOptimaReached(TerminationCriteria):
         return self.global_optima_fitness in utils.unzip(would_be_returned)[1]
 
 
-
 class UnionOfCriteria(TerminationCriteria):
     subcriteria: list[TerminationCriteria]
+
     def __init__(self, *subcriteria):
         self.subcriteria = list(subcriteria)
         super().__init__()
 
-
     def __repr__(self):
-        return "Union("+", ".join(f"{sc}" for sc in self.subcriteria)+")"
-
+        return "Union(" + ", ".join(f"{sc}" for sc in self.subcriteria) + ")"
 
     def met(self, **kwargs):
-        return any(sc.termination_criteria_met(**kwargs) for sc in self.subcriteria)
-
+        return any(sc.met(**kwargs) for sc in self.subcriteria)
