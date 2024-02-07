@@ -68,8 +68,23 @@ def test_psabsm(problem: BenchmarkProblem):
     print(f"The used budget is {absm.ps_evaluator.used_evaluations}")
 
 
+
+def test_atomicity(problem: BenchmarkProblem):
+    pRef: PRef = problem.get_pRef(1000)
+
+    atomicity = KindaAtomicity()
+    ps_evaluator = PSEvaluator([atomicity], pRef)
+    sample_pss = [PS.random(problem.search_space) for _ in range(6)]
+
+    scores = ps_evaluator.evaluate_population_with_raw_scores(sample_pss)
+    print(f"The scores are")
+    for ps, score in scores:
+        print(f"{ps}, score = {score:.2f}")
+
+
 if __name__ == '__main__':
-    problem = RoyalRoadWithOverlaps(2, 4, 7)
+    problem = RoyalRoad(2, 4)
     print(f"The problem is {problem.long_repr()}")
-    test_fsga(problem)
-    test_psabsm(problem)
+    test_atomicity(problem)
+    #test_fsga(problem)
+    #test_psabsm(problem)

@@ -16,72 +16,52 @@ class KindaAtomicity(Metric):
     def __repr__(self):
         return "KindaAtomicity"
 
-    def get_isolated_in_search_space(self, search_space: SearchSpace.SearchSpace) -> list[PS]:
-        empty: PS = PS.empty(search_space)
-        return empty.specialisations(search_space)
 
-    def get_normalised_pRef(self, pRef: PRef) -> PRef:
-        min_fitness = np.min(pRef.fitness_array)
-        normalised_fitnesses = pRef.fitness_array - min_fitness
-        # sum_fitness = np.sum(normalised_fitnesses, dtype=float)
-        #
-        # if sum_fitness == 0:
-        #     raise Exception(f"The sum of fitnesses for {pRef} is 0, could not normalise")
-        #
-        # normalised_fitnesses /= sum_fitness
 
-        return PRef(full_solutions=pRef.full_solutions,
-                    fitness_array=normalised_fitnesses,  # this is the only thing that changes
-                    full_solution_matrix=pRef.full_solution_matrix,
-                    search_space=pRef.search_space)
+    def get_linkages_for_vars(self, pRef: PRef) -> np.ndarray:
+        overall_avg_fitness = np.average(pRef.fitness_array)
+        def chance_of_bta_for_ps(ps: PS):
+            fitnesses = pRef.fitnesses_of_observations(ps)
+            better_than_average = [fit for fit in fitnesses if fit > overall_avg_fitness]
+            return len(better_than_average) / len(fitnesses)
 
-    def get_benefit(self, ps: PS, normalised_pRef: PRef) -> float:
-        return float(np.sum(normalised_pRef.fitnesses_of_observations(ps)))
+        empty = PS.empty(pRef.search_space)
+        trivial_pss = [[empty.with_fixed_value(var_index, val)
+                        for val in range(cardinality)]
+                       for var_index, cardinality in enumerate(pRef.search_space.cardinalities)]
+        def chance_of_bta_for_var(var_index: int) -> ArrayOfFloats:
+            return np.array([chance_of_bta_for_ps(ps) for ps in trivial_pss[var_index]])
 
-    def get_global_isolated_benefits(self, normalised_pRef: PRef) -> list[list[float]]:
-        ss = normalised_pRef.search_space
-        empty: PS = PS.empty(ss)
 
-        def benefit_when_isolating(var: int, val: int) -> float:
-            isolated = empty.with_fixed_value(var, val)
-            return self.get_benefit(isolated, normalised_pRef)
+        distributions = [chance_of_bta_for_var(var) for var in range(pRef.search_space.amount_of_parameters)]
 
-        return [[benefit_when_isolating(var, val)
-                 for val in range(ss.cardinalities[var])]
-                for var in range(ss.amount_of_parameters)]
 
-    def get_excluded(self, ps: PS):
-        return ps.simplifications()
+        def observed_bivariate_distribution(var_a: int, var_b: int) -> np.ndarray:
+            return np.array([[chance_of_bta_for_ps(PS.merge(ps_a, ps_b))
+                              for ps_b in trivial_pss[var_b]]
+                             for ps_a in trivial_pss[var_a]])
 
-    def get_isolated_benefits(self, ps: PS,
-                              global_isolated_benefits: list[list[float]]) -> ArrayOfFloats:
-        return np.array([global_isolated_benefits[var][val]
-                         for var, val in enumerate(ps.values)
-                         if val != STAR])
 
-    def get_excluded_benefits(self, ps: PS, normalised_pRef: PRef) -> ArrayOfFloats:
-        return np.array([self.get_benefit(excluded, normalised_pRef) for excluded in self.get_excluded(ps)])
+        def chi_squared_between_vars(var_a: int, var_b: int) -> float:
+            univariate_distr_a = distributions[var_a]
+            univariate_distr_b = distributions[var_b]
+            expected_distr: np.ndarray = univariate_distr_a.reshape((-1, 1)) * univariate_distr_b.reshape((1, -1))
+            observed_distr: np.ndarray = observed_bivariate_distribution(var_a, var_b)
 
-    def get_unnormalised_scores(self, pss: Iterable[PS], pRef: PRef) -> ArrayOfFloats:
-        normalised_pRef = self.get_normalised_pRef(pRef)
-        global_isolated_benefits = self.get_global_isolated_benefits(normalised_pRef)
+            return sum((np.square(observed_distr)-np.square(expected_distr))/expected_distr)
 
-        def get_single_score(ps: PS) -> float:
-            pAB = self.get_benefit(ps, normalised_pRef)
-            if pAB == 0.0:
-                return pAB
+        chi_squared_matrix = np.zeros((pRef.search_space.amount_of_parameters, pRef.search_space.amount_of_parameters))
+        for var_a in range(pRef.search_space.amount_of_parameters):
+            for var_b in range(var_a, pRef.search_space.amount_of_parameters):
+                chi_squared_matrix[var_a][var_b] = chi_squared_between_vars(var_a, var_b)
 
-            isolated = self.get_isolated_benefits(ps, global_isolated_benefits)
-            excluded = self.get_excluded_benefits(ps, normalised_pRef)
 
-            if len(isolated) == 0: # ie we have the empty ps
-                return 0.5
+        # then we mirror it for convenience...
+        upper_triangle = np.triu(chi_squared_matrix, k=1)
+        chi_squared_matrix = chi_squared_matrix + upper_triangle.T
+        return chi_squared_matrix
 
-            max_denominator = np.max(isolated * excluded)  # praying that they are always the same size!
 
-            result = pAB * np.log(pAB / max_denominator)
-            if np.isnan(result).any():
-                raise Exception("There is a nan value returned in atomicity")
-            return result
-
-        return np.array([get_single_score(ps) for ps in pss])
+    def get_unnormalised_scores(self, pss: list[PS], pRef: PRef) -> ArrayOfFloats:
+        linkages = self.get_linkages_for_vars(pRef)
+        return np.ones(len(pss), dtype=float)
