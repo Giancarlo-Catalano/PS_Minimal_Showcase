@@ -1,3 +1,4 @@
+import random
 from typing import Callable
 
 import TerminationCriteria
@@ -17,6 +18,7 @@ from PSMetric.Atomicity import Atomicity
 from PSMetric.KindaAtomicity import KindaAtomicity
 from PSMetric.MeanFitness import MeanFitness
 from PSMetric.Simplicity import Simplicity
+from PSMetric.Opposite import Opposite
 from PSMiners.ArchiveBasedSpecialisationMiner import ABSM
 from SearchSpace import SearchSpace
 from custom_types import Fitness
@@ -37,7 +39,7 @@ def test_fsga(problem: BenchmarkProblem):
 
     fs_ga.run(termination_criteria)
 
-    results = fs_ga.get_best_of_last_run(amount=3)
+    results = fs_ga.get_best_of_last_run(quantity_returned=3)
     print("The results of the FSGA are:")
     for fs, fitness in results:
         print(f"FS: {fs}, fitness = {fitness}")
@@ -48,7 +50,7 @@ def test_psabsm(problem: BenchmarkProblem):
 
     simplicity = Simplicity()
     mean_fitness = MeanFitness()
-    atomicity = Atomicity()
+    atomicity = KindaAtomicity()
 
     ps_evaluator = PSEvaluator([simplicity, mean_fitness, atomicity], pRef)
 
@@ -81,10 +83,60 @@ def test_atomicity(problem: BenchmarkProblem):
     for ps, score in scores:
         print(f"{ps}, score = {score}")
 
+def test_simplicity_and_atomicity(problem: BenchmarkProblem):
+    pRef: PRef = problem.get_pRef(1000)
+
+    complexity = Opposite(Simplicity())
+    simplicity = Simplicity()
+    atomicity = KindaAtomicity()
+    meanFitness = MeanFitness()
+
+    ps_evaluator = PSEvaluator([simplicity, atomicity, meanFitness], pRef)
+
+    budget_limit = TerminationCriteria.EvaluationBudgetLimit(10000)
+    iteration_limit = TerminationCriteria.IterationLimit(12)
+    termination_criteria = TerminationCriteria.UnionOfCriteria(budget_limit, iteration_limit)
+
+    miner = ABSM(150, ps_evaluator)
+
+    miner.run(termination_criteria)
+
+    results = miner.get_best_of_last_run(quantity_returned=10)
+    print("The results of the PSABSM are:")
+    for ps, fitness in results:
+        print(f"PS: {ps}, fitness = {fitness}")
+
+    print(f"The used budget is {miner.ps_evaluator.used_evaluations}")
+
+
+def test_atomicity_2(problem: RoyalRoadWithOverlaps):
+    pRef: PRef = problem.get_pRef(10000)
+
+    target_a, target_b = None, None
+
+    choices = list(problem.target_pss)
+    while True:
+        random_a = random.choice(choices)
+        random_b = random.choice(choices)
+        if PS.mergeable(random_a, random_b) and random_a!=random_b:
+            target_a, target_b = random_a, random_b
+            break
+
+    united = PS.merge(target_a, target_b)
+    sample_pss = [target_a, target_b, united]
+
+
+    atomicity = KindaAtomicity()
+    ps_evaluator = PSEvaluator([atomicity], pRef)
+
+    scores = ps_evaluator.evaluate_population_with_raw_scores(sample_pss)
+    print(f"The scores are")
+    for ps, score in scores:
+        print(f"{ps}, score = {score}")
+
+
 
 if __name__ == '__main__':
-    problem = Trapk(2, 5)
+    problem = RoyalRoadWithOverlaps(5, 4, amount_of_bits=15)
     print(f"The problem is {problem.long_repr()}")
-    test_atomicity(problem)
-    #test_fsga(problem)
-    #test_psabsm(problem)
+    test_simplicity_and_atomicity(problem)

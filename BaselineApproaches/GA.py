@@ -104,5 +104,5 @@ class GA:
 
 
 
-    def get_best_of_last_run(self, amount=1) -> EvaluatedPopulation:
-        return heapq.nlargest(amount, self.last_evaluated_population, key=utils.second)
+    def get_best_of_last_run(self, quantity_returned=1) -> EvaluatedPopulation:
+        return heapq.nlargest(quantity_returned, self.last_evaluated_population, key=utils.second)

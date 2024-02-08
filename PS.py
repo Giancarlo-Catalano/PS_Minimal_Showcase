@@ -110,3 +110,11 @@ class PS:
         return np.all(matching_cells)
 
 
+    def is_empty(self) -> bool:
+        return np.all(self.values == STAR)
+
+
+    def fixed_count(self) -> int:
+        return int(np.sum(self.values != STAR, dtype=int))
+
+
