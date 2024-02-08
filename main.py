@@ -70,7 +70,7 @@ def test_psabsm(problem: BenchmarkProblem):
 
 
 def test_atomicity(problem: BenchmarkProblem):
-    pRef: PRef = problem.get_pRef(1000)
+    pRef: PRef = problem.get_pRef(10000)
 
     atomicity = KindaAtomicity()
     ps_evaluator = PSEvaluator([atomicity], pRef)
@@ -79,11 +79,11 @@ def test_atomicity(problem: BenchmarkProblem):
     scores = ps_evaluator.evaluate_population_with_raw_scores(sample_pss)
     print(f"The scores are")
     for ps, score in scores:
-        print(f"{ps}, score = {score:.2f}")
+        print(f"{ps}, score = {score}")
 
 
 if __name__ == '__main__':
-    problem = RoyalRoad(2, 4)
+    problem = Trapk(2, 5)
     print(f"The problem is {problem.long_repr()}")
     test_atomicity(problem)
     #test_fsga(problem)

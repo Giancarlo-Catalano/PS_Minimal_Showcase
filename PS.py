@@ -99,7 +99,7 @@ class PS:
     @classmethod
     def merge(cls, a, b):
         """assumes that mergeable(a, b) == True"""
-        new_values = np.max((a, b), axis=0)
+        new_values = np.max((a.values, b.values), axis=0)
         return cls(new_values)
 
 

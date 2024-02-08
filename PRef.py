@@ -65,3 +65,7 @@ class PRef:
                 remaining_fitnesses = remaining_fitnesses[which_to_keep]
 
         return remaining_fitnesses
+
+    @property
+    def sample_size(self) -> int:
+        return len(self.fitness_array)
