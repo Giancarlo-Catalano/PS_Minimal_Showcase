@@ -16,11 +16,13 @@ class Atomicity(Metric):
     def __repr__(self):
         return "Atomicity"
 
-    def get_isolated_in_search_space(self, search_space: SearchSpace.SearchSpace) -> list[PS]:
+    @staticmethod
+    def get_isolated_in_search_space(search_space: SearchSpace.SearchSpace) -> list[PS]:
         empty: PS = PS.empty(search_space)
         return empty.specialisations(search_space)
 
-    def get_normalised_pRef(self, pRef: PRef) -> PRef:
+    @staticmethod
+    def get_normalised_pRef(pRef: PRef) -> PRef:
         min_fitness = np.min(pRef.fitness_array)
         normalised_fitnesses = pRef.fitness_array - min_fitness
         sum_fitness = np.sum(normalised_fitnesses, dtype=float)
@@ -35,32 +37,58 @@ class Atomicity(Metric):
                     full_solution_matrix=pRef.full_solution_matrix,
                     search_space=pRef.search_space)
 
-    def get_benefit(self, ps: PS, normalised_pRef: PRef) -> float:
+    @staticmethod
+    def get_benefit(ps: PS, normalised_pRef: PRef) -> float:
         return float(np.sum(normalised_pRef.fitnesses_of_observations(ps)))
 
-    def get_global_isolated_benefits(self, normalised_pRef: PRef) -> list[list[float]]:
+    @staticmethod
+    def get_global_isolated_benefits(normalised_pRef: PRef) -> list[list[float]]:
         ss = normalised_pRef.search_space
         empty: PS = PS.empty(ss)
 
         def benefit_when_isolating(var: int, val: int) -> float:
             isolated = empty.with_fixed_value(var, val)
-            return self.get_benefit(isolated, normalised_pRef)
+            return Atomicity.get_benefit(isolated, normalised_pRef)
 
         return [[benefit_when_isolating(var, val)
                  for val in range(ss.cardinalities[var])]
                 for var in range(ss.amount_of_parameters)]
 
-    def get_excluded(self, ps: PS):
+    @staticmethod
+    def get_excluded(ps: PS):
         return ps.simplifications()
 
-    def get_isolated_benefits(self, ps: PS,
+    @staticmethod
+    def get_isolated_benefits(ps: PS,
                               global_isolated_benefits: list[list[float]]) -> ArrayOfFloats:
         return np.array([global_isolated_benefits[var][val]
                          for var, val in enumerate(ps.values)
                          if val != STAR])
 
-    def get_excluded_benefits(self, ps: PS, normalised_pRef: PRef) -> ArrayOfFloats:
-        return np.array([self.get_benefit(excluded, normalised_pRef) for excluded in self.get_excluded(ps)])
+    @staticmethod
+    def get_excluded_benefits(ps: PS, normalised_pRef: PRef) -> ArrayOfFloats:
+        return np.array([Atomicity.get_benefit(excluded, normalised_pRef) for excluded in Atomicity.get_excluded(ps)])
+
+    @staticmethod
+    def get_single_score_knowing_information(ps: PS,
+                                             normalised_pRef: PRef,
+                                             global_isolated_benefits: list[list[float]]):
+        pAB = Atomicity.get_benefit(ps, normalised_pRef)
+        if pAB == 0.0:
+            return pAB
+
+        isolated = Atomicity.get_isolated_benefits(ps, global_isolated_benefits)
+        excluded = Atomicity.get_excluded_benefits(ps, normalised_pRef)
+
+        if len(isolated) == 0:  # ie we have the empty ps
+            return 0
+
+        max_denominator = np.max(isolated * excluded)  # praying that they are always the same size!
+
+        result = pAB * np.log(pAB / max_denominator)
+        if np.isnan(result).any():
+            raise Exception("There is a nan value returned in atomicity")
+        return result
 
     def get_unnormalised_scores(self, pss: Iterable[PS], pRef: PRef) -> ArrayOfFloats:
         normalised_pRef = self.get_normalised_pRef(pRef)
@@ -74,7 +102,7 @@ class Atomicity(Metric):
             isolated = self.get_isolated_benefits(ps, global_isolated_benefits)
             excluded = self.get_excluded_benefits(ps, normalised_pRef)
 
-            if len(isolated) == 0: # ie we have the empty ps
+            if len(isolated) == 0:  # ie we have the empty ps
                 return 0
 
             max_denominator = np.max(isolated * excluded)  # praying that they are always the same size!
