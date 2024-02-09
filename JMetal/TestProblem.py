@@ -12,6 +12,7 @@ from jmetal.operator.crossover import IntegerSBXCrossover
 from jmetal.util.solution import get_non_dominated_solutions
 from jmetal.util.termination_criterion import StoppingByEvaluations
 
+from BenchmarkProblems.BenchmarkProblem import BenchmarkProblem
 from SearchSpace import SearchSpace
 
 
@@ -65,51 +66,6 @@ class SubsetSum(BinaryProblem):
     def name(self) -> str:
         return "Subset Sum"
 
-
-class GianIntegerProblem(IntegerProblem, ABC):
-    search_space: SearchSpace
-
-    def __init__(self, search_space: SearchSpace):
-        self.search_space = search_space
-        self.lower_bound = [0 for _ in self.search_space.cardinalities]
-        self.upper_bound = [cardinality - 1 for cardinality in self.search_space.cardinalities]
-
-        super(GianIntegerProblem, self).__init__()
-
-        self.obj_directions = [self.MINIMIZE, self.MAXIMIZE]
-        self.obj_labels = ["Sum", "Product"]
-
-    def number_of_constraints(self) -> int:
-        return 0
-
-    def number_of_objectives(self) -> int:
-        return 2
-
-    def number_of_variables(self) -> int:
-        return 1
-
-    def evaluate(self, solution: IntegerSolution) -> IntegerSolution:
-        score_sum = sum(solution.variables[0])
-        score_product = np.product(solution.variables[0])
-        solution.objectives[0] = score_sum
-        solution.objectives[1] = score_product
-        return solution
-
-    def create_solution(self) -> IntegerSolution:
-        new_solution = IntegerSolution(
-            self.lower_bound,
-            self.upper_bound,
-            self.number_of_objectives(),
-            self.number_of_constraints())
-        new_solution.variables[0] = [random.randrange(lower, upper) for lower, upper in
-                                     zip(self.lower_bound, self.upper_bound)]
-
-        return new_solution
-
-    def name(self) -> str:
-        return "Subset Sum"
-
-
 class BoringIntegerProblem(IntegerProblem, ABC):
     lower_bound = [2, 3, 4]
     upper_bound = [8, 9, 10]
@@ -147,6 +103,52 @@ class BoringIntegerProblem(IntegerProblem, ABC):
 
         new_solution.variables = [random.randrange(lower, upper)
                                      for lower, upper in zip(self.lower_bound, self.upper_bound)]
+
+        return new_solution
+
+    def name(self) -> str:
+        return "Boring Integer problem"
+
+
+
+
+class PSProblem(IntegerProblem):
+    lower_bounds: list[int]
+    upper_bounds: list[int]
+
+    def __init__(self, benchmarkProblem: BenchmarkProblem):
+        super(PSProblem, self).__init__()
+
+        self.obj_directions = [self.MINIMIZE, self.MAXIMIZE]
+        self.obj_labels = ["Sum", "Product"]
+        self.lower_bound = [2, 3, 4]
+        self.upper_bound = [8, 9, 10]
+
+    def number_of_constraints(self) -> int:
+        return 0
+
+    def number_of_objectives(self) -> int:
+        return 2
+
+    def number_of_variables(self) -> int:
+        return 1
+
+    def evaluate(self, solution: IntegerSolution) -> IntegerSolution:
+        score_sum = sum(solution.variables)
+        score_product = np.product(solution.variables)
+        solution.objectives[0] = score_sum
+        solution.objectives[1] = score_product
+        return solution
+
+    def create_solution(self) -> IntegerSolution:
+        new_solution = IntegerSolution(
+            lower_bound=self.lower_bound,
+            upper_bound=self.upper_bound,
+            number_of_objectives=self.number_of_objectives(),
+            number_of_constraints=self.number_of_constraints())
+
+        new_solution.variables = [random.randrange(lower, upper)
+                                  for lower, upper in zip(self.lower_bound, self.upper_bound)]
 
         return new_solution
 
