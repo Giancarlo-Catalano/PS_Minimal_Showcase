@@ -17,7 +17,7 @@ class Trapk(BenchmarkProblem):
 
     def __repr__(self):
         return (f"Trapk(amount_of_cliques = {self.amount_of_cliques}, "
-                f"size_of_cliques = {self.size_of_cliques}")
+                f"size_of_cliques = {self.size_of_cliques})")
 
     def unitary_fitness_function(self, amount_of_ones: int) -> float:
         if amount_of_ones == self.size_of_cliques:
