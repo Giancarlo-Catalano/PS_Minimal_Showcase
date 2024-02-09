@@ -12,6 +12,7 @@ from BenchmarkProblems.RoyalRoad import RoyalRoad
 from BenchmarkProblems.RoyalRoadWithOverlaps import RoyalRoadWithOverlaps
 from BenchmarkProblems.Trapk import Trapk
 from FullSolution import FullSolution
+from JMetal.TestProblem import test_JMetal
 from PRef import PRef
 from PS import PS
 from PSMetric.Atomicity import Atomicity
@@ -137,6 +138,8 @@ def test_atomicity_2(problem: RoyalRoadWithOverlaps):
 
 
 if __name__ == '__main__':
-    problem = Trapk(3, 5)
-    print(f"The problem is {problem.long_repr()}")
-    test_simplicity_and_atomicity(problem)
+    # problem = Trapk(3, 5)
+    # print(f"The problem is {problem.long_repr()}")
+    # test_simplicity_and_atomicity(problem)
+
+    test_JMetal()
