@@ -20,8 +20,6 @@ class AtomicityEvaluator:
     normalised_pRef: PRef
     global_isolated_benefits: list[list[float]]
 
-
-
     def __init__(self, pRef: PRef):
         self.normalised_pRef = Atomicity.get_normalised_pRef(pRef)
         self.global_isolated_benefits = Atomicity.get_global_isolated_benefits(self.normalised_pRef)
@@ -50,7 +48,7 @@ class PSProblem(IntegerProblem):
         self.obj_directions = [self.MAXIMIZE, self.MAXIMIZE, self.MAXIMIZE]
         self.obj_labels = ["Simplicity", "MeanFitness", "Atomicity"]
         self.lower_bound = [-1 for var in benchmark_problem.search_space.cardinalities]
-        self.upper_bound = [cardinality - 1 for cardinality in benchmark_problem.search_space.cardinalities]
+        self.upper_bound = [cardinality for cardinality in benchmark_problem.search_space.cardinalities]
 
         self.pRef = benchmark_problem.get_pRef(1000)
         self.simplicity_metric = Simplicity()
@@ -66,13 +64,12 @@ class PSProblem(IntegerProblem):
     def number_of_variables(self) -> int:
         return 1
 
-
     def evaluate(self, solution: IntegerSolution) -> IntegerSolution:
         ps = into_PS(solution)
 
-        solution.objectives[0] = self.simplicity_metric.get_single_unnormalised_score(ps, self.pRef)
-        solution.objectives[1] = self.meanFitness_metric.get_single_unnormalised_score(ps, self.pRef)
-        solution.objectives[2] = self.atomicity_evaluator.evaluate_single(ps)
+        solution.objectives[0] = -self.simplicity_metric.get_single_unnormalised_score(ps, self.pRef)
+        solution.objectives[1] = -self.meanFitness_metric.get_single_unnormalised_score(ps, self.pRef)
+        solution.objectives[2] = -self.atomicity_evaluator.evaluate_single(ps)
         return solution
 
     def create_solution(self) -> IntegerSolution:
@@ -91,15 +88,14 @@ class PSProblem(IntegerProblem):
         return "PS search problem"
 
 
-
 def test_PSProblem(benchmark_problem: BenchmarkProblem):
-
     problem = PSProblem(benchmark_problem)
     algorithm = NSGAII(
         problem=problem,
         population_size=100,
         offspring_population_size=100,
-        mutation=IntegerPolynomialMutation(probability=1 / benchmark_problem.search_space.amount_of_parameters, distribution_index=20),
+        mutation=IntegerPolynomialMutation(probability=1 / benchmark_problem.search_space.amount_of_parameters,
+                                           distribution_index=20),
         crossover=IntegerSBXCrossover(probability=1, distribution_index=20),
         termination_criterion=StoppingByEvaluations(max_evaluations=10000))
 
@@ -111,9 +107,9 @@ def test_PSProblem(benchmark_problem: BenchmarkProblem):
 
     front = get_non_dominated_solutions(algorithm.get_result())
 
-
-
-
     for item in front:
         ps = into_PS(item)
-        print(f"{ps} = {item}\n")
+        simplicity, mean_fitness, atomicity = item.objectives
+        print(f"{ps}, \tsimplicity = {int(-simplicity)}, \tmean_fit = {-mean_fitness:.3f}, \tatomicity = {-atomicity:.4f}, ")
+        observed_fitnesses = problem.pRef.fitnesses_of_observations(ps)
+        print(f"\t Observed fitnesses = {observed_fitnesses[:6]}")

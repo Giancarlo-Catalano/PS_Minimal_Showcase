@@ -139,8 +139,8 @@ def test_atomicity_2(problem: RoyalRoadWithOverlaps):
 
 
 if __name__ == '__main__':
-    problem = RoyalRoad(3, 5)
+    problem = RoyalRoad(5, 4)
     # print(f"The problem is {problem.long_repr()}")
     #test_simplicity_and_atomicity(problem)
 
-    test_JMetal_integer()
+    test_PSProblem(problem)
