@@ -143,4 +143,4 @@ if __name__ == '__main__':
     # print(f"The problem is {problem.long_repr()}")
     #test_simplicity_and_atomicity(problem)
 
-    test_PSProblem(problem)
+    test_JMetal_integer()

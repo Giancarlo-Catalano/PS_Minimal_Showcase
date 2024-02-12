@@ -67,31 +67,30 @@ class SubsetSum(BinaryProblem):
         return "Subset Sum"
 
 class BoringIntegerProblem(IntegerProblem, ABC):
-    lower_bound = [2, 3, 4]
-    upper_bound = [8, 9, 10]
+    lower_bound = [0, 0, 0]
+    upper_bound = [6, 6, 6]
 
     def __init__(self):
         super(BoringIntegerProblem, self).__init__()
 
-        self.obj_directions = [self.MINIMIZE, self.MAXIMIZE]
-        self.obj_labels = ["Sum", "Product"]
-        self.lower_bound = [2, 3, 4]
-        self.upper_bound = [8, 9, 10]
+        self.obj_directions = [self.MAXIMIZE, self.MAXIMIZE, self.MAXIMIZE]
+        self.obj_labels = ["First", "Second", "Third"]
+        self.lower_bound = [0, 0, 0]
+        self.upper_bound = [6, 6, 6]
 
     def number_of_constraints(self) -> int:
         return 0
 
     def number_of_objectives(self) -> int:
-        return 2
+        return 3
 
     def number_of_variables(self) -> int:
         return 1
 
     def evaluate(self, solution: IntegerSolution) -> IntegerSolution:
-        score_sum = sum(solution.variables)
-        score_product = np.product(solution.variables)
-        solution.objectives[0] = score_sum
-        solution.objectives[1] = score_product
+        solution.objectives[0] = -solution.variables[0]
+        solution.objectives[1] = -solution.variables[1]
+        solution.objectives[2] = -solution.variables[2]
         return solution
 
     def create_solution(self) -> IntegerSolution:
@@ -103,52 +102,6 @@ class BoringIntegerProblem(IntegerProblem, ABC):
 
         new_solution.variables = [random.randrange(lower, upper)
                                      for lower, upper in zip(self.lower_bound, self.upper_bound)]
-
-        return new_solution
-
-    def name(self) -> str:
-        return "Boring Integer problem"
-
-
-
-
-class PSProblem(IntegerProblem):
-    lower_bounds: list[int]
-    upper_bounds: list[int]
-
-    def __init__(self, benchmarkProblem: BenchmarkProblem):
-        super(PSProblem, self).__init__()
-
-        self.obj_directions = [self.MINIMIZE, self.MAXIMIZE]
-        self.obj_labels = ["Sum", "Product"]
-        self.lower_bound = [2, 3, 4]
-        self.upper_bound = [8, 9, 10]
-
-    def number_of_constraints(self) -> int:
-        return 0
-
-    def number_of_objectives(self) -> int:
-        return 2
-
-    def number_of_variables(self) -> int:
-        return 1
-
-    def evaluate(self, solution: IntegerSolution) -> IntegerSolution:
-        score_sum = sum(solution.variables)
-        score_product = np.product(solution.variables)
-        solution.objectives[0] = score_sum
-        solution.objectives[1] = score_product
-        return solution
-
-    def create_solution(self) -> IntegerSolution:
-        new_solution = IntegerSolution(
-            lower_bound=self.lower_bound,
-            upper_bound=self.upper_bound,
-            number_of_objectives=self.number_of_objectives(),
-            number_of_constraints=self.number_of_constraints())
-
-        new_solution.variables = [random.randrange(lower, upper)
-                                  for lower, upper in zip(self.lower_bound, self.upper_bound)]
 
         return new_solution
 
