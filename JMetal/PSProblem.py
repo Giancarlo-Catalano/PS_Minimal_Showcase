@@ -1,14 +1,19 @@
 import random
 
-from jmetal.algorithm.multiobjective import NSGAII
+from jmetal.algorithm.multiobjective import NSGAII, MOEAD, MOCell, GDE3, HYPE
+from jmetal.algorithm.multiobjective.nsgaiii import NSGAIII
 from jmetal.core.problem import IntegerProblem
 from jmetal.core.solution import IntegerSolution
 from jmetal.operator import IntegerPolynomialMutation
-from jmetal.operator.crossover import IntegerSBXCrossover
+from jmetal.operator.crossover import IntegerSBXCrossover, DifferentialEvolutionCrossover
+from jmetal.util.aggregative_function import Tschebycheff
+from jmetal.util.archive import CrowdingDistanceArchive
+from jmetal.util.neighborhood import C9
 from jmetal.util.solution import get_non_dominated_solutions
 from jmetal.util.termination_criterion import StoppingByEvaluations
 
 from BenchmarkProblems.BenchmarkProblem import BenchmarkProblem
+from JMetal.TestProblem import BoringIntegerProblem
 from PRef import PRef
 from PS import PS
 from PSMetric.Atomicity import Atomicity
@@ -48,9 +53,9 @@ class PSProblem(IntegerProblem):
         self.obj_directions = [self.MAXIMIZE, self.MAXIMIZE, self.MAXIMIZE]
         self.obj_labels = ["Simplicity", "MeanFitness", "Atomicity"]
         self.lower_bound = [-1 for var in benchmark_problem.search_space.cardinalities]
-        self.upper_bound = [cardinality for cardinality in benchmark_problem.search_space.cardinalities]
+        self.upper_bound = [cardinality - 1 for cardinality in benchmark_problem.search_space.cardinalities]
 
-        self.pRef = benchmark_problem.get_pRef(1000)
+        self.pRef = benchmark_problem.get_pRef(10000)
         self.simplicity_metric = Simplicity()
         self.meanFitness_metric = MeanFitness()
         self.atomicity_evaluator = AtomicityEvaluator(self.pRef)
@@ -79,7 +84,7 @@ class PSProblem(IntegerProblem):
             number_of_objectives=self.number_of_objectives(),
             number_of_constraints=self.number_of_constraints())
 
-        new_solution.variables = [random.randrange(lower, upper)
+        new_solution.variables = [random.randrange(lower, upper + 1)
                                   for lower, upper in zip(self.lower_bound, self.upper_bound)]
 
         return new_solution
@@ -88,16 +93,85 @@ class PSProblem(IntegerProblem):
         return "PS search problem"
 
 
-def test_PSProblem(benchmark_problem: BenchmarkProblem):
-    problem = PSProblem(benchmark_problem)
-    algorithm = NSGAII(
-        problem=problem,
+def make_NSGAII(benchmark_problem: BenchmarkProblem):
+    return NSGAII(
+        problem=PSProblem(benchmark_problem),
         population_size=100,
         offspring_population_size=100,
         mutation=IntegerPolynomialMutation(probability=1 / benchmark_problem.search_space.amount_of_parameters,
                                            distribution_index=20),
-        crossover=IntegerSBXCrossover(probability=1, distribution_index=20),
+        crossover=IntegerSBXCrossover(probability=0.5, distribution_index=20),
         termination_criterion=StoppingByEvaluations(max_evaluations=10000))
+
+
+
+
+def make_MOEAD(benchmark_problem: BenchmarkProblem):
+    problem = PSProblem(benchmark_problem)
+
+    return MOEAD(
+        problem=problem,
+        population_size=300,
+        crossover=DifferentialEvolutionCrossover(CR=0.5, F=0.5, K=0.5),
+        mutation=IntegerPolynomialMutation(probability=1.0 / benchmark_problem.search_space.amount_of_parameters,
+                                           distribution_index=20),
+        aggregative_function=Tschebycheff(dimension=problem.number_of_objectives()),
+        neighbor_size=20,
+        neighbourhood_selection_probability=0.9,
+        max_number_of_replaced_solutions=2,
+        weight_files_path='resources/MOEAD_weights',
+        termination_criterion=StoppingByEvaluations(10000)
+    )
+
+
+def make_MOCELL(benchmark_problem: BenchmarkProblem):
+    return MOCell(
+        problem=PSProblem(benchmark_problem),
+        population_size=100,
+        neighborhood=C9(10, 10),
+        archive=CrowdingDistanceArchive(100),
+        mutation=IntegerPolynomialMutation(probability=1 / benchmark_problem.search_space.amount_of_parameters,
+                                           distribution_index=20),
+        crossover=IntegerSBXCrossover(probability=0.5, distribution_index=20),
+        termination_criterion=StoppingByEvaluations(max_evaluations=10000)
+    )
+
+
+def make_GDE3(benchmark_problem: BenchmarkProblem):
+    return GDE3(problem=PSProblem(benchmark_problem),
+                population_size=100,
+                cr=0.5,
+                f=0.5,
+                termination_criterion=StoppingByEvaluations(10000)
+)
+
+def make_HYPE(benchmark_problem: BenchmarkProblem):
+    problem = PSProblem(benchmark_problem)
+    reference_point = IntegerSolution([0], [1], problem.number_of_objectives())
+    reference_point.objectives = [1., 1.]  # Mandatory for HYPE
+
+
+    return HYPE(
+        problem=problem,
+        reference_point=reference_point,
+        population_size=100,
+        offspring_population_size=100,
+        mutation=IntegerPolynomialMutation(probability=1.0 / problem.number_of_variables(), distribution_index=20),
+        crossover=IntegerSBXCrossover(probability=0.5, distribution_index=20),
+        termination_criterion=StoppingByEvaluations(2500))
+
+def test_PSProblem(benchmark_problem: BenchmarkProblem, which: str):
+    algorithm = None
+    if which == "NSGAII":
+        algorithm = make_NSGAII(benchmark_problem)
+    elif which == "MOEAD":
+        algorithm = make_MOEAD(benchmark_problem)
+    elif which == "MOCell":
+        algorithm = make_MOCELL(benchmark_problem)
+    elif which == "GDE3":
+        algorithm = make_GDE3(benchmark_problem)
+    else:
+        raise Exception(f"The algorithm {which} was not recognised")
 
     print("Setup the algorithm, now we run it")
 
@@ -110,6 +184,8 @@ def test_PSProblem(benchmark_problem: BenchmarkProblem):
     for item in front:
         ps = into_PS(item)
         simplicity, mean_fitness, atomicity = item.objectives
-        print(f"{ps}, \tsimplicity = {int(-simplicity)}, \tmean_fit = {-mean_fitness:.3f}, \tatomicity = {-atomicity:.4f}, ")
-        observed_fitnesses = problem.pRef.fitnesses_of_observations(ps)
-        print(f"\t Observed fitnesses = {observed_fitnesses[:6]}")
+        print(f"{ps}, "
+              f"\tsimplicity = {int(-simplicity)}, "
+              f"\tmean_fit = {-mean_fitness:.3f}, "
+              f"\tatomicity = {-atomicity:.4f}, ")
+
