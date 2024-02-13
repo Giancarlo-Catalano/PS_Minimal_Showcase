@@ -40,3 +40,5 @@ def remap_each_column_in_zero_one(input_matrix: np.ndarray) -> np.ndarray:
     for column in range(columns):
         result_matrix[:, column] = remap_array_in_zero_one(input_matrix[:, column])
     return result_matrix
+
+

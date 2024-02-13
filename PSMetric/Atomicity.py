@@ -1,8 +1,9 @@
-from typing import Iterable
+from typing import Iterable, Optional
 
 import numpy as np
 
 import SearchSpace
+import utils
 from PRef import PRef
 from PS import PS, STAR
 from PSMetric.Metric import Metric
@@ -89,6 +90,28 @@ class Atomicity(Metric):
         if np.isnan(result).any():
             raise Exception("There is a nan value returned in atomicity")
         return result
+
+
+    @staticmethod
+    def get_individual_atomicities(ps: PS,
+                                   normalised_pRef: PRef,
+                                   global_isolated_benefits: list[list[float]]) -> list[float]:
+        pAB = Atomicity.get_benefit(ps, normalised_pRef)
+        if pAB == 0.0:   # means that there are no observations
+            return (None, pAB)
+
+        isolated = Atomicity.get_isolated_benefits(ps, global_isolated_benefits)
+        excluded = Atomicity.get_excluded_benefits(ps, normalised_pRef)
+
+        if len(isolated) == 0:  # ie we have the empty ps
+            return (None, 0)
+
+        denominators = isolated * excluded  # praying that they are always the same size
+
+        result = pAB * np.log(pAB / denominators)
+        if np.isnan(result).any():
+            raise Exception("There is a nan value returned in atomicity")
+        return list(result)
 
     def get_unnormalised_scores(self, pss: Iterable[PS], pRef: PRef) -> ArrayOfFloats:
         normalised_pRef = self.get_normalised_pRef(pRef)

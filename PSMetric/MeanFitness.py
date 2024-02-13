@@ -14,7 +14,7 @@ class MeanFitness(Metric):
     def __repr__(self):
         return "MeanFitness"
 
-    def get_single_unnormalised_score(self, ps: PS, pRef: PRef) -> float:
+    def get_single_score(self, ps: PS, pRef: PRef) -> float:
         observed_fitnesses = pRef.fitnesses_of_observations(ps)
         if len(observed_fitnesses) == 0:
             #warnings.warn(f"The passed PS {ps} has no observations, and thus the MeanFitness could not be calculated")

@@ -1,5 +1,4 @@
 import heapq
-import logging
 import warnings
 from math import ceil
 from typing import TypeAlias
@@ -16,12 +15,7 @@ from BaselineApproaches.Selection import tournament_select
 Metrics: TypeAlias = tuple
 
 
-# setup the looger
-logger = logging.getLogger(__name__)
-logging.basicConfig(level=logging.DEBUG)
-
-
-class ABSM:
+class ModifiedArchiveMiner:
     population_size: int
     ps_evaluator: PSEvaluator
 
@@ -37,7 +31,6 @@ class ABSM:
         self.population_size = population_size
         self.ps_evaluator = ps_evaluator
 
-        # initilise a population and evaluate it
         self.current_population = self.ps_evaluator.evaluate_population(self.make_initial_population())
         self.archive = set()
 
@@ -50,33 +43,32 @@ class ABSM:
         return self.ps_evaluator.pRef.search_space
 
     def make_initial_population(self) -> list[PS]:
+        """ basically takes the elite of the PRef, and converts them into PSs """
         """this is called get_init in the paper"""
-        """Returns a list containing only the empty PS, ***..***"""
-        logger.debug("Creating initial set of solutions...")
         return [PS.empty(self.search_space)]
 
     def get_localities(self, ps: PS) -> list[PS]:
-        """Returns the neighbourhood of PS, which consists of every possible variation
-        of ps, where a * has been replaced by a fixed value"""
         return ps.specialisations(self.search_space)
 
     def select_one(self) -> PS:
-        """returns a randomly selected individual from the population using tournament selection"""
         return tournament_select(self.current_population, tournament_size=self.tournament_size)
 
     def top(self, evaluated_population: list[(PS, float)], amount: int) -> list[(PS, float)]:
-        """truncation selection basically"""
         return heapq.nlargest(amount, evaluated_population, key=utils.second)
+
+    def without_features_in_archive(self, population: list[PS]) -> list[PS]:
+        return [ps for ps in population if ps not in self.archive]
 
     def make_new_evaluated_population(self):
         selected = [self.select_one() for _ in range(ceil(self.population_size * self.selection_proportion))]
-        localities = [local for ps in selected
-                      for local in self.get_localities(ps)]
         self.archive.update(selected)
+        localities = [local for ps in selected
+                      for local in self.get_localities(ps)
+                      if local not in self.archive]
+
 
         old_population, _ = utils.unzip(self.current_population)
         new_population = old_population + localities
-        new_population = [ps for ps in new_population if ps not in self.archive] # not using .difference because I don't want to create a set just yet
         new_population = list(set(new_population))  # removes duplicates
         evaluated_new_population = self.ps_evaluator.evaluate_population(new_population)
 

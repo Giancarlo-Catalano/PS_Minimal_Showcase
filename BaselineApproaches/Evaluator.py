@@ -1,3 +1,4 @@
+import logging
 import warnings
 from typing import Callable, TypeAlias, Any
 
@@ -42,6 +43,10 @@ class FullSolutionEvaluator(Evaluator):
 MetricValues: TypeAlias = np.ndarray
 
 
+
+logger = logging.getLogger(__name__)
+logging.basicConfig(level=logging.DEBUG)  # Set the desired log level
+
 class PSEvaluator(Evaluator):
     metrics: list[Metric]
     pRef: PRef
@@ -56,6 +61,7 @@ class PSEvaluator(Evaluator):
     # a normalised evaluated population contains PSs and a single float
 
     def evaluate_population_with_raw_scores(self, pss: list[PS]) -> list[(PS, MetricValues)]:
+        logger.debug("Evaluating a population")
         self.used_evaluations += len(pss)
 
         # this is a matrix

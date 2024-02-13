@@ -12,9 +12,9 @@ class Metric:
         """ Return a string which describes the Criterion, eg 'Robustness' """
         raise Exception("Error: a realisation of PSMetric does not implement __repr__")
 
-    def get_single_unnormalised_score(self, ps: PS, pRef: PRef) -> float:
+    def get_single_score(self, ps: PS, pRef: PRef) -> float:
         raise Exception("Error: a realisation of PSMetric does not implement get_single_score_for_PS")
 
     def get_unnormalised_scores(self, pss: Iterable[PS], pRef: PRef) -> ArrayOfFloats:
         """default implementation, subclasses might overwrite this"""
-        return np.array([self.get_single_unnormalised_score(ps, pRef) for ps in pss])
+        return np.array([self.get_single_score(ps, pRef) for ps in pss])

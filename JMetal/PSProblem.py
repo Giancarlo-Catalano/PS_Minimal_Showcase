@@ -1,4 +1,5 @@
 import random
+from typing import Optional
 
 from jmetal.algorithm.multiobjective import NSGAII, MOEAD, MOCell, GDE3, HYPE
 from jmetal.algorithm.multiobjective.nsgaiii import NSGAIII
@@ -31,6 +32,9 @@ class AtomicityEvaluator:
 
     def evaluate_single(self, ps: PS) -> float:
         return Atomicity.get_single_score_knowing_information(ps, self.normalised_pRef, self.global_isolated_benefits)
+
+    def get_weakest(self, ps: PS) -> list[float]:
+        return Atomicity.get_individual_atomicities(ps, self.normalised_pRef, self.global_isolated_benefits)
 
 
 def into_PS(metal_solution: IntegerSolution) -> PS:
@@ -72,8 +76,8 @@ class PSProblem(IntegerProblem):
     def evaluate(self, solution: IntegerSolution) -> IntegerSolution:
         ps = into_PS(solution)
 
-        solution.objectives[0] = -self.simplicity_metric.get_single_unnormalised_score(ps, self.pRef)
-        solution.objectives[1] = -self.meanFitness_metric.get_single_unnormalised_score(ps, self.pRef)
+        solution.objectives[0] = -self.simplicity_metric.get_single_score(ps, self.pRef)
+        solution.objectives[1] = -self.meanFitness_metric.get_single_score(ps, self.pRef)
         solution.objectives[2] = -self.atomicity_evaluator.evaluate_single(ps)
         return solution
 
@@ -102,8 +106,6 @@ def make_NSGAII(benchmark_problem: BenchmarkProblem):
                                            distribution_index=20),
         crossover=IntegerSBXCrossover(probability=0.5, distribution_index=20),
         termination_criterion=StoppingByEvaluations(max_evaluations=10000))
-
-
 
 
 def make_MOEAD(benchmark_problem: BenchmarkProblem):
@@ -143,13 +145,13 @@ def make_GDE3(benchmark_problem: BenchmarkProblem):
                 cr=0.5,
                 f=0.5,
                 termination_criterion=StoppingByEvaluations(10000)
-)
+                )
+
 
 def make_HYPE(benchmark_problem: BenchmarkProblem):
     problem = PSProblem(benchmark_problem)
     reference_point = IntegerSolution([0], [1], problem.number_of_objectives())
     reference_point.objectives = [1., 1.]  # Mandatory for HYPE
-
 
     return HYPE(
         problem=problem,
@@ -159,6 +161,7 @@ def make_HYPE(benchmark_problem: BenchmarkProblem):
         mutation=IntegerPolynomialMutation(probability=1.0 / problem.number_of_variables(), distribution_index=20),
         crossover=IntegerSBXCrossover(probability=0.5, distribution_index=20),
         termination_criterion=StoppingByEvaluations(2500))
+
 
 def test_PSProblem(benchmark_problem: BenchmarkProblem, which: str):
     algorithm = None
@@ -188,4 +191,3 @@ def test_PSProblem(benchmark_problem: BenchmarkProblem, which: str):
               f"\tsimplicity = {int(-simplicity)}, "
               f"\tmean_fit = {-mean_fitness:.3f}, "
               f"\tatomicity = {-atomicity:.4f}, ")
-

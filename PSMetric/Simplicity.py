@@ -12,5 +12,5 @@ class Simplicity(Metric):
     def __repr__(self):
         return "Simplicity"
 
-    def get_single_unnormalised_score(self, ps: PS, pRef: PRef) -> float:
+    def get_single_score(self, ps: PS, pRef: PRef) -> float:
         return float(np.sum(ps.values == STAR))

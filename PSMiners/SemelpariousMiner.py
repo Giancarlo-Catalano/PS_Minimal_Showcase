@@ -85,8 +85,8 @@ class SemelpariousMiner:
 
     def evaluate_individual(self, individual: Individual) -> Individual:
         # sets the values in the individual and returns it, similarly to how JMetal does it...
-        individual.metrics[0] = self.mean_fitness.get_single_unnormalised_score(individual.ps, self.pRef)
-        individual.metrics[1] = self.simplicity.get_single_unnormalised_score(individual.ps, self.pRef)
+        individual.metrics[0] = self.mean_fitness.get_single_score(individual.ps, self.pRef)
+        individual.metrics[1] = self.simplicity.get_single_score(individual.ps, self.pRef)
         individual.metrics[2] = self.atomicity_evaluator.evaluate_single(individual.ps)
 
         self.evaluations += 1
@@ -99,18 +99,18 @@ class SemelpariousMiner:
         # as seen in the paper
         return individual.ps.specialisations(self.search_space)
 
-    def select_from_population_unsafe(self) -> Individual:
+    def select_from_population_unsafe(self, pool: list[Individual]) -> Individual:
         random_key = SemelpariousMiner.get_key_metric()
-        tournament_pool = random.choices(self.current_population, k=self.tournament_size)
+        tournament_pool = random.choices(pool, k=self.tournament_size)
         winner = max(tournament_pool, key=random_key)
         return winner
 
     def select_from_population(self) -> Individual:
-        current_winner = self.select_from_population_unsafe()
+        current_winner = self.select_from_population_unsafe(self.current_population)
 
         attempts = 0
         while current_winner.has_reproduced:
-            current_winner = self.select_from_population_unsafe()
+            current_winner = self.select_from_population_unsafe(self.current_population)
             attempts += 1
 
         return current_winner
@@ -133,6 +133,7 @@ class SemelpariousMiner:
     @staticmethod
     def top(population: list[Individual], amount: int) -> list[Individual]:
         return heapq.nlargest(amount, population, key=SemelpariousMiner.get_key_metric())
+
     def make_new_population(self) -> list[Individual]:
         print(f"Currently, {self.available_from_current_population} individuals can be selected")
 
@@ -152,13 +153,27 @@ class SemelpariousMiner:
         # top should work differently...
         return self.top(self.current_population, self.population_size)
 
+    def make_new_population_experimental(self) -> list[Individual]:
+        print(f"Population size is {len(self.current_population)}")
+
+        new_population = []
+        while len(new_population) < self.population_size and len(self.current_population) > 0:
+            selected = self.select_from_population_unsafe(self.current_population)
+            new_population.append(selected)
+            if not selected.has_reproduced:
+                new_population.extend(self.get_offspring(selected))
+                selected.has_reproduced = True
+
+            self.current_population.remove(selected)
+
+        return new_population
+
     def remove_duplicates_from_population(self, population: list[Individual]) -> list[Individual]:
         return list(set(population))
 
     def update_available_count(self):
         self.available_from_current_population = len(
             [None for individual in self.current_population if not individual.has_reproduced])
-
 
     def get_percentage_of_selectable(self):
         return self.available_from_current_population / len(self.current_population)
@@ -171,11 +186,10 @@ class SemelpariousMiner:
                 warnings.warn("The run is ending because the population is empty!!!")
                 return True
 
-            if self.get_percentage_of_selectable() < 0.1:
-                warnings.warn(f"The run is ending because "
-                              f"the there's not enough selectables ({self.available_from_current_population})!!!")
-
-                return True
+            # if self.get_percentage_of_selectable() < 0.1:
+            #    warnings.warn(f"The run is ending because "
+            #                  f"the there's not enough selectables ({self.available_from_current_population})!!!")
+            #    return True
 
             return termination_criteria.met(iterations=iteration,
                                             evaluations=self.evaluations,
@@ -183,8 +197,8 @@ class SemelpariousMiner:
 
         while not termination_criteria_met():
             self.current_population = self.make_new_population()
-            self.current_population = self.remove_duplicates_from_population(self.current_population)
-            self.update_available_count()
+            #self.current_population = self.remove_duplicates_from_population(self.current_population)
+            #self.update_available_count()
             iteration += 1
 
     def get_results(self, quantity_returned: int) -> list[(PS, float)]:
