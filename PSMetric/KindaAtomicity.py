@@ -10,6 +10,7 @@ from custom_types import ArrayOfFloats
 
 LinkageTable: TypeAlias = np.ndarray
 
+
 class LinkageViaMeanFitDiff(Metric):
     def __init__(self):
         super().__init__()
@@ -17,9 +18,8 @@ class LinkageViaMeanFitDiff(Metric):
     def __repr__(self):
         return "KindaAtomicity"
 
-
-
-    def get_linkages_for_vars(self, pRef: PRef) -> LinkageTable:
+    @staticmethod
+    def get_linkages_for_vars(pRef: PRef) -> LinkageTable:
         overall_avg_fitness = np.average(pRef.fitness_array)
 
         empty = PS.empty(pRef.search_space)
@@ -39,20 +39,18 @@ class LinkageViaMeanFitDiff(Metric):
 
         def interaction_effect_between_vars(var_a: int, var_b: int) -> float:
             return sum([interaction_effect_between_pss(ps_a, ps_b)
-                            for ps_b in trivial_pss[var_b]
-                            for ps_a in trivial_pss[var_a]])
+                        for ps_b in trivial_pss[var_b]
+                        for ps_a in trivial_pss[var_a]])
 
         linkage_table = np.zeros((pRef.search_space.amount_of_parameters, pRef.search_space.amount_of_parameters))
-        for var_a in range(pRef.search_space.amount_of_parameters-1):
-            for var_b in range(var_a+1, pRef.search_space.amount_of_parameters):
+        for var_a in range(pRef.search_space.amount_of_parameters - 1):
+            for var_b in range(var_a + 1, pRef.search_space.amount_of_parameters):
                 linkage_table[var_a][var_b] = interaction_effect_between_vars(var_a, var_b)
-
 
         # then we mirror it for convenience...
         upper_triangle = np.triu(linkage_table, k=1)
         linkage_table = linkage_table + upper_triangle.T
         return linkage_table
-
 
     def get_linkage_scores(self, ps: PS, linkage_table: LinkageTable) -> np.array:
         fixed = ps.values != STAR
@@ -60,22 +58,20 @@ class LinkageViaMeanFitDiff(Metric):
         np.fill_diagonal(fixed_combinations, False)  # remove relexive combinations
         return linkage_table[fixed_combinations]
 
-    def get_minimum_linkage_value(self, ps: PS, linkage_table: LinkageTable, otherwise:float) -> float:
+    @staticmethod
+    def get_minimum_linkage_value(ps: PS, linkage_table: LinkageTable, otherwise: float) -> float:
         if ps.fixed_count() < 2:
             return 0
         else:
             fixed = ps.values != STAR
             fixed_combinations: np.array = np.outer(fixed, fixed)
             np.fill_diagonal(fixed_combinations, False)  # remove reflexive combinations
-            return np.min(linkage_table, where = fixed_combinations, initial=otherwise)
-
-
+            return np.min(linkage_table, where=fixed_combinations, initial=otherwise)
 
     def get_unnormalised_scores(self, pss: list[PS], pRef: PRef) -> ArrayOfFloats:
         linkage_table = self.get_linkages_for_vars(pRef)
         worst = linkage_table.max(initial=0)
         return np.array([self.get_minimum_linkage_value(ps, linkage_table, otherwise=worst) for ps in pss])
-
 
 
 class SimplerAtomicity(Metric):
@@ -97,7 +93,7 @@ class SimplerAtomicity(Metric):
         if sum_fitness == 0:
             raise Exception(f"The sum of fitnesses for {pRef} is 0, could not normalise")
 
-        #normalised_fitnesses /= sum_fitness
+        # normalised_fitnesses /= sum_fitness
 
         return PRef(full_solutions=pRef.full_solutions,
                     fitness_array=normalised_fitnesses,  # this is the only thing that changes
@@ -131,26 +127,27 @@ class SimplerAtomicity(Metric):
     def get_excluded_benefits(self, ps: PS, normalised_pRef: PRef) -> ArrayOfFloats:
         return np.array([self.get_benefit(excluded, normalised_pRef) for excluded in self.get_excluded(ps)])
 
+    def get_single_score_using_cached_info(self, ps: PS, normalised_pRef, global_isolated_benefits):
+        pAB = self.get_benefit(ps, normalised_pRef)
+        if pAB == 0.0:
+            return pAB
+
+        isolated = self.get_isolated_benefits(ps, global_isolated_benefits)
+        excluded = self.get_excluded_benefits(ps, normalised_pRef)
+
+        if len(isolated) == 0:  # ie we have the empty ps
+            return 0
+
+        max_denominator = np.max(isolated * excluded)  # praying that they are always the same size!
+
+        result = pAB / max_denominator
+        if np.isnan(result).any():
+            raise Exception("There is a nan value returned in atomicity")
+        return result
+
     def get_unnormalised_scores(self, pss: Iterable[PS], pRef: PRef) -> ArrayOfFloats:
         normalised_pRef = self.get_normalised_pRef(pRef)
         global_isolated_benefits = self.get_global_isolated_benefits(normalised_pRef)
 
-        def get_single_score(ps: PS) -> float:
-            pAB = self.get_benefit(ps, normalised_pRef)
-            if pAB == 0.0:
-                return pAB
-
-            isolated = self.get_isolated_benefits(ps, global_isolated_benefits)
-            excluded = self.get_excluded_benefits(ps, normalised_pRef)
-
-            if len(isolated) == 0: # ie we have the empty ps
-                return 0
-
-            max_denominator = np.max(isolated * excluded)  # praying that they are always the same size!
-
-            result = pAB / max_denominator
-            if np.isnan(result).any():
-                raise Exception("There is a nan value returned in atomicity")
-            return result
-
-        return np.array([get_single_score(ps) for ps in pss])
+        return np.array([self.get_single_score_using_cached_info(ps, normalised_pRef, global_isolated_benefits)
+                         for ps in pss])

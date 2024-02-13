@@ -122,33 +122,27 @@ def test_many_miners():
 
 def test_modified_archive_miner():
     print("Testing the modified archive miner")
-    problem = RoyalRoad(4, 5)
+    problem = RoyalRoad(3, 4)
     pRef: PRef = problem.get_pRef(10000)
-
-    simplicity = Simplicity()
-    atomicity = Atomicity()
-    meanFitness = MeanFitness()
-
-    ps_evaluator = PSEvaluator([simplicity, atomicity, meanFitness], pRef)
 
     budget_limit = TerminationCriteria.EvaluationBudgetLimit(10000)
     # iteration_limit = TerminationCriteria.IterationLimit(12)
     # termination_criteria = TerminationCriteria.UnionOfCriteria(budget_limit, iteration_limit)
 
-    miner = ModifiedArchiveMiner(150, ps_evaluator)
+    miner = ModifiedArchiveMiner(150, pRef)
 
     miner.run(budget_limit)
 
-    results = miner.get_best_of_last_run(quantity_returned=10)
+    results = miner.get_results(quantity_returned=10)
     print("The results of the PSABSM are:")
     for ps, fitness in results:
         print(f"PS: {ps}, fitness = {fitness}")
 
-    print(f"The used budget is {miner.ps_evaluator.used_evaluations}")
+    print(f"The used budget is {miner.evaluator.evaluations}")
 
 
 if __name__ == '__main__':
-    test_many_miners()
+    test_modified_archive_miner()
 
 
 
