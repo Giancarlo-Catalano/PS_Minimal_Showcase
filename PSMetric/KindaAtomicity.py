@@ -128,6 +128,7 @@ class SimplerAtomicity(Metric):
         return np.array([self.get_benefit(excluded, normalised_pRef) for excluded in self.get_excluded(ps)])
 
     def get_single_score_using_cached_info(self, ps: PS, normalised_pRef, global_isolated_benefits):
+#        return 1.0 # testing
         pAB = self.get_benefit(ps, normalised_pRef)
         if pAB == 0.0:
             return pAB

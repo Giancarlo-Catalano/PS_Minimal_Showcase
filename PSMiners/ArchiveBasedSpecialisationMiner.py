@@ -75,9 +75,17 @@ class ABSM:
         self.archive.update(selected)
 
         old_population, _ = utils.unzip(self.current_population)
+
+        # make a population with the current + localities
         new_population = old_population + localities
-        new_population = [ps for ps in new_population if ps not in self.archive] # not using .difference because I don't want to create a set just yet
-        new_population = list(set(new_population))  # removes duplicates
+
+        # remove selected individuals and those in the archive
+        new_population = [ps for ps in new_population if ps not in self.archive]
+
+        # remove duplicates
+        new_population = list(set(new_population))
+
+        # evaluate
         evaluated_new_population = self.ps_evaluator.evaluate_population(new_population)
 
         return self.top(evaluated_new_population, self.population_size)
@@ -91,7 +99,7 @@ class ABSM:
                 return True
 
             return termination_criteria.met(iterations=iteration,
-                                            evaluations=self.ps_evaluator.used_evaluations,
+                                            evaluations=self.get_used_evaluations(),
                                             evaluated_population=self.current_population)
 
         while not termination_criteria_met():
@@ -99,7 +107,11 @@ class ABSM:
             iteration += 1
 
 
-    def get_best_of_last_run(self, quantity_returned: int) -> list[(PS, float)]:
+    def get_results(self, quantity_returned: int) -> list[(PS, float)]:
         archive_as_list = list(self.archive)
         evaluated_archive = self.ps_evaluator.evaluate_population(archive_as_list)
         return Selection.top_evaluated(evaluated_archive, quantity_returned)
+
+
+    def get_used_evaluations(self) -> int:
+        return self.ps_evaluator.used_evaluations

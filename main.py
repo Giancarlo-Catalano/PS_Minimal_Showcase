@@ -46,12 +46,60 @@ def test_archive_miner(problem: BenchmarkProblem):
 
     miner.run(budget_limit)
 
-    results = miner.get_best_of_last_run(quantity_returned=10)
+    results = miner.get_results(quantity_returned=10)
     print("The results of the PSABSM are:")
     for ps, fitness in results:
         print(f"PS: {ps}, fitness = {fitness}")
 
     print(f"The used budget is {miner.ps_evaluator.used_evaluations}")
+
+
+def test_modified_archive_miner(problem: BenchmarkProblem):
+    print("Testing the modified archive miner")
+    pRef: PRef = problem.get_pRef(10000)
+
+    budget_limit = TerminationCriteria.EvaluationBudgetLimit(10000)
+    # iteration_limit = TerminationCriteria.IterationLimit(12)
+    # termination_criteria = TerminationCriteria.UnionOfCriteria(budget_limit, iteration_limit)
+
+    miner = ModifiedArchiveMiner(150, pRef)
+
+    miner.run(budget_limit)
+
+    results = miner.get_results(quantity_returned=10)
+    print("The results of the PSABSM are:")
+    for ps, fitness in results:
+        print(f"PS: {ps}, fitness = {fitness}")
+
+    print(f"The used budget is {miner.evaluator.evaluations}")
+
+
+
+def compare_own_miners(problem: BenchmarkProblem):
+    print(f"The problem is {problem.long_repr()}")
+    pRef: PRef = problem.get_pRef(10000)
+    budget_limit = TerminationCriteria.EvaluationBudgetLimit(10000)
+
+    ps_evaluator = PSEvaluator([Simplicity(), MeanFitness(), Atomicity()], pRef)
+    traditional_miner = ABSM(150, ps_evaluator)
+
+    experimental_miner = ModifiedArchiveMiner(150, pRef)
+
+    def run_and_show_results(miner):
+        miner.run(budget_limit)
+        returned_from_experimental = miner.get_results(10)
+        for ps, fitness in returned_from_experimental:
+            print(f"PS: {ps}, fitness = {fitness}")
+        print(f"The used budget is {miner.get_used_evaluations()}")
+
+
+    print("Running the experimental miner")
+    run_and_show_results(experimental_miner)
+
+    print("Running the traditional miner")
+    run_and_show_results(traditional_miner)
+
+
 
 
 def test_MO(problem: BenchmarkProblem):
@@ -120,29 +168,12 @@ def test_many_miners():
 
 
 
-def test_modified_archive_miner():
-    print("Testing the modified archive miner")
-    problem = RoyalRoad(3, 4)
-    pRef: PRef = problem.get_pRef(10000)
 
-    budget_limit = TerminationCriteria.EvaluationBudgetLimit(10000)
-    # iteration_limit = TerminationCriteria.IterationLimit(12)
-    # termination_criteria = TerminationCriteria.UnionOfCriteria(budget_limit, iteration_limit)
-
-    miner = ModifiedArchiveMiner(150, pRef)
-
-    miner.run(budget_limit)
-
-    results = miner.get_results(quantity_returned=10)
-    print("The results of the PSABSM are:")
-    for ps, fitness in results:
-        print(f"PS: {ps}, fitness = {fitness}")
-
-    print(f"The used budget is {miner.evaluator.evaluations}")
 
 
 if __name__ == '__main__':
-    test_modified_archive_miner()
+    problem = RoyalRoadWithOverlaps(3, 5, amount_of_bits=12)
+    compare_own_miners(problem)
 
 
 

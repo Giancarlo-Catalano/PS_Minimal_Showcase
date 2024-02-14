@@ -40,20 +40,6 @@ class Individual:
 
 
 
-class KindaAtomicity:
-    pRef: PRef
-    linkage_table: np.ndarray
-    worst: float
-
-    def __init__(self, pRef: PRef):
-        self.pRef = pRef
-        self.linkage_table = LinkageViaMeanFitDiff.get_linkages_for_vars(pRef)
-        self.worst = self.linkage_table.max(initial=0)
-
-    def evaluate_single(self, ps: PS) -> float:
-        return LinkageViaMeanFitDiff.get_minimum_linkage_value(ps, self.linkage_table, self.worst)
-
-
 class KindaAtomicityEvaluator:
     normalised_pRef: PRef
     global_isolated_benefits: list[list[float]]
@@ -72,7 +58,7 @@ class KindaAtomicityEvaluator:
 class ThreeMetricPSEvaluator:
     simplicity: Simplicity
     mean_fitness: MeanFitness
-    linkage_evaluator: KindaAtomicityEvaluator
+    linkage_evaluator: AtomicityEvaluator
 
     pRef: PRef
 
@@ -82,10 +68,10 @@ class ThreeMetricPSEvaluator:
         self.pRef = pRef
         self.simplicity = Simplicity()
         self.mean_fitness = MeanFitness()
-        self.linkage_evaluator = KindaAtomicityEvaluator(self.pRef)
+        self.linkage_evaluator = AtomicityEvaluator(self.pRef)
         self.evaluations = 0
 
-    def evaluate_population(self, unevaluated_individuals: list[PS]) -> list[Individual]:
+    def evaluate_metrics(self, unevaluated_individuals: list[PS]) -> list[Individual]:
         def get_evaluated(ps: PS):
             simplicity = self.simplicity.get_single_score(ps, self.pRef)
             mean_fitness = self.mean_fitness.get_single_score(ps, self.pRef)
@@ -124,7 +110,7 @@ class ModifiedArchiveMiner:
         self.pRef = pRef
         self.evaluator = ThreeMetricPSEvaluator(self.pRef)
 
-        self.current_population = self.evaluator.evaluate_population(self.make_initial_population())
+        self.current_population = self.evaluator.evaluate_metrics(self.make_initial_population())
         self.current_population = self.evaluator.assign_aggregated_scores(self.current_population)
         self.archive = set()
 
@@ -156,14 +142,36 @@ class ModifiedArchiveMiner:
         else:
             return [self.select_one() for _ in range(amount_of_select)]
 
+
     def make_new_evaluated_population(self):
+        selected = [self.select_one() for _ in range(ceil(self.population_size * self.selection_proportion))]
+        localities = [local for ps in selected
+                      for local in self.get_localities(ps)]
+        self.archive.update(selected)
+
+        # make a population with the current + localities
+        new_population = [i.ps for i in self.current_population] + localities
+
+        # remove selected individuals and those in the archive
+        new_population = [ps for ps in new_population if ps not in self.archive]
+
+        # remove duplicates
+        new_population = list(set(new_population))
+
+        # evaluate
+        new_population = self.evaluator.evaluate_metrics(new_population)
+        new_population = self.evaluator.assign_aggregated_scores(new_population)
+
+        return self.top(new_population, self.population_size)
+
+    def make_new_evaluated_population_original(self):
         selected = self.make_selection()
         self.archive.update(selected)
         localities = [local for ps in selected
                       for local in self.get_localities(ps)
                       if local not in self.archive]
 
-        new_population = self.evaluator.evaluate_population(localities)
+        new_population = self.evaluator.evaluate_metrics(localities)
         new_population.extend(individual for individual in self.current_population
                               if individual not in self.archive)
 
@@ -180,7 +188,7 @@ class ModifiedArchiveMiner:
                 return True
 
             return termination_criteria.met(iterations=iteration,
-                                            evaluations=self.evaluator.evaluations,
+                                            evaluations=self.get_used_evaluations(),
                                             evaluated_population=self.current_population)  # TODO change this
 
         while not termination_criteria_met():
@@ -188,7 +196,11 @@ class ModifiedArchiveMiner:
             iteration += 1
 
     def get_results(self, quantity_returned: int) -> list[(PS, float)]:
-        evaluated_archive = self.evaluator.evaluate_population(list(self.archive))
+        evaluated_archive = self.evaluator.evaluate_metrics(list(self.archive))
         evaluated_archive = self.evaluator.assign_aggregated_scores(evaluated_archive)
         best = self.top(evaluated_archive, quantity_returned)
         return [(i.ps, i.aggregated_score) for i in best]
+
+
+    def get_used_evaluations(self) -> int:
+        return self.evaluator.evaluations
