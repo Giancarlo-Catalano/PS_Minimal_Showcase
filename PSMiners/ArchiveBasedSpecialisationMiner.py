@@ -106,6 +106,9 @@ class ABSM:
             self.current_population = self.make_new_evaluated_population()
             iteration += 1
 
+        print(f"Execution terminated with {iteration = } and used_budget = {self.get_used_evaluations()}")
+
+
 
     def get_results(self, quantity_returned: int) -> list[(PS, float)]:
         archive_as_list = list(self.archive)

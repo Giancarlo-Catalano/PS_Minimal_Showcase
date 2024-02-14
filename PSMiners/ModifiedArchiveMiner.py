@@ -195,6 +195,8 @@ class ModifiedArchiveMiner:
             self.current_population = self.make_new_evaluated_population()
             iteration += 1
 
+        print(f"Execution terminated with {iteration = } and used_budget = {self.get_used_evaluations()}")
+
     def get_results(self, quantity_returned: int) -> list[(PS, float)]:
         evaluated_archive = self.evaluator.evaluate_metrics(list(self.archive))
         evaluated_archive = self.evaluator.assign_aggregated_scores(evaluated_archive)
