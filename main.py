@@ -12,6 +12,7 @@ from BenchmarkProblems.RoyalRoad import RoyalRoad
 from BenchmarkProblems.RoyalRoadWithOverlaps import RoyalRoadWithOverlaps
 from BenchmarkProblems.Trapk import Trapk
 from FullSolution import FullSolution
+from JMetal.CustomPSProblem import test_PSProblem_with_2_metrics
 from JMetal.PSProblem import test_PSProblem
 from JMetal.TestProblem import test_JMetal_integer
 from PRef import PRef
@@ -172,8 +173,14 @@ def test_many_miners():
 
 
 if __name__ == '__main__':
-    problem = RoyalRoadWithOverlaps(3, 5, amount_of_bits=12)
-    compare_own_miners(problem)
+    problem = Trapk(3, 5)
+
+
+    algorithms = ["NSGAII", "MOEAD", "MOCell", "GDE3"]
+
+    for algorithm in algorithms:
+        print(f"\n\nTesting with {algorithm}")
+        test_PSProblem_with_2_metrics(problem, which=algorithm)
 
 
 
