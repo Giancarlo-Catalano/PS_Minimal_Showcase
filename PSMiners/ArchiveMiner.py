@@ -89,9 +89,10 @@ class ArchiveMiner:
 
         return self.top(new_population, self.population_size)
 
+
     def make_new_population_efficient(self):
         """Note how this relies on the current population being evaluated,
-        and how at the end it returns an evaluated population"""
+                and how at the end it returns an evaluated population"""
         selected = [self.select_one() for _ in range(ceil(self.population_size * self.selection_proportion))]
         localities = [local for ps in selected
                       for local in self.get_localities(ps)]
@@ -158,9 +159,9 @@ class ArchiveMiner:
 
 def test_archive_miner(problem: BenchmarkProblem, efficient: bool, show_each_generation = True):
     print(f"Testing the modified archive miner(Efficient = {efficient})")
-    pRef: PRef = problem.get_pRef(10000)
+    pRef: PRef = problem.get_pRef(15000)
 
-    budget_limit = EvaluationBudgetLimit(10000)
+    budget_limit = EvaluationBudgetLimit(15000)
     # iteration_limit = TerminationCriteria.IterationLimit(12)
     # termination_criteria = TerminationCriteria.UnionOfCriteria(budget_limit, iteration_limit)
 
@@ -171,6 +172,10 @@ def test_archive_miner(problem: BenchmarkProblem, efficient: bool, show_each_gen
     results = miner.get_results(quantity_returned=10)
     print("The results of the archive miner are:")
     for ps, fitness in results:
-        print(f"PS: {ps}, fitness = {fitness}")
+        print(f"PS: {ps}, fitness = {fitness:.3f}")
 
     print(f"The used budget is {miner.get_used_evaluations()}")
+
+
+
+
