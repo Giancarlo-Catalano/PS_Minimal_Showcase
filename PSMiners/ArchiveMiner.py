@@ -2,26 +2,20 @@ import heapq
 import random
 import warnings
 from math import ceil
-from typing import TypeAlias
 
-import numpy as np
-
-import utils
 from BenchmarkProblems.BenchmarkProblem import BenchmarkProblem
 from PRef import PRef
 from PS import PS
 from PSMetric.Atomicity import Atomicity
-from PSMetric.KindaAtomicity import SimplerAtomicity
 from PSMetric.MeanFitness import MeanFitness
 from PSMetric.Metric import ManyMetrics
 from PSMetric.Simplicity import Simplicity
 from PSMiners.Individual import Individual, add_metrics, with_aggregated_scores
 from SearchSpace import SearchSpace
-from TerminationCriteria import TerminationCriteria
-from custom_types import ArrayOfFloats
+from TerminationCriteria import TerminationCriteria, EvaluationBudgetLimit
 
 
-class ModifiedArchiveMiner:
+class ArchiveMiner:
     population_size: int
     pRef: PRef
     many_metrics: ManyMetrics
@@ -42,11 +36,9 @@ class ModifiedArchiveMiner:
         self.current_population = self.calculate_metrics_and_aggregated_score(self.make_initial_population())
         self.archive = set()
 
-
     def calculate_metrics_and_aggregated_score(self, population: list[Individual]):
         to_return = add_metrics(population, self.many_metrics)
         return with_aggregated_scores(to_return)
-
 
     @property
     def search_space(self) -> SearchSpace:
@@ -76,7 +68,9 @@ class ModifiedArchiveMiner:
         else:
             return [self.select_one() for _ in range(amount_of_select)]
 
-    def make_new_evaluated_population(self):
+    def make_new_population_inefficient(self):
+        """Note how this relies on the current population being evaluated,
+        and how at the end it returns an evaluated population"""
         selected = [self.select_one() for _ in range(ceil(self.population_size * self.selection_proportion))]
         localities = [local for ps in selected
                       for local in self.get_localities(ps)]
@@ -97,7 +91,35 @@ class ModifiedArchiveMiner:
 
         return self.top(new_population, self.population_size)
 
-    def run(self, termination_criteria: TerminationCriteria):
+    def make_new_population_effcient(self):
+        """Note how this relies on the current population being evaluated,
+        and how at the end it returns an evaluated population"""
+        selected = [self.select_one() for _ in range(ceil(self.population_size * self.selection_proportion))]
+        localities = [local for ps in selected
+                      for local in self.get_localities(ps)]
+        self.archive.update(selected)
+
+        # make a population with the current + localities
+        new_population = self.current_population + add_metrics([Individual(ps) for ps in localities], self.many_metrics)
+
+        # remove selected individuals and those in the archive
+        new_population = [ind for ind in new_population if ind.ps not in self.archive]
+
+        # remove duplicates
+        new_population = list(set(new_population))
+
+        # convert to individual and evaluate
+        new_population = with_aggregated_scores(new_population)
+
+        return self.top(new_population, self.population_size)
+
+    def make_new_population(self, efficient=True):
+        if efficient:
+            return self.make_new_population_effcient()
+        else:
+            return self.make_new_population_inefficient()
+
+    def run(self, termination_criteria: TerminationCriteria, efficient=True):
         iteration = 0
 
         def termination_criteria_met():
@@ -110,7 +132,7 @@ class ModifiedArchiveMiner:
                                             evaluated_population=self.current_population)  # TODO change this
 
         while not termination_criteria_met():
-            self.current_population = self.make_new_evaluated_population()
+            self.current_population = self.make_new_population(efficient)
             iteration += 1
 
         print(f"Execution terminated with {iteration = } and used_budget = {self.get_used_evaluations()}")
@@ -124,16 +146,15 @@ class ModifiedArchiveMiner:
         return self.many_metrics.used_evaluations
 
 
-
 def test_modified_archive_miner(problem: BenchmarkProblem):
     print("Testing the modified archive miner")
     pRef: PRef = problem.get_pRef(10000)
 
-    budget_limit = TerminationCriteria.EvaluationBudgetLimit(10000)
+    budget_limit = EvaluationBudgetLimit(10000)
     # iteration_limit = TerminationCriteria.IterationLimit(12)
     # termination_criteria = TerminationCriteria.UnionOfCriteria(budget_limit, iteration_limit)
 
-    miner = ModifiedArchiveMiner(150, pRef)
+    miner = ArchiveMiner(150, pRef)
 
     miner.run(budget_limit)
 

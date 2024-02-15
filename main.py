@@ -1,7 +1,7 @@
 from BenchmarkProblems.RoyalRoad import RoyalRoad
 from BenchmarkProblems.Trapk import Trapk
 from JMetal.PSProblem import test_MO
-from PSMiners.ModifiedArchiveMiner import test_modified_archive_miner
+from PSMiners.ArchiveMiner import test_modified_archive_miner
 from PSMiners.SelfAssembly import test_simple_hill_climber
 
 
