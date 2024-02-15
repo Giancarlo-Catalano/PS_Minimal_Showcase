@@ -12,19 +12,42 @@ class Metric:
         """ Return a string which describes the Criterion, eg 'Robustness' """
         raise Exception("Error: a realisation of PSMetric does not implement __repr__")
 
-
     def set_pRef(self, pRef: PRef):
         raise Exception("Error: a realisation of PSMetric does not implement set_pRef")
 
     def get_single_score(self, ps: PS) -> float:
         raise Exception("Error: a realisation of PSMetric does not implement get_single_score_for_PS")
 
-    def get_single_normalised_score(self, ps: PS) -> float:#
+    def get_single_normalised_score(self, ps: PS) -> float:  #
         raise Exception("Error: a realisation of PSMetric does not implement get_single_normalised_score")
 
-    def get_unnormalised_scores(self, pss: Iterable[PS], pRef: PRef) -> ArrayOfFloats:
+    def get_unnormalised_scores(self, pss: Iterable[PS]) -> ArrayOfFloats:
         """default implementation, subclasses might overwrite this"""
-        return np.array([self.get_single_score(ps, pRef) for ps in pss])
+        return np.array([self.get_single_score(ps) for ps in pss])
 
 
+class ManyMetrics:
+    metrics: list[Metric]
+    used_evaluations: int
 
+    def __init__(self, metrics: list[Metric]):
+        self.metrics = metrics
+        self.used_evaluations = 0
+
+    def get_labels(self) -> list[str]:
+        return [m.__repr__() for m in self.metrics]
+
+    def set_pRef(self, pRef: PRef):
+        for m in self.metrics:
+            m.set_pRef(pRef)
+
+    def __repr__(self):
+        return f"{self.get_labels()}"
+
+    def get_scores(self, ps: PS) -> list[float]:
+        self.used_evaluations += 1
+        return [m.get_single_score(ps) for m in self.metrics]
+
+
+    def get_amount_of_metrics(self) -> int:
+        return len(self.metrics)

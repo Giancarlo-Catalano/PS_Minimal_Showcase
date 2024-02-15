@@ -2,7 +2,7 @@ import random
 from collections import Counter
 
 import utils
-from JMetal.PSProblem import AtomicityEvaluator
+from JMetal.ThreeMetricPSProblem import AtomicityEvaluator
 from PRef import PRef
 from PS import PS
 from PSMetric.MeanFitness import MeanFitness

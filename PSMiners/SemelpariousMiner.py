@@ -7,7 +7,7 @@ from typing import TypeAlias, Callable
 import utils
 from BaselineApproaches import Selection
 from BaselineApproaches.Evaluator import PSEvaluator
-from JMetal.PSProblem import AtomicityEvaluator
+from JMetal.ThreeMetricPSProblem import AtomicityEvaluator
 from PRef import PRef
 from PS import PS
 from PSMetric.MeanFitness import MeanFitness

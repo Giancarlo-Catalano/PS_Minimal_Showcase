@@ -12,8 +12,8 @@ from BenchmarkProblems.RoyalRoad import RoyalRoad
 from BenchmarkProblems.RoyalRoadWithOverlaps import RoyalRoadWithOverlaps
 from BenchmarkProblems.Trapk import Trapk
 from FullSolution import FullSolution
-from JMetal.CustomPSProblem import test_PSProblem_with_2_metrics
-from JMetal.PSProblem import test_PSProblem
+from JMetal.PSProblem import test_PSProblem_with_2_metrics
+from JMetal.ThreeMetricPSProblem import test_PSProblem
 from JMetal.TestProblem import test_JMetal_integer
 from PRef import PRef
 from PS import PS
@@ -180,7 +180,7 @@ if __name__ == '__main__':
 
     for algorithm in algorithms:
         print(f"\n\nTesting with {algorithm}")
-        test_PSProblem_with_2_metrics(problem, which=algorithm)
+        test_PSProblem_with_2_metrics(problem, which_mo_method=algorithm)
 
 
 
