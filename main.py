@@ -1,7 +1,7 @@
 from BenchmarkProblems.RoyalRoad import RoyalRoad
 from BenchmarkProblems.Trapk import Trapk
 from JMetal.PSProblem import test_MO
-from PSMiners.ArchiveMiner import test_modified_archive_miner
+from PSMiners.ArchiveMiner import test_archive_miner
 from PSMiners.SelfAssembly import test_simple_hill_climber
 
 
@@ -13,7 +13,7 @@ def test_many_miners():
     benchmark_problem = RoyalRoad(4, 5)
     # print(f"The problem is {problem.long_repr()}")
     print_separator()
-    test_modified_archive_miner(benchmark_problem)
+    test_archive_miner(benchmark_problem)
     print_separator()
     test_MO(benchmark_problem)
     print_separator()

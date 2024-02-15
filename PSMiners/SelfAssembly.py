@@ -23,6 +23,8 @@ class SelfAssembly:
         self.mean_fitness.set_pRef(pRef)
         self.atomicity.set_pRef(pRef)
 
+        self.pRef = pRef
+
         self.ps_counter = Counter()
 
     def tournament_select_alternative(self, vars_and_scores: list[(PS, float)]) -> PS:

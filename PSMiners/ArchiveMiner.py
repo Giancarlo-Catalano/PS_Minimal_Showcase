@@ -144,7 +144,7 @@ class ArchiveMiner:
         return self.many_metrics.used_evaluations
 
 
-def test_modified_archive_miner(problem: BenchmarkProblem):
+def test_archive_miner(problem: BenchmarkProblem):
     print("Testing the modified archive miner")
     pRef: PRef = problem.get_pRef(10000)
 
@@ -157,7 +157,7 @@ def test_modified_archive_miner(problem: BenchmarkProblem):
     miner.run(budget_limit)
 
     results = miner.get_results(quantity_returned=10)
-    print("The results of the PSABSM are:")
+    print("The results of the archive miner are:")
     for ps, fitness in results:
         print(f"PS: {ps}, fitness = {fitness}")
 
