@@ -8,6 +8,8 @@ import utils
 from BaselineApproaches import Selection
 from BaselineApproaches.Evaluator import PSEvaluator
 from JMetal.ThreeMetricPSProblem import AtomicityEvaluator
+
+from BenchmarkProblems.BenchmarkProblem import BenchmarkProblem
 from PRef import PRef
 from PS import PS
 from PSMetric.MeanFitness import MeanFitness
@@ -203,3 +205,22 @@ class SemelpariousMiner:
 
     def get_results(self, quantity_returned: int) -> list[(PS, float)]:
         return self.remove_duplicates_from_population(self.current_population)
+
+
+def test_semelparious_miner(problem: BenchmarkProblem):
+    pRef = problem.get_pRef(10000)
+    spm = SemelpariousMiner(population_size=150, pRef=pRef)
+    budget_limit = TerminationCriteria.EvaluationBudgetLimit(10000)
+    spm.run(budget_limit)
+
+    results = spm.get_results(0)
+    print("The results of the SemelpariousMiner are:")
+    for individual in results:
+        ps = individual.ps
+        simplicity, mean_fitness, atomicity = individual.metrics
+        print(f"PS: {ps}, "
+              f"\t{simplicity:.0f},"
+              f"\t{mean_fitness:.2f},"
+              f"\t{atomicity:.4f}")
+
+    print(f"The used budget is {spm.evaluations}")

@@ -177,3 +177,12 @@ def test_PSProblem(benchmark_problem: BenchmarkProblem, which_mo_method: str, me
     # plot
     plot_front = Plot(title='Pareto front approximation', axis_labels=metric_labels)
     plot_front.plot(front, label=filename, filename=filename, format='png')
+
+
+
+def test_MO(problem: BenchmarkProblem):
+    algorithms = ["NSGAII", "MOEAD", "MOCell", "GDE3"]
+
+    for algorithm in algorithms:
+        print(f"\n\nTesting with {algorithm}")
+        test_PSProblem(problem, which_mo_method=algorithm)

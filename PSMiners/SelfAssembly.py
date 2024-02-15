@@ -3,6 +3,8 @@ from collections import Counter
 
 import utils
 from JMetal.ThreeMetricPSProblem import AtomicityEvaluator
+
+from BenchmarkProblems.BenchmarkProblem import BenchmarkProblem
 from PRef import PRef
 from PS import PS
 from PSMetric.MeanFitness import MeanFitness
@@ -73,3 +75,22 @@ class SelfAssembly:
 
     def unfixed_start(self) -> PS:
         return PS.empty(self.search_space)
+
+
+
+def test_simple_hill_climber(problem: BenchmarkProblem):
+    sa = SelfAssembly(problem.get_pRef(10000))
+
+    for _ in range(60):
+        if random.random() < 0.5:
+            starting_point = sa.select_random_fixed_start()
+        else:
+            starting_point = sa.unfixed_start()
+
+        final = sa.improve_continously(starting_point)
+
+        print(f"Starting from {starting_point}, we got to {final}")
+
+    print("At the end, the top 12 best partial solutions are")
+    for ps, count in sa.ps_counter.most_common(12):
+        print(f"{ps}, appearing {count} times")

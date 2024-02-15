@@ -7,6 +7,7 @@ from typing import TypeAlias
 import numpy as np
 
 import utils
+from BenchmarkProblems.BenchmarkProblem import BenchmarkProblem
 from PRef import PRef
 from PS import PS
 from PSMetric.Atomicity import Atomicity
@@ -121,3 +122,24 @@ class ModifiedArchiveMiner:
 
     def get_used_evaluations(self) -> int:
         return self.many_metrics.used_evaluations
+
+
+
+def test_modified_archive_miner(problem: BenchmarkProblem):
+    print("Testing the modified archive miner")
+    pRef: PRef = problem.get_pRef(10000)
+
+    budget_limit = TerminationCriteria.EvaluationBudgetLimit(10000)
+    # iteration_limit = TerminationCriteria.IterationLimit(12)
+    # termination_criteria = TerminationCriteria.UnionOfCriteria(budget_limit, iteration_limit)
+
+    miner = ModifiedArchiveMiner(150, pRef)
+
+    miner.run(budget_limit)
+
+    results = miner.get_results(quantity_returned=10)
+    print("The results of the PSABSM are:")
+    for ps, fitness in results:
+        print(f"PS: {ps}, fitness = {fitness}")
+
+    print(f"The used budget is {miner.get_used_evaluations()}")
