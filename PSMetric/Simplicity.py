@@ -1,8 +1,7 @@
 import numpy as np
 
-from PSMetric.Metric import Metric
 from PS import PS, STAR
-from PRef import PRef
+from PSMetric.Metric import Metric
 
 
 class Simplicity(Metric):

@@ -1,9 +1,8 @@
-from typing import Iterable, Optional
+from typing import Optional
 
 import numpy as np
 
 import SearchSpace
-import utils
 from PRef import PRef
 from PS import PS, STAR
 from PSMetric.Metric import Metric

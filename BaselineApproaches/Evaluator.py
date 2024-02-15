@@ -1,13 +1,7 @@
-import logging
-import warnings
 from typing import Callable, TypeAlias, Any
 
 import numpy as np
 
-import utils
-from PRef import PRef
-from PS import PS
-from PSMetric.Metric import Metric
 from custom_types import Fitness
 
 Individual: TypeAlias = Any

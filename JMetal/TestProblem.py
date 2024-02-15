@@ -1,19 +1,13 @@
-import copy
 import random
 from abc import ABC
 
-import numpy as np
 from jmetal.algorithm.multiobjective import NSGAII
-from jmetal.core.operator import Crossover
-from jmetal.core.problem import Problem, BinaryProblem, IntegerProblem
+from jmetal.core.problem import BinaryProblem, IntegerProblem
 from jmetal.core.solution import BinarySolution, IntegerSolution
-from jmetal.operator import PolynomialMutation, SBXCrossover, SPXCrossover, BitFlipMutation, IntegerPolynomialMutation
+from jmetal.operator import BitFlipMutation, IntegerPolynomialMutation
 from jmetal.operator.crossover import IntegerSBXCrossover
 from jmetal.util.solution import get_non_dominated_solutions
 from jmetal.util.termination_criterion import StoppingByEvaluations
-
-from BenchmarkProblems.BenchmarkProblem import BenchmarkProblem
-from SearchSpace import SearchSpace
 
 
 class SubsetSum(BinaryProblem):

@@ -10,14 +10,14 @@ def print_separator():
 
 
 def test_many_miners():
-    problem = RoyalRoad(4, 5)
+    benchmark_problem = RoyalRoad(4, 5)
     # print(f"The problem is {problem.long_repr()}")
     print_separator()
-    test_modified_archive_miner(problem)
+    test_modified_archive_miner(benchmark_problem)
     print_separator()
-    test_MO(problem)
+    test_MO(benchmark_problem)
     print_separator()
-    test_simple_hill_climber(problem)
+    test_simple_hill_climber(benchmark_problem)
 
 
 if __name__ == '__main__':

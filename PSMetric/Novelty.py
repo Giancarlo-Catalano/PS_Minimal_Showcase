@@ -2,9 +2,9 @@ from typing import Optional
 
 import numpy as np
 
-from PSMetric.Metric import Metric
-from PS import PS, STAR
 from PRef import PRef
+from PS import PS
+from PSMetric.Metric import Metric
 
 
 class Novelty(Metric):

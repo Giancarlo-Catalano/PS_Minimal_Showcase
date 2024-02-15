@@ -2,28 +2,26 @@ import random
 from collections import Counter
 
 import utils
-from JMetal.ThreeMetricPSProblem import AtomicityEvaluator
-
 from BenchmarkProblems.BenchmarkProblem import BenchmarkProblem
 from PRef import PRef
 from PS import PS
+from PSMetric.Atomicity import Atomicity
 from PSMetric.MeanFitness import MeanFitness
-from PSMetric.Simplicity import Simplicity
 
 
 class SelfAssembly:
     pRef: PRef
-    atomicity_evaluator: AtomicityEvaluator
-    mean_fitness: MeanFitness
 
+    mean_fitness: MeanFitness
+    atomicity: Atomicity
 
     ps_counter: Counter
 
     def __init__(self, pRef: PRef):
-        self.pRef = pRef
-        self.atomicity_evaluator = AtomicityEvaluator(pRef)
-        self.simplicity = Simplicity()
         self.mean_fitness = MeanFitness()
+        self.atomicity = Atomicity()
+        self.mean_fitness.set_pRef(pRef)
+        self.atomicity.set_pRef(pRef)
 
         self.ps_counter = Counter()
 
@@ -31,12 +29,6 @@ class SelfAssembly:
         tournament_size = 3
         tournament = random.choices(vars_and_scores, k=tournament_size)
         return max(tournament, key=utils.second)[0]
-
-    def get_atomicity(self, ps: PS) -> float:
-        return self.atomicity_evaluator.evaluate_single(ps)
-
-    def get_mean_fitness(self, ps: PS) -> float:
-        return self.mean_fitness.get_single_score(ps, self.pRef)
 
     @property
     def search_space(self):
@@ -47,21 +39,21 @@ class SelfAssembly:
 
         alternatives = None
         if random.random() < chance_of_simplification:
-            alternatives = [(simpl, self.get_atomicity(simpl))
+            alternatives = [(simpl, self.atomicity.get_single_score(simpl))
                             for simpl in ps.simplifications()]
         else:
-            alternatives = [(spec, self.get_mean_fitness(spec))
+            alternatives = [(spec, self.mean_fitness.get_single_score(spec))
                             for spec in ps.specialisations(self.search_space)]
 
         return self.tournament_select_alternative(alternatives)
 
     def improve_continously(self, ps: PS) -> PS:
-        iterations = self.search_space.hot_encoded_length*2
+        iterations = self.search_space.hot_encoded_length * 2
         current = PS(ps.values)
         for iteration in range(iterations):
             current = self.improvement_step(current)
             self.ps_counter.update([current])
-            #print(f"\t{current}")
+            # print(f"\t{current}")
 
         return current
 
@@ -75,7 +67,6 @@ class SelfAssembly:
 
     def unfixed_start(self) -> PS:
         return PS.empty(self.search_space)
-
 
 
 def test_simple_hill_climber(problem: BenchmarkProblem):

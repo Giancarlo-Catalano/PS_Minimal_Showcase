@@ -1,30 +1,23 @@
 import random
-from typing import Optional
 
-from jmetal.algorithm.multiobjective import NSGAII, MOEAD, MOCell, GDE3, HYPE
-from jmetal.algorithm.multiobjective.nsgaiii import NSGAIII
+from jmetal.algorithm.multiobjective import NSGAII, MOEAD, MOCell, GDE3
 from jmetal.core.problem import IntegerProblem
 from jmetal.core.solution import IntegerSolution
+from jmetal.lab.visualization import Plot
 from jmetal.operator import IntegerPolynomialMutation
 from jmetal.operator.crossover import IntegerSBXCrossover, DifferentialEvolutionCrossover
 from jmetal.util.aggregative_function import Tschebycheff
 from jmetal.util.archive import CrowdingDistanceArchive
 from jmetal.util.neighborhood import C9
-from jmetal.util.solution import get_non_dominated_solutions
+from jmetal.util.solution import get_non_dominated_solutions, print_function_values_to_file, print_variables_to_file
 from jmetal.util.termination_criterion import StoppingByEvaluations
 
 from BenchmarkProblems.BenchmarkProblem import BenchmarkProblem
 from JMetal.JMetalUtils import into_PS
-from JMetal.MetricEvaluators import MetricEvaluator, SimplicityEvaluator, MeanFitnessEvaluator, AtomicityEvaluator
-from JMetal.TestProblem import BoringIntegerProblem
-from PRef import PRef
-from PS import PS
 from PSMetric.Atomicity import Atomicity
 from PSMetric.MeanFitness import MeanFitness
 from PSMetric.Metric import ManyMetrics
 from PSMetric.Simplicity import Simplicity
-from jmetal.util.solution import get_non_dominated_solutions, print_function_values_to_file, print_variables_to_file
-from jmetal.lab.visualization import Plot
 
 
 class PSProblem(IntegerProblem):
@@ -62,8 +55,6 @@ class PSProblem(IntegerProblem):
         return 1
 
     def evaluate(self, solution: IntegerSolution) -> IntegerSolution:
-        ps = into_PS(solution)
-
         ps = into_PS(solution)
         solution.objectives = [-score for score in self.many_metrics.get_scores(ps)]
         return solution

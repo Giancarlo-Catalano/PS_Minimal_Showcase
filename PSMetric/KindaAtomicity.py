@@ -1,4 +1,4 @@
-from typing import Iterable, TypeAlias, Optional
+from typing import TypeAlias, Optional
 
 import numpy as np
 
@@ -25,7 +25,7 @@ class LinkageViaMeanFitDiff(Metric):
 
     def set_pRef(self, pRef: PRef):
         self.linkage_table = self.get_linkage_table(pRef)
-        self.worst = self.linkage_table.max(initial=0)
+        self.worst_linkage = self.linkage_table.max(initial=0)
 
     @staticmethod
     def get_linkage_table(pRef: PRef) -> LinkageTable:

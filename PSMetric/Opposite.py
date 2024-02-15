@@ -1,8 +1,7 @@
-import numpy as np
 
-from PSMetric.Metric import Metric
-from PS import PS
 from PRef import PRef
+from PS import PS
+from PSMetric.Metric import Metric
 
 
 class Opposite(Metric):

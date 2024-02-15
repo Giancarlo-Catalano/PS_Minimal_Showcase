@@ -1,5 +1,3 @@
-from typing import Callable
-
 from FullSolution import FullSolution
 from PRef import PRef
 from PS import PS
