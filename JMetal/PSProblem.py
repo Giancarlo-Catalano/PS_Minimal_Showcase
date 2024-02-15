@@ -1,5 +1,6 @@
 import random
 
+import numpy as np
 from jmetal.algorithm.multiobjective import NSGAII, MOEAD, MOCell, GDE3
 from jmetal.core.problem import IntegerProblem
 from jmetal.core.solution import IntegerSolution
@@ -15,6 +16,7 @@ from jmetal.util.termination_criterion import StoppingByEvaluations
 from BenchmarkProblems.BenchmarkProblem import BenchmarkProblem
 from JMetal.JMetalUtils import into_PS
 from PSMetric.Atomicity import Atomicity
+from PSMetric.KindaAtomicity import Linkage
 from PSMetric.MeanFitness import MeanFitness
 from PSMetric.Metric import ManyMetrics
 from PSMetric.Simplicity import Simplicity
@@ -37,13 +39,6 @@ class PSProblem(IntegerProblem):
         self.obj_labels = self.many_metrics.get_labels()
         self.lower_bound = [-1 for _ in benchmark_problem.search_space.cardinalities]
         self.upper_bound = [cardinality - 1 for cardinality in benchmark_problem.search_space.cardinalities]
-
-
-
-    @classmethod
-    def with_three_metrics(cls, benchmark_problem: BenchmarkProblem):
-        many_metrics = ManyMetrics([Simplicity(), MeanFitness(), Atomicity()])
-        return cls(benchmark_problem, many_metrics)
 
     def number_of_constraints(self) -> int:
         return 0
@@ -77,6 +72,45 @@ class PSProblem(IntegerProblem):
     @property
     def amount_of_parameters(self) -> int:
         return len(self.lower_bound)
+
+
+class NormalisedObjectivePSProblem(PSProblem):
+    def __init__(self, benchmark_problem: BenchmarkProblem, many_metrics: ManyMetrics):
+        super().__init__(benchmark_problem, many_metrics)
+
+    def number_of_objectives(self) -> int:
+        return self.many_metrics.get_amount_of_metrics()
+
+    def number_of_variables(self) -> int:
+        return 1
+
+    def evaluate(self, solution: IntegerSolution) -> IntegerSolution:
+        ps = into_PS(solution)
+        solution.objectives = [-score for score in self.many_metrics.get_normalised_scores(ps)]
+        return solution
+
+    def name(self) -> str:
+        return "PS search problem (Normalised Objectives)"
+
+
+class SingleObjectivePSProblem(PSProblem):
+    def __init__(self, benchmark_problem: BenchmarkProblem, many_metrics: ManyMetrics):
+        super().__init__(benchmark_problem, many_metrics)
+
+    def number_of_objectives(self) -> int:
+        return 1
+
+    def number_of_variables(self) -> int:
+        return 1
+
+    def evaluate(self, solution: IntegerSolution) -> IntegerSolution:
+        ps = into_PS(solution)
+        scores = self.many_metrics.get_normalised_scores(ps)
+        solution.objectives[0] = -np.average(scores)
+        return solution
+
+    def name(self) -> str:
+        return "PS search problem (Normalised Single Objective)"
 
 
 def make_NSGAII(problem: PSProblem):
@@ -128,9 +162,19 @@ def make_GDE3(problem: PSProblem):
                 )
 
 
-def test_PSProblem(benchmark_problem: BenchmarkProblem, which_mo_method: str, metrics = None):
+def test_PSProblem(benchmark_problem: BenchmarkProblem,
+                   which_mo_method: str,
+                   metrics=None,
+                   normalised_objectives=True,
+                   single_objective=False,
+                   save_to_files=False):
     if metrics is None:
-        problem = PSProblem.with_three_metrics(benchmark_problem)
+        metrics = ManyMetrics([Simplicity(), MeanFitness(), Linkage()])
+
+    if single_objective:
+        problem = SingleObjectivePSProblem(benchmark_problem, metrics)
+    elif normalised_objectives:
+        problem = NormalisedObjectivePSProblem(benchmark_problem, metrics)
     else:
         problem = PSProblem(benchmark_problem, metrics)
     algorithm = None
@@ -158,17 +202,17 @@ def test_PSProblem(benchmark_problem: BenchmarkProblem, which_mo_method: str, me
         ps = into_PS(item)
         print(f"{ps}, {item.objectives}")
 
-
     # save to files
-    metric_labels = problem.many_metrics.get_labels()
-    filename = f"resources\images\{which_mo_method}_{benchmark_problem}(" + "+".join(metric_labels) + ")"
-    print_function_values_to_file(front, filename)
-    print_variables_to_file(front, filename)
 
-    # plot
-    plot_front = Plot(title='Pareto front approximation', axis_labels=metric_labels)
-    plot_front.plot(front, label=filename, filename=filename, format='png')
+    if save_to_files:
+        metric_labels = problem.many_metrics.get_labels()
+        filename = f"resources\images\{which_mo_method}_{benchmark_problem}(" + "+".join(metric_labels) + ")"
+        print_function_values_to_file(front, filename)
+        print_variables_to_file(front, filename)
 
+        # plot
+        plot_front = Plot(title='Pareto front approximation', axis_labels=metric_labels)
+        plot_front.plot(front, label=filename, filename=filename, format='png')
 
 
 def test_MO(problem: BenchmarkProblem):
@@ -177,3 +221,30 @@ def test_MO(problem: BenchmarkProblem):
     for algorithm in algorithms:
         print(f"\n\nTesting with {algorithm}")
         test_PSProblem(problem, which_mo_method=algorithm)
+
+
+def test_MO_comprehensive(problem: BenchmarkProblem):
+    algorithms = ["NSGAII", "MOEAD", "MOCell", "GDE3"]
+    objective_combinations = [[Simplicity(), MeanFitness(), Linkage()],
+                              [Simplicity(), MeanFitness()],
+                              [MeanFitness(), Linkage()],
+                              [Simplicity(), Linkage()]]
+
+    print("Testing with multiple objectives")
+    for algorithm in algorithms:
+        print(f"\n\nTesting with {algorithm}")
+        for metrics in objective_combinations:
+            test_PSProblem(problem,
+                           which_mo_method=algorithm,
+                           metrics=ManyMetrics(metrics),
+                           normalised_objectives=True,
+                           save_to_files=True)
+
+
+    print("Testing with a single objective")
+    for algorithm in algorithms:
+        print(f"\n\nTesting with {algorithm}")
+        test_PSProblem(problem,
+                       which_mo_method=algorithm,
+                       single_objective=True,
+                       save_to_files=False)

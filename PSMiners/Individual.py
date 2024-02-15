@@ -28,6 +28,10 @@ class Individual:
         self.metrics = np.array(metrics.get_scores(self.ps))
 
 
+    def calculate_normalised_metrics(self, metrics: ManyMetrics):
+        self.metrics = np.array(metrics.get_normalised_scores(self.ps))
+
+
     def __hash__(self):
         return self.ps.__hash__()
 
@@ -43,6 +47,12 @@ def add_metrics(population: list[Individual], metrics: ManyMetrics) -> list[Indi
 
     return population
 
+def add_normalised_metrics(population: list[Individual], metrics: ManyMetrics) -> list[Individual]:
+    for individual in population:
+        individual.calculate_normalised_metrics(metrics)
+
+    return population
+
 
 def with_aggregated_scores(population: list[Individual]) -> list[Individual]:
     metrics = np.array([x.metrics for x in population])
@@ -51,5 +61,12 @@ def with_aggregated_scores(population: list[Individual]) -> list[Individual]:
 
     for individual, aggregated in zip(population, average_for_each_row):
         individual.aggregated_score = aggregated
+
+    return population
+
+
+def with_average_score(population: list[Individual]) -> list[Individual]:
+    for individual in population:
+        individual.aggregated_score = np.average(individual.metrics)
 
     return population

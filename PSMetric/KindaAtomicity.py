@@ -3,6 +3,7 @@ from typing import TypeAlias, Optional
 import numpy as np
 
 import SearchSpace
+import utils
 from PRef import PRef
 from PS import PS, STAR
 from PSMetric.Metric import Metric
@@ -11,21 +12,26 @@ from custom_types import ArrayOfFloats
 LinkageTable: TypeAlias = np.ndarray
 
 
-class LinkageViaMeanFitDiff(Metric):
+class Linkage(Metric):
     linkage_table: Optional[LinkageTable]
+    normalised_linkage_table: Optional[LinkageTable]
     worst_linkage: Optional[float]
+
+    normalised_linkage_table: Optional[LinkageTable]
 
     def __init__(self):
         super().__init__()
         self.linkage_table = None
         self.worst_linkage = None
+        self.normalised_linkage_table = None
 
     def __repr__(self):
-        return "KindaAtomicity"
+        return "LinkageViaMeanDiff"
 
     def set_pRef(self, pRef: PRef):
         self.linkage_table = self.get_linkage_table(pRef)
         self.worst_linkage = self.linkage_table.max(initial=0)
+        self.normalised_linkage_table = self.get_normalised_linkage_table(self.linkage_table)
 
     @staticmethod
     def get_linkage_table(pRef: PRef) -> LinkageTable:
@@ -61,13 +67,25 @@ class LinkageViaMeanFitDiff(Metric):
         linkage_table = linkage_table + upper_triangle.T
         return linkage_table
 
+
+    @staticmethod
+    def get_normalised_linkage_table(linkage_table: LinkageTable):
+        where_to_consider = np.triu(np.full_like(linkage_table, True, dtype=bool), k=1)
+        triu_min = np.min(linkage_table, where=where_to_consider, initial=np.inf)
+        triu_max = np.max(linkage_table, where=where_to_consider, initial=-np.inf)
+        normalised_linkage_table = (linkage_table - triu_min)/triu_max
+
+        return normalised_linkage_table
+
+
+
     def get_linkage_scores(self, ps: PS) -> np.array:
         fixed = ps.values != STAR
         fixed_combinations: np.array = np.outer(fixed, fixed)
-        np.fill_diagonal(fixed_combinations, False)  # remove relexive combinations
+        np.fill_diagonal(fixed_combinations, False)  # remove reflexive combinations
         return self.linkage_table[fixed_combinations]
 
-    def get_single_score(self, ps: PS) -> float:
+    def get_single_score_using_min(self, ps: PS) -> float:
         if ps.fixed_count() < 2:
             return 0
         else:
@@ -75,6 +93,31 @@ class LinkageViaMeanFitDiff(Metric):
             fixed_combinations: np.array = np.outer(fixed, fixed)
             np.fill_diagonal(fixed_combinations, False)  # remove reflexive combinations
             return np.min(self.linkage_table, where=fixed_combinations, initial=self.worst_linkage)
+
+
+    def get_single_score_using_avg(self, ps: PS) -> float:
+        if ps.fixed_count() < 2:
+            return 0
+        else:
+            fixed = ps.values != STAR
+            fixed_combinations: np.array = np.outer(fixed, fixed)
+            np.fill_diagonal(fixed_combinations, False)  # remove reflexive combinations
+            linkages = self.linkage_table[fixed_combinations]
+            return np.average(linkages)
+
+
+    def get_single_normalised_score(self, ps: PS) -> float:
+        if ps.fixed_count() < 2:
+            return 0
+        else:
+            fixed = ps.values != STAR
+            fixed_combinations: np.array = np.outer(fixed, fixed)
+            np.fill_diagonal(fixed_combinations, False)  # remove reflexive combinations
+            linkages = self.normalised_linkage_table[fixed_combinations]
+            return np.average(linkages)
+
+    def get_single_score(self, ps: PS) -> float:
+        return self.get_single_score_using_avg(ps)
 
 
 class SimplerAtomicity(Metric):

@@ -1,3 +1,4 @@
+import itertools
 from typing import Any
 
 import numpy as np
@@ -29,7 +30,7 @@ def remap_array_in_zero_one(input_array: np.ndarray):
     max_value = np.max(input_array)
 
     if min_value == max_value:
-        return np.full(len(input_array), 0.5, dtype=float)  # all 0.5!
+        return np.full_like(input_array, 0.5, dtype=float)  # all 0.5!
 
     return (input_array - min_value) / (max_value - min_value)
 
@@ -42,3 +43,6 @@ def remap_each_column_in_zero_one(input_matrix: np.ndarray) -> np.ndarray:
     return result_matrix
 
 
+def powerset(iterable):
+    s = list(iterable)
+    return itertools.chain.from_iterable(itertools.combinations(s, r) for r in range(len(s)+1))

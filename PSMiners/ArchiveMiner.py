@@ -7,10 +7,12 @@ from BenchmarkProblems.BenchmarkProblem import BenchmarkProblem
 from PRef import PRef
 from PS import PS
 from PSMetric.Atomicity import Atomicity
+from PSMetric.KindaAtomicity import Linkage
 from PSMetric.MeanFitness import MeanFitness
 from PSMetric.Metric import ManyMetrics
 from PSMetric.Simplicity import Simplicity
-from PSMiners.Individual import Individual, add_metrics, with_aggregated_scores
+from PSMiners.Individual import Individual, add_metrics, with_aggregated_scores, add_normalised_metrics, \
+    with_average_score
 from SearchSpace import SearchSpace
 from TerminationCriteria import TerminationCriteria, EvaluationBudgetLimit
 
@@ -29,18 +31,24 @@ class ArchiveMiner:
 
     def __init__(self,
                  population_size: int,
-                 pRef: PRef):
+                 pRef: PRef,
+                 metrics = None):
         self.search_space = pRef.search_space
         self.population_size = population_size
-        self.many_metrics = ManyMetrics([Simplicity(), MeanFitness(), Atomicity()])
+        if metrics is None:
+            self.many_metrics = ManyMetrics([Simplicity(), MeanFitness(), Atomicity()])
+        else:
+            self.many_metrics = metrics
         self.many_metrics.set_pRef(pRef)
+
+        print(f"Initialised the ArchiveMiner with metrics {self.many_metrics.get_labels()}")
 
         self.current_population = self.calculate_metrics_and_aggregated_score(self.make_initial_population())
         self.archive = set()
 
     def calculate_metrics_and_aggregated_score(self, population: list[Individual]):
-        to_return = add_metrics(population, self.many_metrics)
-        return with_aggregated_scores(to_return)
+        to_return = add_normalised_metrics(population, self.many_metrics)
+        return with_average_score(to_return)
 
     def make_initial_population(self) -> list[Individual]:
         """ basically takes the elite of the PRef, and converts them into PSs """
@@ -165,7 +173,7 @@ def test_archive_miner(problem: BenchmarkProblem, efficient: bool, show_each_gen
     # iteration_limit = TerminationCriteria.IterationLimit(12)
     # termination_criteria = TerminationCriteria.UnionOfCriteria(budget_limit, iteration_limit)
 
-    miner = ArchiveMiner(150, pRef)
+    miner = ArchiveMiner(150, pRef, metrics=ManyMetrics([Simplicity(), MeanFitness(), Linkage()]))
 
     miner.run(budget_limit, efficient=efficient, show_each_generation = show_each_generation)
 

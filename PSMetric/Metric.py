@@ -49,5 +49,10 @@ class ManyMetrics:
         return [m.get_single_score(ps) for m in self.metrics]
 
 
+    def get_normalised_scores(self, ps: PS) -> list[float]:
+        self.used_evaluations += 1
+        return [m.get_single_normalised_score(ps) for m in self.metrics]
+
+
     def get_amount_of_metrics(self) -> int:
         return len(self.metrics)

@@ -1,6 +1,10 @@
+import utils
 from BenchmarkProblems.RoyalRoad import RoyalRoad
 from BenchmarkProblems.Trapk import Trapk
-from JMetal.PSProblem import test_MO
+from JMetal.PSProblem import test_MO, test_PSProblem, test_MO_comprehensive
+from PSMetric.KindaAtomicity import Linkage
+from PSMetric.MeanFitness import MeanFitness
+from PSMetric.Simplicity import Simplicity
 from PSMiners.ArchiveMiner import test_archive_miner
 from PSMiners.SelfAssembly import test_simple_hill_climber
 
@@ -23,5 +27,12 @@ def test_many_miners():
 
 
 if __name__ == '__main__':
+    algorithms = ["NSGAII", "MOCell", "GDE3"]
     problem = Trapk(3, 5)
-    test_archive_miner(problem, efficient=True, show_each_generation=True)
+    print("Testing with a single objective")
+    for algorithm in algorithms:
+        print(f"\n\nTesting with {algorithm}")
+        test_PSProblem(problem,
+                       which_mo_method=algorithm,
+                       single_objective=True,
+                       save_to_files=False)
