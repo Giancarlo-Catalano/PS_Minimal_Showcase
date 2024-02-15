@@ -24,4 +24,4 @@ def test_many_miners():
 
 if __name__ == '__main__':
     problem = Trapk(3, 5)
-    test_archive_miner(problem, efficient=False, show_each_generation=True)
+    test_archive_miner(problem, efficient=True, show_each_generation=True)

@@ -28,6 +28,13 @@ class Individual:
         self.metrics = np.array(metrics.get_scores(self.ps))
 
 
+    def __hash__(self):
+        return self.ps.__hash__()
+
+
+    def __eq__(self, other):
+        return self.ps == other.ps
+
 
 
 def add_metrics(population: list[Individual], metrics: ManyMetrics) -> list[Individual]:
