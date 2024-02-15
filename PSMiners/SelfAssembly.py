@@ -82,7 +82,7 @@ def test_simple_hill_climber(problem: BenchmarkProblem):
 
         final = sa.improve_continously(starting_point)
 
-        print(f"Starting from {starting_point}, we got to {final}")
+        #print(f"Starting from {starting_point}, we got to {final}")
 
     print("At the end, the top 12 best partial solutions are")
     for ps, count in sa.ps_counter.most_common(12):

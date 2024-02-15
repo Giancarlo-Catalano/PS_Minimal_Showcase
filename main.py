@@ -13,7 +13,9 @@ def test_many_miners():
     benchmark_problem = RoyalRoad(4, 5)
     # print(f"The problem is {problem.long_repr()}")
     print_separator()
-    test_archive_miner(benchmark_problem)
+    test_archive_miner(benchmark_problem, False)
+    print_separator()
+    test_archive_miner(benchmark_problem, True)
     print_separator()
     test_MO(benchmark_problem)
     print_separator()
@@ -22,4 +24,4 @@ def test_many_miners():
 
 if __name__ == '__main__':
     problem = Trapk(3, 5)
-    test_many_miners()
+    test_archive_miner(problem, efficient=False, show_each_generation=True)

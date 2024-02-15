@@ -89,7 +89,7 @@ class ArchiveMiner:
 
         return self.top(new_population, self.population_size)
 
-    def make_new_population_effcient(self):
+    def make_new_population_efficient(self):
         """Note how this relies on the current population being evaluated,
         and how at the end it returns an evaluated population"""
         selected = [self.select_one() for _ in range(ceil(self.population_size * self.selection_proportion))]
@@ -113,11 +113,20 @@ class ArchiveMiner:
 
     def make_new_population(self, efficient=True):
         if efficient:
-            return self.make_new_population_effcient()
+            return self.make_new_population_efficient()
         else:
             return self.make_new_population_inefficient()
 
-    def run(self, termination_criteria: TerminationCriteria, efficient=True):
+
+    def show_best_of_current_population(self, how_many: int):
+        best = self.top(self.current_population, how_many)
+        for individual in best:
+            print(individual)
+
+    def run(self,
+            termination_criteria: TerminationCriteria,
+            efficient=True,
+            show_each_generation = False):
         iteration = 0
 
         def termination_criteria_met():
@@ -131,6 +140,9 @@ class ArchiveMiner:
 
         while not termination_criteria_met():
             self.current_population = self.make_new_population(efficient)
+            if show_each_generation:
+                print(f"Population at iteration {iteration}, used_budget = {self.get_used_evaluations()}--------------")
+                self.show_best_of_current_population(12)
             iteration += 1
 
         print(f"Execution terminated with {iteration = } and used_budget = {self.get_used_evaluations()}")
@@ -144,8 +156,8 @@ class ArchiveMiner:
         return self.many_metrics.used_evaluations
 
 
-def test_archive_miner(problem: BenchmarkProblem):
-    print("Testing the modified archive miner")
+def test_archive_miner(problem: BenchmarkProblem, efficient: bool, show_each_generation = True):
+    print(f"Testing the modified archive miner(Efficient = {efficient})")
     pRef: PRef = problem.get_pRef(10000)
 
     budget_limit = EvaluationBudgetLimit(10000)
@@ -154,7 +166,7 @@ def test_archive_miner(problem: BenchmarkProblem):
 
     miner = ArchiveMiner(150, pRef)
 
-    miner.run(budget_limit)
+    miner.run(budget_limit, efficient=efficient, show_each_generation = show_each_generation)
 
     results = miner.get_results(quantity_returned=10)
     print("The results of the archive miner are:")
