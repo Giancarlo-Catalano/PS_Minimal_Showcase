@@ -17,7 +17,6 @@ from TerminationCriteria import TerminationCriteria, EvaluationBudgetLimit
 
 class ArchiveMiner:
     population_size: int
-    pRef: PRef
     many_metrics: ManyMetrics
 
     current_population: list[Individual]
@@ -26,12 +25,15 @@ class ArchiveMiner:
     selection_proportion = 0.3
     tournament_size = 3
 
+    search_space: SearchSpace
+
     def __init__(self,
                  population_size: int,
                  pRef: PRef):
+        self.search_space = pRef.search_space
         self.population_size = population_size
-        self.pRef = pRef
         self.many_metrics = ManyMetrics([Simplicity(), MeanFitness(), Atomicity()])
+        self.many_metrics.set_pRef(pRef)
 
         self.current_population = self.calculate_metrics_and_aggregated_score(self.make_initial_population())
         self.archive = set()
@@ -39,10 +41,6 @@ class ArchiveMiner:
     def calculate_metrics_and_aggregated_score(self, population: list[Individual]):
         to_return = add_metrics(population, self.many_metrics)
         return with_aggregated_scores(to_return)
-
-    @property
-    def search_space(self) -> SearchSpace:
-        return self.pRef.search_space
 
     def make_initial_population(self) -> list[Individual]:
         """ basically takes the elite of the PRef, and converts them into PSs """
