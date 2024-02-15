@@ -11,8 +11,20 @@ from custom_types import ArrayOfFloats
 
 
 class Atomicity(Metric):
+    pRef: Optional[PRef]
+    normalised_pRef: Optional[PRef]
+    global_isolated_benefits: Optional[list[list[float]]]
+
     def __init__(self):
         super().__init__()
+        self.pRef = None
+        self.normalised_pRef = None
+        self.global_isolated_benefits = None
+
+    def set_pRef(self, pRef: PRef):
+        self.pRef = pRef
+        self.normalised_pRef = self.get_normalised_pRef(self.pRef)
+        self.global_isolated_benefits = self.get_global_isolated_benefits()
 
     def __repr__(self):
         return "Atomicity"
@@ -38,48 +50,39 @@ class Atomicity(Metric):
                     full_solution_matrix=pRef.full_solution_matrix,
                     search_space=pRef.search_space)
 
-    @staticmethod
-    def get_benefit(ps: PS, normalised_pRef: PRef) -> float:
-        return float(np.sum(normalised_pRef.fitnesses_of_observations(ps)))
+    def get_benefit(self, ps: PS) -> float:
+        return float(np.sum(self.normalised_pRef.fitnesses_of_observations(ps)))
 
-    @staticmethod
-    def get_global_isolated_benefits(normalised_pRef: PRef) -> list[list[float]]:
-        ss = normalised_pRef.search_space
+    def get_global_isolated_benefits(self) -> list[list[float]]:
+        """Requires self.normalised_pRef"""
+        ss = self.normalised_pRef.search_space
         empty: PS = PS.empty(ss)
 
         def benefit_when_isolating(var: int, val: int) -> float:
             isolated = empty.with_fixed_value(var, val)
-            return Atomicity.get_benefit(isolated, normalised_pRef)
+            return self.get_benefit(isolated)
 
         return [[benefit_when_isolating(var, val)
                  for val in range(ss.cardinalities[var])]
                 for var in range(ss.amount_of_parameters)]
 
-    @staticmethod
-    def get_excluded(ps: PS):
-        return ps.simplifications()
 
-    @staticmethod
-    def get_isolated_benefits(ps: PS,
-                              global_isolated_benefits: list[list[float]]) -> ArrayOfFloats:
-        return np.array([global_isolated_benefits[var][val]
+    def get_isolated_benefits(self, ps: PS) -> ArrayOfFloats:
+        return np.array([self.global_isolated_benefits[var][val]
                          for var, val in enumerate(ps.values)
                          if val != STAR])
 
-    @staticmethod
-    def get_excluded_benefits(ps: PS, normalised_pRef: PRef) -> ArrayOfFloats:
-        return np.array([Atomicity.get_benefit(excluded, normalised_pRef) for excluded in Atomicity.get_excluded(ps)])
+    def get_excluded_benefits(self, ps: PS) -> ArrayOfFloats:
+        exclusions = ps.simplifications()
+        return np.array([self.get_benefit(excluded) for excluded in exclusions])
 
-    @staticmethod
-    def get_single_score_knowing_information(ps: PS,
-                                             normalised_pRef: PRef,
-                                             global_isolated_benefits: list[list[float]]):
-        pAB = Atomicity.get_benefit(ps, normalised_pRef)
+    def get_single_score(self, ps: PS):
+        pAB = self.get_benefit(ps)
         if pAB == 0.0:
             return pAB
 
-        isolated = Atomicity.get_isolated_benefits(ps, global_isolated_benefits)
-        excluded = Atomicity.get_excluded_benefits(ps, normalised_pRef)
+        isolated = self.get_isolated_benefits(ps)
+        excluded = self.get_excluded_benefits(ps)
 
         if len(isolated) == 0:  # ie we have the empty ps
             return 0
@@ -90,49 +93,3 @@ class Atomicity(Metric):
         if np.isnan(result).any():
             raise Exception("There is a nan value returned in atomicity")
         return result
-
-
-    @staticmethod
-    def get_individual_atomicities(ps: PS,
-                                   normalised_pRef: PRef,
-                                   global_isolated_benefits: list[list[float]]) -> list[float]:
-        pAB = Atomicity.get_benefit(ps, normalised_pRef)
-        if pAB == 0.0:   # means that there are no observations
-            return (None, pAB)
-
-        isolated = Atomicity.get_isolated_benefits(ps, global_isolated_benefits)
-        excluded = Atomicity.get_excluded_benefits(ps, normalised_pRef)
-
-        if len(isolated) == 0:  # ie we have the empty ps
-            return (None, 0)
-
-        denominators = isolated * excluded  # praying that they are always the same size
-
-        result = pAB * np.log(pAB / denominators)
-        if np.isnan(result).any():
-            raise Exception("There is a nan value returned in atomicity")
-        return list(result)
-
-    def get_unnormalised_scores(self, pss: Iterable[PS], pRef: PRef) -> ArrayOfFloats:
-        normalised_pRef = self.get_normalised_pRef(pRef)
-        global_isolated_benefits = self.get_global_isolated_benefits(normalised_pRef)
-
-        def get_single_score(ps: PS) -> float:
-            pAB = self.get_benefit(ps, normalised_pRef)
-            if pAB == 0.0:
-                return pAB
-
-            isolated = self.get_isolated_benefits(ps, global_isolated_benefits)
-            excluded = self.get_excluded_benefits(ps, normalised_pRef)
-
-            if len(isolated) == 0:  # ie we have the empty ps
-                return 0
-
-            max_denominator = np.max(isolated * excluded)  # praying that they are always the same size!
-
-            result = pAB * np.log(pAB / max_denominator)
-            if np.isnan(result).any():
-                raise Exception("There is a nan value returned in atomicity")
-            return result
-
-        return np.array([get_single_score(ps) for ps in pss])
