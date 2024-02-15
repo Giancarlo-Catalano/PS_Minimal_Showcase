@@ -10,16 +10,16 @@ from custom_types import ArrayOfFloats
 class Metric:
     def __repr__(self):
         """ Return a string which describes the Criterion, eg 'Robustness' """
-        raise Exception("Error: a realisation of PSMetric does not implement __repr__")
+        raise Exception(f"Error: a realisation of PSMetric({self.__repr__()}) does not implement __repr__")
 
     def set_pRef(self, pRef: PRef):
-        raise Exception("Error: a realisation of PSMetric does not implement set_pRef")
+        raise Exception(f"Error: a realisation of PSMetric({self.__repr__()}) does not implement set_pRef")
 
     def get_single_score(self, ps: PS) -> float:
-        raise Exception("Error: a realisation of PSMetric does not implement get_single_score_for_PS")
+        raise Exception(f"Error: a realisation of PSMetric({self.__repr__()}) does not implement get_single_score_for_PS")
 
     def get_single_normalised_score(self, ps: PS) -> float:  #
-        raise Exception("Error: a realisation of PSMetric does not implement get_single_normalised_score")
+        raise Exception(f"Error: a realisation of PSMetric({self.__repr__()}) does not implement get_single_normalised_score")
 
     def get_unnormalised_scores(self, pss: Iterable[PS]) -> ArrayOfFloats:
         """default implementation, subclasses might overwrite this"""
