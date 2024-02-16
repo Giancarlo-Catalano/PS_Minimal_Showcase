@@ -224,25 +224,24 @@ def test_MO(problem: BenchmarkProblem):
 
 
 def test_MO_comprehensive(problem: BenchmarkProblem):
-    algorithms = ["NSGAII", "MOEAD", "MOCell", "GDE3"]
     objective_combinations = [[Simplicity(), MeanFitness(), Linkage()],
                               [Simplicity(), MeanFitness()],
                               [MeanFitness(), Linkage()],
                               [Simplicity(), Linkage()]]
 
     print("Testing with multiple objectives")
-    for algorithm in algorithms:
+    for algorithm in ["NSGAII", "MOEAD", "MOCell", "GDE3"]:
         print(f"\n\nTesting with {algorithm}")
         for metrics in objective_combinations:
             test_PSProblem(problem,
                            which_mo_method=algorithm,
                            metrics=ManyMetrics(metrics),
                            normalised_objectives=True,
-                           save_to_files=True)
+                           save_to_files=False)
 
 
     print("Testing with a single objective")
-    for algorithm in algorithms:
+    for algorithm in ["NSGAII", "GDE3"]:
         print(f"\n\nTesting with {algorithm}")
         test_PSProblem(problem,
                        which_mo_method=algorithm,

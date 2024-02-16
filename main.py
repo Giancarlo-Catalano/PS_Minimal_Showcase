@@ -29,10 +29,4 @@ def test_many_miners():
 if __name__ == '__main__':
     algorithms = ["NSGAII", "MOCell", "GDE3"]
     problem = Trapk(3, 5)
-    print("Testing with a single objective")
-    for algorithm in algorithms:
-        print(f"\n\nTesting with {algorithm}")
-        test_PSProblem(problem,
-                       which_mo_method=algorithm,
-                       single_objective=True,
-                       save_to_files=False)
+    test_MO_comprehensive(problem)
