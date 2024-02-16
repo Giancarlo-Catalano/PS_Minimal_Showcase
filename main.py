@@ -1,5 +1,6 @@
 import utils
 from BenchmarkProblems.RoyalRoad import RoyalRoad
+from BenchmarkProblems.RoyalRoadWithOverlaps import RoyalRoadWithOverlaps
 from BenchmarkProblems.Trapk import Trapk
 from JMetal.PSProblem import test_MO, test_PSProblem, test_MO_comprehensive
 from PSMetric.KindaAtomicity import Linkage
@@ -14,7 +15,7 @@ def print_separator():
 
 
 def test_many_miners():
-    benchmark_problem = RoyalRoad(4, 5)
+    benchmark_problem = RoyalRoadWithOverlaps(4, 5, 15)
     # print(f"The problem is {problem.long_repr()}")
     print_separator()
     test_archive_miner(benchmark_problem, False)
@@ -27,6 +28,9 @@ def test_many_miners():
 
 
 if __name__ == '__main__':
-    algorithms = ["NSGAII", "MOCell", "GDE3"]
-    problem = Trapk(3, 5)
-    test_MO_comprehensive(problem)
+    problem = Trapk(5, 5)
+    #problem = RoyalRoadWithOverlaps(4, 4, 15)
+    #test_MO_comprehensive(problem)
+    #print_separator()
+    #print("Now testing with my own algorithm")
+    test_archive_miner(problem, efficient=True, show_each_generation=True)

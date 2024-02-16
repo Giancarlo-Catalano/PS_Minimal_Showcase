@@ -19,4 +19,4 @@ class Simplicity(Metric):
         return float(np.sum(ps.values == STAR))
 
     def get_single_normalised_score(self, ps: PS) -> float:
-        return 1.0 - float(np.sum(ps.values == STAR) / len(ps))
+        return float(np.sum(ps.values == STAR) / len(ps))

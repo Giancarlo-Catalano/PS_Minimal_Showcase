@@ -113,7 +113,7 @@ class SingleObjectivePSProblem(PSProblem):
         return "PS search problem (Normalised Single Objective)"
 
 
-def make_NSGAII(problem: PSProblem):
+def make_NSGAII(problem: PSProblem, max_evaluations: int):
     return NSGAII(
         problem=problem,
         population_size=100,
@@ -121,10 +121,10 @@ def make_NSGAII(problem: PSProblem):
         mutation=IntegerPolynomialMutation(probability=1 / problem.amount_of_parameters,
                                            distribution_index=20),
         crossover=IntegerSBXCrossover(probability=0.5, distribution_index=20),
-        termination_criterion=StoppingByEvaluations(max_evaluations=10000))
+        termination_criterion=StoppingByEvaluations(max_evaluations=max_evaluations))
 
 
-def make_MOEAD(problem: PSProblem):
+def make_MOEAD(problem: PSProblem, max_evaluations: int):
     return MOEAD(
         problem=problem,
         population_size=300,
@@ -136,11 +136,11 @@ def make_MOEAD(problem: PSProblem):
         neighbourhood_selection_probability=0.9,
         max_number_of_replaced_solutions=2,
         weight_files_path='resources/MOEAD_weights',
-        termination_criterion=StoppingByEvaluations(10000)
+        termination_criterion=StoppingByEvaluations(max_evaluations)
     )
 
 
-def make_MOCELL(problem: PSProblem):
+def make_MOCELL(problem: PSProblem, max_evaluations: int):
     return MOCell(
         problem=problem,
         population_size=100,
@@ -149,17 +149,16 @@ def make_MOCELL(problem: PSProblem):
         mutation=IntegerPolynomialMutation(probability=1 / problem.amount_of_parameters,
                                            distribution_index=20),
         crossover=IntegerSBXCrossover(probability=0.5, distribution_index=20),
-        termination_criterion=StoppingByEvaluations(max_evaluations=10000)
+        termination_criterion=StoppingByEvaluations(max_evaluations=max_evaluations)
     )
 
 
-def make_GDE3(problem: PSProblem):
+def make_GDE3(problem: PSProblem, max_evaluations: int):
     return GDE3(problem=problem,
                 population_size=100,
                 cr=0.5,
                 f=0.5,
-                termination_criterion=StoppingByEvaluations(10000)
-                )
+                termination_criterion=StoppingByEvaluations(max_evaluations))
 
 
 def test_PSProblem(benchmark_problem: BenchmarkProblem,
@@ -167,7 +166,8 @@ def test_PSProblem(benchmark_problem: BenchmarkProblem,
                    metrics=None,
                    normalised_objectives=True,
                    single_objective=False,
-                   save_to_files=False):
+                   save_to_files=False,
+                   max_evaluations = 10000):
     if metrics is None:
         metrics = ManyMetrics([Simplicity(), MeanFitness(), Linkage()])
 
@@ -180,13 +180,13 @@ def test_PSProblem(benchmark_problem: BenchmarkProblem,
     algorithm = None
 
     if which_mo_method == "NSGAII":
-        algorithm = make_NSGAII(problem)
+        algorithm = make_NSGAII(problem, max_evaluations)
     elif which_mo_method == "MOEAD":
-        algorithm = make_MOEAD(problem)
+        algorithm = make_MOEAD(problem, max_evaluations)
     elif which_mo_method == "MOCell":
-        algorithm = make_MOCELL(problem)
+        algorithm = make_MOCELL(problem, max_evaluations)
     elif which_mo_method == "GDE3":
-        algorithm = make_GDE3(problem)
+        algorithm = make_GDE3(problem, max_evaluations)
     else:
         raise Exception(f"The algorithm {which_mo_method} was not recognised")
 
@@ -237,7 +237,8 @@ def test_MO_comprehensive(problem: BenchmarkProblem):
                            which_mo_method=algorithm,
                            metrics=ManyMetrics(metrics),
                            normalised_objectives=True,
-                           save_to_files=False)
+                           save_to_files=True,
+                           max_evaluations=20000)
 
 
     print("Testing with a single objective")
@@ -246,4 +247,5 @@ def test_MO_comprehensive(problem: BenchmarkProblem):
         test_PSProblem(problem,
                        which_mo_method=algorithm,
                        single_objective=True,
+                       max_evaluations=20000,
                        save_to_files=False)

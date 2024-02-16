@@ -70,3 +70,28 @@ def with_average_score(population: list[Individual]) -> list[Individual]:
         individual.aggregated_score = np.average(individual.metrics)
 
     return population
+
+
+def with_product_score(population: list[Individual]) -> list[Individual]:
+    for individual in population:
+        individual.aggregated_score = np.product(individual.metrics)
+
+    return population
+
+
+
+def partition_by_simplicity(population: list[Individual]) -> list[list[Individual]]:
+    if len(population) == 0:
+        return []
+
+    amount_of_variables = len(population[0].ps)
+    result = [[] for _ in range(amount_of_variables)]
+
+    for individual in population:
+        amount_of_fixed_vars = individual.ps.fixed_count()
+        result[amount_of_fixed_vars].append(individual)
+
+    return result
+
+
+
