@@ -3,7 +3,7 @@ from BenchmarkProblems.RoyalRoad import RoyalRoad
 from BenchmarkProblems.RoyalRoadWithOverlaps import RoyalRoadWithOverlaps
 from BenchmarkProblems.Trapk import Trapk
 from JMetal.PSProblem import test_MO, test_PSProblem, test_MO_comprehensive
-from PSMetric.KindaAtomicity import Linkage
+from PSMetric.Linkage import Linkage
 from PSMetric.MeanFitness import MeanFitness
 from PSMetric.Simplicity import Simplicity
 from PSMiners.ArchiveMiner import test_archive_miner

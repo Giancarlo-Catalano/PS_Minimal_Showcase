@@ -16,7 +16,7 @@ from jmetal.util.termination_criterion import StoppingByEvaluations
 from BenchmarkProblems.BenchmarkProblem import BenchmarkProblem
 from JMetal.JMetalUtils import into_PS
 from PSMetric.Atomicity import Atomicity
-from PSMetric.KindaAtomicity import Linkage
+from PSMetric.Linkage import Linkage
 from PSMetric.MeanFitness import MeanFitness
 from PSMetric.Metric import ManyMetrics
 from PSMetric.Simplicity import Simplicity

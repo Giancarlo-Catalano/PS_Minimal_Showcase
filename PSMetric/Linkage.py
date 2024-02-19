@@ -16,15 +16,13 @@ class Linkage(Metric):
     linkage_table: Optional[LinkageTable]
     normalised_linkage_table: Optional[LinkageTable]
 
-    normalised_linkage_table: Optional[LinkageTable]
-
     def __init__(self):
         super().__init__()
         self.linkage_table = None
         self.normalised_linkage_table = None
 
     def __repr__(self):
-        return "LinkageViaMeanDiff"
+        return "Linkage"
 
     def set_pRef(self, pRef: PRef):
         self.linkage_table = self.get_linkage_table(pRef)
