@@ -12,7 +12,9 @@ from jmetal.util.archive import CrowdingDistanceArchive
 from jmetal.util.neighborhood import C9
 from jmetal.util.solution import get_non_dominated_solutions, print_function_values_to_file, print_variables_to_file
 from jmetal.util.termination_criterion import StoppingByEvaluations
+from pandas import DataFrame
 
+import utils
 from BenchmarkProblems.BenchmarkProblem import BenchmarkProblem
 from JMetal.JMetalUtils import into_PS
 from PSMetric.Atomicity import Atomicity
@@ -161,13 +163,27 @@ def make_GDE3(problem: PSProblem, max_evaluations: int):
                 termination_criterion=StoppingByEvaluations(max_evaluations))
 
 
+def construct_MO_algorithm(which: str, problem: PSProblem, max_evaluations: int):
+    if which == "NSGAII":
+        return make_NSGAII(problem, max_evaluations)
+    elif which == "MOEAD":
+        return make_MOEAD(problem, max_evaluations)
+    elif which == "MOCell":
+        return make_MOCELL(problem, max_evaluations)
+    elif which == "GDE3":
+        return make_GDE3(problem, max_evaluations)
+    else:
+        raise Exception(f"The algorithm {which} was not recognised")
+
+
 def test_PSProblem(benchmark_problem: BenchmarkProblem,
                    which_mo_method: str,
                    metrics=None,
                    normalised_objectives=True,
+                   show_interactive_plot = False,
                    single_objective=False,
                    save_to_files=False,
-                   max_evaluations = 10000):
+                   max_evaluations=10000):
     if metrics is None:
         metrics = MultipleMetrics([Simplicity(), MeanFitness(), Linkage()])
 
@@ -177,18 +193,8 @@ def test_PSProblem(benchmark_problem: BenchmarkProblem,
         problem = NormalisedObjectivePSProblem(benchmark_problem, metrics)
     else:
         problem = PSProblem(benchmark_problem, metrics)
-    algorithm = None
 
-    if which_mo_method == "NSGAII":
-        algorithm = make_NSGAII(problem, max_evaluations)
-    elif which_mo_method == "MOEAD":
-        algorithm = make_MOEAD(problem, max_evaluations)
-    elif which_mo_method == "MOCell":
-        algorithm = make_MOCELL(problem, max_evaluations)
-    elif which_mo_method == "GDE3":
-        algorithm = make_GDE3(problem, max_evaluations)
-    else:
-        raise Exception(f"The algorithm {which_mo_method} was not recognised")
+    algorithm = construct_MO_algorithm(which_mo_method, problem, max_evaluations)
 
     print("Setup the algorithm, now we run it")
 
@@ -215,6 +221,14 @@ def test_PSProblem(benchmark_problem: BenchmarkProblem,
         plot_front.plot(front, label=filename, filename=filename, format='png')
 
 
+    if show_interactive_plot:
+        labels = metrics.get_labels()
+        points = [i.objectives for i in front]
+        points = [[-value for value in coords] for coords in points]
+
+        utils.make_interactive_3d_plot(points, labels)
+
+
 def test_MO(problem: BenchmarkProblem):
     algorithms = ["NSGAII", "MOEAD", "MOCell", "GDE3"]
 
@@ -237,9 +251,8 @@ def test_MO_comprehensive(problem: BenchmarkProblem):
                            which_mo_method=algorithm,
                            metrics=MultipleMetrics(metrics),
                            normalised_objectives=True,
-                           save_to_files=True,
+                           save_to_files=False,
                            max_evaluations=20000)
-
 
     print("Testing with a single objective")
     for algorithm in ["NSGAII", "GDE3"]:

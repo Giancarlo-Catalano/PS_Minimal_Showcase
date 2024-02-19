@@ -54,7 +54,7 @@ class ArchiveMiner:
 
     def calculate_metrics_and_aggregated_score(self, population: list[Individual]) -> list[Individual]:
         for individual in population:
-            scores = self.metrics.get_scores(individual.ps)
+            scores = self.metrics.get_normalised_scores(individual.ps)
             individual.metric_scores = scores
             individual.aggregated_score = self.metrics.get_aggregated_score(scores)
         return population
@@ -144,12 +144,13 @@ def show_plot_of_individuals(individuals: list[Individual], metrics: MultipleMet
     labels = metrics.get_labels()
     points = [i.metric_scores for i in individuals]
 
-    df = DataFrame(data=points, columns=labels)
-    fig = px.scatter_3d(df, x=labels[0], y=labels[1], z=labels[2])
-    fig.show()
+    utils.make_interactive_3d_plot(points, labels)
 
 
-def test_archive_miner(problem: BenchmarkProblem, show_each_generation=True):
+def test_archive_miner(problem: BenchmarkProblem,
+                       show_each_generation=True,
+                       show_interactive_plot = False,
+                       metrics=None):
     print(f"Testing the modified archive miner")
     pRef: PRef = problem.get_pRef(15000)
 
@@ -157,7 +158,13 @@ def test_archive_miner(problem: BenchmarkProblem, show_each_generation=True):
     # iteration_limit = TerminationCriteria.IterationLimit(12)
     # termination_criteria = TerminationCriteria.UnionOfCriteria(budget_limit, iteration_limit)
 
-    miner = ArchiveMiner(150, pRef, metrics=MultipleMetrics([Simplicity(), MeanFitness(), Linkage()]))
+    if metrics is None:
+        metrics = MultipleMetrics(metrics=[Simplicity(), MeanFitness(), Linkage()],
+                                  weights=[1, 2, 1])
+
+    miner = ArchiveMiner(150,
+                         pRef,
+                         metrics=metrics)
 
     miner.run(budget_limit, show_each_generation=show_each_generation)
 
@@ -168,8 +175,9 @@ def test_archive_miner(problem: BenchmarkProblem, show_each_generation=True):
 
     print(f"The used budget is {miner.get_used_evaluations()}")
 
-    print("Displaying the plot")
-    show_plot_of_individuals(results, miner.metrics)
+    if show_interactive_plot:
+        print("Displaying the plot")
+        show_plot_of_individuals(results, miner.metrics)
 
     print("Partitioned by complexity, the PSs are")
     for fixed_count, pss in enumerate(partition_by_simplicity(results)):

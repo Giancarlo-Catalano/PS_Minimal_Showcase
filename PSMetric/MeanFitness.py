@@ -14,6 +14,7 @@ class MeanFitness(Metric):
 
     max_fitness: Optional[float]
     min_fitness: Optional[float]
+    median_fitness: Optional[float]
 
 
     def __init__(self):
@@ -63,3 +64,32 @@ class MeanFitness(Metric):
     def get_single_normalised_score(self, ps: PS) -> float:
         average_fitness = self.get_single_score(ps)
         return (average_fitness - self.min_fitness)/self.max_fitness
+
+
+
+class ChanceOfGood(Metric):
+    pRef: Optional[PRef]
+    median_fitness: Optional[float]
+
+
+    def __init__(self):
+        super().__init__()
+        self.pRef = None
+        self.median_fitness = None
+    def set_pRef(self, pRef: PRef):
+        self.pRef = pRef
+
+        self.median_fitness = np.median(pRef.fitness_array)
+
+    def __repr__(self):
+        return "ChanceOfGood"
+
+    def get_single_normalised_score(self, ps: PS) -> float:
+        observations = self.pRef.fitnesses_of_observations(ps)
+        if len(observations) == 0:
+            return 0
+
+        amount_which_are_better_than_median = sum([1 for observation in observations
+                                                   if observation > self.median_fitness])
+
+        return amount_which_are_better_than_median / len(observations)

@@ -2,6 +2,8 @@ import itertools
 from typing import Any
 
 import numpy as np
+from pandas import DataFrame
+import plotly.express as px
 
 
 def first(pair: (Any, Any)) -> Any:
@@ -46,3 +48,10 @@ def remap_each_column_in_zero_one(input_matrix: np.ndarray) -> np.ndarray:
 def powerset(iterable):
     s = list(iterable)
     return itertools.chain.from_iterable(itertools.combinations(s, r) for r in range(len(s)+1))
+
+
+
+def make_interactive_3d_plot(points, labels: list[str]):
+    df = DataFrame(data=points, columns=labels)
+    fig = px.scatter_3d(df, x=labels[0], y=labels[1], z=labels[2])
+    fig.show()
