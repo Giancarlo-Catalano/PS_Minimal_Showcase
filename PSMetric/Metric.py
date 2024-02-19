@@ -26,13 +26,18 @@ class Metric:
         return np.array([self.get_single_score(ps) for ps in pss])
 
 
-class ManyMetrics:
+class MultipleMetrics:
     metrics: list[Metric]
     used_evaluations: int
+    weights: list[int]
 
-    def __init__(self, metrics: list[Metric]):
+    def __init__(self, metrics: list[Metric], weights = None):
         self.metrics = metrics
         self.used_evaluations = 0
+        if weights is None:
+            self.weights = [1 for _ in metrics]
+        else:
+            self.weights = weights
 
     def get_labels(self) -> list[str]:
         return [m.__repr__() for m in self.metrics]
@@ -56,3 +61,7 @@ class ManyMetrics:
 
     def get_amount_of_metrics(self) -> int:
         return len(self.metrics)
+
+
+    def get_aggregated_score(self, score_list: list[float]):
+        return sum([score * weight for score, weight in zip(score_list, self.weights)]) / sum(self.weights)

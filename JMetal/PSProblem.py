@@ -18,7 +18,7 @@ from JMetal.JMetalUtils import into_PS
 from PSMetric.Atomicity import Atomicity
 from PSMetric.Linkage import Linkage
 from PSMetric.MeanFitness import MeanFitness
-from PSMetric.Metric import ManyMetrics
+from PSMetric.Metric import MultipleMetrics
 from PSMetric.Simplicity import Simplicity
 
 
@@ -26,9 +26,9 @@ class PSProblem(IntegerProblem):
     lower_bounds: list[int]
     upper_bounds: list[int]
 
-    many_metrics: ManyMetrics
+    many_metrics: MultipleMetrics
 
-    def __init__(self, benchmark_problem: BenchmarkProblem, many_metrics: ManyMetrics):
+    def __init__(self, benchmark_problem: BenchmarkProblem, many_metrics: MultipleMetrics):
         super(PSProblem, self).__init__()
 
         self.many_metrics = many_metrics
@@ -75,7 +75,7 @@ class PSProblem(IntegerProblem):
 
 
 class NormalisedObjectivePSProblem(PSProblem):
-    def __init__(self, benchmark_problem: BenchmarkProblem, many_metrics: ManyMetrics):
+    def __init__(self, benchmark_problem: BenchmarkProblem, many_metrics: MultipleMetrics):
         super().__init__(benchmark_problem, many_metrics)
 
     def number_of_objectives(self) -> int:
@@ -94,7 +94,7 @@ class NormalisedObjectivePSProblem(PSProblem):
 
 
 class SingleObjectivePSProblem(PSProblem):
-    def __init__(self, benchmark_problem: BenchmarkProblem, many_metrics: ManyMetrics):
+    def __init__(self, benchmark_problem: BenchmarkProblem, many_metrics: MultipleMetrics):
         super().__init__(benchmark_problem, many_metrics)
 
     def number_of_objectives(self) -> int:
@@ -169,7 +169,7 @@ def test_PSProblem(benchmark_problem: BenchmarkProblem,
                    save_to_files=False,
                    max_evaluations = 10000):
     if metrics is None:
-        metrics = ManyMetrics([Simplicity(), MeanFitness(), Linkage()])
+        metrics = MultipleMetrics([Simplicity(), MeanFitness(), Linkage()])
 
     if single_objective:
         problem = SingleObjectivePSProblem(benchmark_problem, metrics)
@@ -235,7 +235,7 @@ def test_MO_comprehensive(problem: BenchmarkProblem):
         for metrics in objective_combinations:
             test_PSProblem(problem,
                            which_mo_method=algorithm,
-                           metrics=ManyMetrics(metrics),
+                           metrics=MultipleMetrics(metrics),
                            normalised_objectives=True,
                            save_to_files=True,
                            max_evaluations=20000)

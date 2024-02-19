@@ -33,4 +33,4 @@ if __name__ == '__main__':
     #test_MO_comprehensive(problem)
     #print_separator()
     #print("Now testing with my own algorithm")
-    test_archive_miner(problem, efficient=True, show_each_generation=True)
+    test_archive_miner(problem, show_each_generation=True)

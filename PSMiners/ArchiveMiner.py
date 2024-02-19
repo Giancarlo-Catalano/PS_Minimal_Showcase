@@ -12,7 +12,7 @@ from PS import PS
 from PSMetric.Atomicity import Atomicity
 from PSMetric.Linkage import Linkage
 from PSMetric.MeanFitness import MeanFitness
-from PSMetric.Metric import ManyMetrics
+from PSMetric.Metric import MultipleMetrics
 from PSMetric.Simplicity import Simplicity
 from PSMiners.Individual import Individual, add_metrics, with_aggregated_scores, add_normalised_metrics, \
     with_average_score, with_product_score, partition_by_simplicity
@@ -25,7 +25,7 @@ import plotly.express as px
 
 class ArchiveMiner:
     population_size: int
-    many_metrics: ManyMetrics
+    metrics: MultipleMetrics
 
     current_population: list[Individual]
     archive: set[PS]
@@ -38,23 +38,26 @@ class ArchiveMiner:
     def __init__(self,
                  population_size: int,
                  pRef: PRef,
-                 metrics = None):
+                 metrics=None):
         self.search_space = pRef.search_space
         self.population_size = population_size
         if metrics is None:
-            self.many_metrics = ManyMetrics([Simplicity(), MeanFitness(), Linkage()])
+            self.metrics = MultipleMetrics([Simplicity(), MeanFitness(), Linkage()])
         else:
-            self.many_metrics = metrics
-        self.many_metrics.set_pRef(pRef)
+            self.metrics = metrics
+        self.metrics.set_pRef(pRef)
 
-        print(f"Initialised the ArchiveMiner with metrics {self.many_metrics.get_labels()}")
+        print(f"Initialised the ArchiveMiner with metrics {self.metrics.get_labels()}")
 
         self.current_population = self.calculate_metrics_and_aggregated_score(self.make_initial_population())
         self.archive = set()
 
-    def calculate_metrics_and_aggregated_score(self, population: list[Individual]):
-        to_return = add_normalised_metrics(population, self.many_metrics)
-        return with_average_score(to_return)
+    def calculate_metrics_and_aggregated_score(self, population: list[Individual]) -> list[Individual]:
+        for individual in population:
+            scores = self.metrics.get_scores(individual.ps)
+            individual.metric_scores = scores
+            individual.aggregated_score = self.metrics.get_aggregated_score(scores)
+        return population
 
     def make_initial_population(self) -> list[Individual]:
         """ basically takes the elite of the PRef, and converts them into PSs """
@@ -73,37 +76,6 @@ class ArchiveMiner:
     def top(evaluated_population: list[Individual], amount: int) -> list[Individual]:
         return heapq.nlargest(amount, evaluated_population, key=lambda x: x.aggregated_score)
 
-    def make_selection(self) -> list[PS]:
-        amount_of_select = ceil(self.population_size * self.selection_proportion)
-        if len(self.current_population) < amount_of_select:
-            return [individual.ps for individual in self.current_population]
-        else:
-            return [self.select_one() for _ in range(amount_of_select)]
-
-    def make_new_population_inefficient(self):
-        """Note how this relies on the current population being evaluated,
-        and how at the end it returns an evaluated population"""
-        selected = [self.select_one() for _ in range(ceil(self.population_size * self.selection_proportion))]
-        localities = [local for ps in selected
-                      for local in self.get_localities(ps)]
-        self.archive.update(selected)
-
-        # make a population with the current + localities
-        new_population = [i.ps for i in self.current_population] + localities
-
-        # remove selected individuals and those in the archive
-        new_population = [ps for ps in new_population if ps not in self.archive]
-
-        # remove duplicates
-        new_population = list(set(new_population))
-
-        # convert to individual and evaluate
-        new_population = [Individual(ps) for ps in new_population]
-        new_population = self.calculate_metrics_and_aggregated_score(new_population)
-
-        return self.top(new_population, self.population_size)
-
-
     def make_new_population_efficient(self):
         """Note how this relies on the current population being evaluated,
                 and how at the end it returns an evaluated population"""
@@ -113,7 +85,8 @@ class ArchiveMiner:
         self.archive.update(selected)
 
         # make a population with the current + localities
-        new_population = self.current_population + self.calculate_metrics_and_aggregated_score([Individual(ps) for ps in localities])
+        new_population = self.current_population + self.calculate_metrics_and_aggregated_score(
+            [Individual(ps) for ps in localities])
 
         # remove selected individuals and those in the archive
         new_population = [ind for ind in new_population if ind.ps not in self.archive]
@@ -122,16 +95,12 @@ class ArchiveMiner:
         new_population = list(set(new_population))
 
         # convert to individual and evaluate
-        #new_population = self.calculate_metrics_and_aggregated_score(new_population)
+        # new_population = self.calculate_metrics_and_aggregated_score(new_population)
 
         return self.top(new_population, self.population_size)
 
-    def make_new_population(self, efficient=True):
-        if efficient:
-            return self.make_new_population_efficient()
-        else:
-            return self.make_new_population_inefficient()
-
+    def make_new_population(self):
+        return self.make_new_population_efficient()
 
     def show_best_of_current_population(self, how_many: int):
         best = self.top(self.current_population, how_many)
@@ -140,8 +109,7 @@ class ArchiveMiner:
 
     def run(self,
             termination_criteria: TerminationCriteria,
-            efficient=True,
-            show_each_generation = False):
+            show_each_generation=False):
         iteration = 0
 
         def termination_criteria_met():
@@ -154,7 +122,7 @@ class ArchiveMiner:
                                             evaluated_population=self.current_population)  # TODO change this
 
         while not termination_criteria_met():
-            self.current_population = self.make_new_population(efficient)
+            self.current_population = self.make_new_population()
             if show_each_generation:
                 print(f"Population at iteration {iteration}, used_budget = {self.get_used_evaluations()}--------------")
                 self.show_best_of_current_population(12)
@@ -162,38 +130,36 @@ class ArchiveMiner:
 
         print(f"Execution terminated with {iteration = } and used_budget = {self.get_used_evaluations()}")
 
-    def get_results(self, quantity_returned = None) -> list[(PS, float)]:
+    def get_results(self, quantity_returned=None) -> list[(PS, float)]:
         if quantity_returned is None:
             quantity_returned = len(self.archive)
         evaluated_archive = self.calculate_metrics_and_aggregated_score([Individual(ps) for ps in self.archive])
         return self.top(evaluated_archive, quantity_returned)
 
     def get_used_evaluations(self) -> int:
-        return self.many_metrics.used_evaluations
+        return self.metrics.used_evaluations
 
 
-
-def show_plot_of_individuals(individuals: list[Individual], metrics: ManyMetrics):
+def show_plot_of_individuals(individuals: list[Individual], metrics: MultipleMetrics):
     labels = metrics.get_labels()
-    points = [i.metrics for i in individuals]
+    points = [i.metric_scores for i in individuals]
 
     df = DataFrame(data=points, columns=labels)
     fig = px.scatter_3d(df, x=labels[0], y=labels[1], z=labels[2])
     fig.show()
 
 
-
-def test_archive_miner(problem: BenchmarkProblem, efficient: bool, show_each_generation = True):
-    print(f"Testing the modified archive miner(Efficient = {efficient})")
+def test_archive_miner(problem: BenchmarkProblem, show_each_generation=True):
+    print(f"Testing the modified archive miner")
     pRef: PRef = problem.get_pRef(15000)
 
     budget_limit = EvaluationBudgetLimit(15000)
     # iteration_limit = TerminationCriteria.IterationLimit(12)
     # termination_criteria = TerminationCriteria.UnionOfCriteria(budget_limit, iteration_limit)
 
-    miner = ArchiveMiner(150, pRef, metrics=ManyMetrics([Simplicity(), MeanFitness(), Linkage()]))
+    miner = ArchiveMiner(150, pRef, metrics=MultipleMetrics([Simplicity(), MeanFitness(), Linkage()]))
 
-    miner.run(budget_limit, efficient=efficient, show_each_generation = show_each_generation)
+    miner.run(budget_limit, show_each_generation=show_each_generation)
 
     results = miner.get_results()
     print("The results of the archive miner are:")
@@ -202,11 +168,8 @@ def test_archive_miner(problem: BenchmarkProblem, efficient: bool, show_each_gen
 
     print(f"The used budget is {miner.get_used_evaluations()}")
 
-
     print("Displaying the plot")
-    show_plot_of_individuals(results, miner.many_metrics)
-
-
+    show_plot_of_individuals(results, miner.metrics)
 
     print("Partitioned by complexity, the PSs are")
     for fixed_count, pss in enumerate(partition_by_simplicity(results)):
@@ -215,14 +178,7 @@ def test_archive_miner(problem: BenchmarkProblem, efficient: bool, show_each_gen
             for individual in pss:
                 print(individual)
 
-
-
     print("The top 10 by mean fitness are")
-    sorted_by_mean_fitness = sorted(results, key=lambda i: i.metrics[1], reverse=True)
+    sorted_by_mean_fitness = sorted(results, key=lambda i: i.metric_scores[1], reverse=True)
     for individual in sorted_by_mean_fitness[:10]:
         print(individual)
-
-
-
-
-
