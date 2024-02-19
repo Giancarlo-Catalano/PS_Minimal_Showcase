@@ -1,10 +1,12 @@
 from typing import Optional
 
+import numpy as np
+
 
 class WorkDay:
     working: bool
-    start_time: Optional[int]
-    end_time: Optional[int]
+    start_time: Optional[int]   # ignored for now
+    end_time: Optional[int]     # ignored for now
 
 
     def __init__(self, working: bool, start_time: Optional[int], end_time: Optional[int]):
@@ -48,7 +50,42 @@ class RotaPattern:
 
     def get_rotated_by(self, starting_day: int):
         assert(starting_day < len(self.days))
-        return self.days[starting_day:]+self.days[:starting_day]
+        return RotaPattern(self.workweek_length, self.days[starting_day:]+self.days[:starting_day])
+
+    def as_bools(self) -> list[bool]:
+        return [day.working for day in self.days]
+
+    def working_days_in_calendar(self, calendar_length: int) -> np.ndarray:
+        result = []
+        as_bools = self.as_bools()
+        while len(result) < calendar_length:
+            result.extend(as_bools)
+
+        return np.array(result[:calendar_length])
+
+
+    def __len__(self):
+        return len(self.days)
+
+
+def get_workers_present_each_day_of_the_week(rotas: list[RotaPattern], calendar_length: int) -> np.ndarray:
+    all_rotas = np.array([rota.working_days_in_calendar(calendar_length) for rota in rotas])
+    workers_per_day = np.sum(all_rotas, axis=0, dtype=int)
+
+    return workers_per_day.reshape((-1, 7))
+
+
+def get_ranges(workers_per_weekday: np.ndarray):
+    maxs = np.max(workers_per_weekday, axis=0)
+    mins = np.min(workers_per_weekday, axis=0)
+
+    def range_score(min_amount, max_amount):
+        return (max_amount - min_amount) / max_amount
+
+    return sum(range_score(min_amount, max_amount) for min_amount, max_amount in range(mins, maxs))
+
+
+
 
 
 

@@ -55,3 +55,14 @@ def make_interactive_3d_plot(points, labels: list[str]):
     df = DataFrame(data=points, columns=labels)
     fig = px.scatter_3d(df, x=labels[0], y=labels[1], z=labels[2])
     fig.show()
+
+
+def break_list(input_list: list[Any], group_size: int) -> list[list[Any]]:
+    def start(which):
+        return group_size*which
+
+    def end(which):
+        return group_size*(which+1)
+
+
+    return [input_list[start(i):end(i)] for i in range(len(input_list) // group_size)]
