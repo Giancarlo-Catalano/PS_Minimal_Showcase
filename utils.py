@@ -1,5 +1,5 @@
 import itertools
-from typing import Any
+from typing import Any, Iterable
 
 import numpy as np
 from pandas import DataFrame
@@ -47,8 +47,7 @@ def remap_each_column_in_zero_one(input_matrix: np.ndarray) -> np.ndarray:
 
 def powerset(iterable):
     s = list(iterable)
-    return itertools.chain.from_iterable(itertools.combinations(s, r) for r in range(len(s)+1))
-
+    return itertools.chain.from_iterable(itertools.combinations(s, r) for r in range(len(s) + 1))
 
 
 def make_interactive_3d_plot(points, labels: list[str]):
@@ -59,10 +58,17 @@ def make_interactive_3d_plot(points, labels: list[str]):
 
 def break_list(input_list: list[Any], group_size: int) -> list[list[Any]]:
     def start(which):
-        return group_size*which
+        return group_size * which
 
     def end(which):
-        return group_size*(which+1)
-
+        return group_size * (which + 1)
 
     return [input_list[start(i):end(i)] for i in range(len(input_list) // group_size)]
+
+
+def join_lists(many_lists: Iterable[list]) -> list:
+    result = []
+    for sub_list in many_lists:
+        result.extend(sub_list)
+
+    return result

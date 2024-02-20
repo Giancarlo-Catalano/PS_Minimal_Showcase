@@ -1,4 +1,5 @@
 import utils
+from BenchmarkProblems.BT.BTProblem import BTProblem
 from BenchmarkProblems.RoyalRoad import RoyalRoad
 from BenchmarkProblems.RoyalRoadWithOverlaps import RoyalRoadWithOverlaps
 from BenchmarkProblems.Trapk import Trapk
@@ -29,7 +30,9 @@ def test_many_miners():
 
 
 if __name__ == '__main__':
-    problem = Trapk(5, 5)
+    problem = BTProblem.from_files(employee_data_file=r"C:\Users\gac8\PycharmProjects\PS\resources\BT\employeeData.csv",
+                                   rota_file=r"C:\Users\gac8\PycharmProjects\PS\resources\BT\roster_pattern_days.csv",
+                                   calendar_length=56)
     # problem = RoyalRoadWithOverlaps(4, 4, 15)
     # test_MO_comprehensive(problem)
     # print_separator()

@@ -30,7 +30,10 @@ class Novelty(Metric):
         if len(observations) == 0:
             return 1
 
-        expected_observations = np.product(self.normalised_pRef.search_space.cardinalities[ps.values != STAR])
+        expected_observations = self.pRef.sample_size
+        for value, cardinality in zip(ps.values, self.pRef.search_space.cardinalities):
+            if value != STAR:
+                expected_observations /= cardinality
 
         if len(observations) >= expected_observations:
             return 0

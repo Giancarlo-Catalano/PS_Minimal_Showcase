@@ -48,9 +48,14 @@ class RotaPattern:
 
         return ", ".join(map(repr_week, split_by_week))
 
-    def get_rotated_by(self, starting_day: int):
+    def with_starting_day(self, starting_day: int):
+        if (starting_day >= len(self.days)):
+            print("FUCK")
         assert(starting_day < len(self.days))
         return RotaPattern(self.workweek_length, self.days[starting_day:]+self.days[:starting_day])
+
+    def with_starting_week(self, starting_week: int):
+        return self.with_starting_day(starting_week * self.workweek_length)
 
     def as_bools(self) -> list[bool]:
         return [day.working for day in self.days]
@@ -75,14 +80,16 @@ def get_workers_present_each_day_of_the_week(rotas: list[RotaPattern], calendar_
     return workers_per_day.reshape((-1, 7))
 
 
-def get_ranges(workers_per_weekday: np.ndarray):
+def get_range_scores(workers_per_weekday: np.ndarray):
     maxs = np.max(workers_per_weekday, axis=0)
     mins = np.min(workers_per_weekday, axis=0)
 
     def range_score(min_amount, max_amount):
+        if max_amount == 0:
+            return 0
         return (max_amount - min_amount) / max_amount
 
-    return sum(range_score(min_amount, max_amount) for min_amount, max_amount in range(mins, maxs))
+    return [range_score(min_amount, max_amount) for min_amount, max_amount in zip(mins, maxs)]
 
 
 
