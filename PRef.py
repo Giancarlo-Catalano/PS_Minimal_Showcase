@@ -69,3 +69,8 @@ class PRef:
     @property
     def sample_size(self) -> int:
         return len(self.fitness_array)
+
+
+    def save_to_file(self, filename: str):
+        # TODO
+        pass

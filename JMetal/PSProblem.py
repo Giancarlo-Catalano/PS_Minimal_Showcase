@@ -108,7 +108,7 @@ class SingleObjectivePSProblem(PSProblem):
     def evaluate(self, solution: IntegerSolution) -> IntegerSolution:
         ps = into_PS(solution)
         scores = self.many_metrics.get_normalised_scores(ps)
-        solution.objectives[0] = -np.average(scores)
+        solution.objectives[0] = -self.many_metrics.get_aggregated_score(scores)
         return solution
 
     def name(self) -> str:
@@ -196,7 +196,7 @@ def test_PSProblem(benchmark_problem: BenchmarkProblem,
 
     algorithm = construct_MO_algorithm(which_mo_method, problem, max_evaluations)
 
-    print("Setup the algorithm, now we run it")
+    print("The metrics are ", metrics.get_labels())
 
     algorithm.run()
 
@@ -251,8 +251,8 @@ def test_MO_comprehensive(problem: BenchmarkProblem):
                            which_mo_method=algorithm,
                            metrics=MultipleMetrics(metrics),
                            normalised_objectives=True,
-                           save_to_files=False,
-                           max_evaluations=20000)
+                           save_to_files=True,
+                           max_evaluations=15000)
 
     print("Testing with a single objective")
     for algorithm in ["NSGAII", "GDE3"]:

@@ -85,7 +85,7 @@ def partition_by_simplicity(population: list[Individual]) -> list[list[Individua
         return []
 
     amount_of_variables = len(population[0].ps)
-    result = [[] for _ in range(amount_of_variables)]
+    result = [[] for _ in range(amount_of_variables+1)]
 
     for individual in population:
         amount_of_fixed_vars = individual.ps.fixed_count()

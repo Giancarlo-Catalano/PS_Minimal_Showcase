@@ -162,16 +162,16 @@ def test_archive_miner(problem: BenchmarkProblem,
         metrics = MultipleMetrics(metrics=[Simplicity(), MeanFitness(), Linkage()],
                                   weights=[1, 2, 1])
 
-    miner = ArchiveMiner(150,
+    miner = ArchiveMiner(200,
                          pRef,
                          metrics=metrics)
 
     miner.run(budget_limit, show_each_generation=show_each_generation)
 
     results = miner.get_results()
-    print("The results of the archive miner are:")
-    for individual in results:
-        print(f"{individual}")
+    # print("The results of the archive miner are:")
+    # for individual in results:
+    #     print(f"{individual}")
 
     print(f"The used budget is {miner.get_used_evaluations()}")
 
@@ -186,7 +186,7 @@ def test_archive_miner(problem: BenchmarkProblem,
             for individual in pss:
                 print(individual)
 
-    print("The top 10 by mean fitness are")
-    sorted_by_mean_fitness = sorted(results, key=lambda i: i.metric_scores[1], reverse=True)
-    for individual in sorted_by_mean_fitness[:10]:
+    print("The top 12 by mean fitness are")
+    sorted_by_mean_fitness = sorted(results, key=lambda i: i.aggregated_score, reverse=True)
+    for individual in sorted_by_mean_fitness[:12]:
         print(individual)
