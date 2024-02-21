@@ -162,7 +162,7 @@ def test_archive_miner(problem: BenchmarkProblem,
         metrics = MultipleMetrics(metrics=[Simplicity(), MeanFitness(), Linkage()],
                                   weights=[1, 2, 1])
 
-    miner = ArchiveMiner(200,
+    miner = ArchiveMiner(150,
                          pRef,
                          metrics=metrics)
 

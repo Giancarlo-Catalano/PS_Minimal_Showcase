@@ -117,4 +117,6 @@ class PS:
     def fixed_count(self) -> int:
         return int(np.sum(self.values != STAR, dtype=int))
 
+    def copy(self):
+        return PS(self.values)
 

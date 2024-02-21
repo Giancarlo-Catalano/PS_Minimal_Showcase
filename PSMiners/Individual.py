@@ -1,3 +1,4 @@
+import random
 from typing import TypeAlias, Optional
 
 import numpy as np
@@ -92,6 +93,11 @@ def partition_by_simplicity(population: list[Individual]) -> list[list[Individua
         result[amount_of_fixed_vars].append(individual)
 
     return result
+
+
+def tournament_select(individuals: list[Individual], tournament_size: int) -> Individual:
+    tournament_pool = random.choices(individuals, k=tournament_size)
+    return max(tournament_pool, key=lambda x: x.aggregated_score)
 
 
 
