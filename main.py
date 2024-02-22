@@ -3,6 +3,7 @@ from BenchmarkProblems.BT.BTProblem import BTProblem
 from BenchmarkProblems.RoyalRoad import RoyalRoad
 from BenchmarkProblems.RoyalRoadWithOverlaps import RoyalRoadWithOverlaps
 from BenchmarkProblems.Trapk import Trapk
+from EDA.Ouroboros import test_ouroboros
 from JMetal.PSProblem import test_MO, test_PSProblem, test_MO_comprehensive
 from PSMetric.Linkage import Linkage
 from PSMetric.MeanFitness import MeanFitness, ChanceOfGood
@@ -34,7 +35,7 @@ if __name__ == '__main__':
     # problem = BTProblem.from_files(employee_data_file=r"C:\Users\gac8\PycharmProjects\PS\resources\BT\employeeData.csv",
     #                               rota_file=r"C:\Users\gac8\PycharmProjects\PS\resources\BT\roster_pattern_days.csv",
     #                               calendar_length=56)
-    #problem = Trapk(5, 5)
+    problem = Trapk(5, 5)
     #test_MO_comprehensive(problem)
     # print_separator()
     # print("Now testing with my own algorithm")
@@ -51,4 +52,4 @@ if __name__ == '__main__':
     #                save_to_files=True,
     #                max_evaluations=15000)
 
-    test_pick_and_merge()
+    test_ouroboros(problem)
