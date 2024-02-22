@@ -14,7 +14,7 @@ from PSMetric.Novelty import Novelty
 from PSMiners.ArchiveMiner import ArchiveMiner
 from PickAndMerge.PickAndMerge import FSSampler
 from SearchSpace import SearchSpace
-from TerminationCriteria import EvaluationBudgetLimit
+from TerminationCriteria import EvaluationBudgetLimit, IterationLimit
 
 
 class EXEX(Metric):
@@ -81,13 +81,13 @@ class Ouroboros:
         self.model_size = model_size
 
     def calculate_model(self) -> Model:
-        budget_limit = EvaluationBudgetLimit(15000)
+        termination_criteria = IterationLimit(12)
 
-        miner = ArchiveMiner(150,
+        miner = ArchiveMiner(50,
                              self.current_pRef,
                              metrics=MultipleMetrics([self.exex_evaluator]))
 
-        miner.run(budget_limit, show_each_generation=False)
+        miner.run(termination_criteria, show_each_generation=False)
 
         return miner.get_results(quantity_returned=self.model_size)
 
@@ -111,7 +111,11 @@ class Ouroboros:
     def print_current_state(self):
         print(f"The pRef has {self.current_pRef.sample_size}, and the model is ")
         for item in self.current_model:
-            print(f"\t{item}")
+            mean_fitness = self.exex_evaluator.mean_fitness_evaluator.get_single_normalised_score(item.ps)
+            atomicity_fitness = self.exex_evaluator.atomicity_evaluator.get_single_normalised_score(item.ps)
+            novelty = self.exex_evaluator.novelty_evaluator.get_single_normalised_score(item.ps)
+
+            print(f"\t{item}, mf = {mean_fitness:.3f}, atomicity = {atomicity_fitness:.3f}, novelty = {novelty:.3f}")
 
     def run(self, show_every_generation=False):
         iteration = 0
@@ -133,8 +137,8 @@ def test_ouroboros(benchmark_problem: BenchmarkProblem):
     print("Initialising the EDA")
     eda = Ouroboros(benchmark_problem.search_space,
                     benchmark_problem.fitness_function,
-                    initial_sample_size=benchmark_problem.search_space.hot_encoded_length,
-                    increment_per_iteration=benchmark_problem.search_space.hot_encoded_length,
+                    initial_sample_size=1000,
+                    increment_per_iteration=1000,
                     model_size=20)
 
     eda.run(show_every_generation=True)

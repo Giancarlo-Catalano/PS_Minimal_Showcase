@@ -79,6 +79,6 @@ class PRef:
     def concat(cls, a, b):
         new_full_solutions = a.full_solutions + b.full_solutions
         new_fitness_array = np.concatenate((a.fitness_array, b.fitness_array))
-        new_full_solution_matrix = np.vstack(a.full_solution_matrix, b.full_solution_matrix)
+        new_full_solution_matrix = np.vstack((a.full_solution_matrix, b.full_solution_matrix))
 
         return cls(new_full_solutions, new_fitness_array, new_full_solution_matrix, a.search_space)

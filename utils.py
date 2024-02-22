@@ -80,4 +80,4 @@ def harmonic_mean(values: Iterable[float]) -> float:
         raise Exception("Trying to get the harmonic mean of no values!")
 
     sum_of_inverses = sum(value**(-1) for value in values)
-    return sum_of_inverses**(-1)
+    return (sum_of_inverses/len(sum_of_inverses))**(-1)
