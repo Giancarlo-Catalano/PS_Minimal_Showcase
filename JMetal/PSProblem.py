@@ -17,6 +17,8 @@ from pandas import DataFrame
 import utils
 from BenchmarkProblems.BenchmarkProblem import BenchmarkProblem
 from JMetal.JMetalUtils import into_PS
+from JMetal.PSOperator import SpecialisationMutation
+from PS import STAR
 from PSMetric.Atomicity import Atomicity
 from PSMetric.Linkage import Linkage
 from PSMetric.MeanFitness import MeanFitness
@@ -56,7 +58,7 @@ class PSProblem(IntegerProblem):
         solution.objectives = [-score for score in self.many_metrics.get_scores(ps)]
         return solution
 
-    def create_solution(self) -> IntegerSolution:
+    def create_random_solution(self) -> IntegerSolution:
         new_solution = IntegerSolution(
             lower_bound=self.lower_bound,
             upper_bound=self.upper_bound,
@@ -67,6 +69,21 @@ class PSProblem(IntegerProblem):
                                   for lower, upper in zip(self.lower_bound, self.upper_bound)]
 
         return new_solution
+
+
+    def create_empty_solution(self) -> IntegerSolution:
+        new_solution = IntegerSolution(
+            lower_bound=self.lower_bound,
+            upper_bound=self.upper_bound,
+            number_of_objectives=self.number_of_objectives(),
+            number_of_constraints=self.number_of_constraints())
+
+        new_solution.variables = [STAR for value in new_solution.lower_bound]
+        return new_solution
+
+
+    def create_solution(self) -> IntegerSolution:
+        return self.create_empty_solution()
 
     def name(self) -> str:
         return "PS search problem"
@@ -115,63 +132,47 @@ class SingleObjectivePSProblem(PSProblem):
         return "PS search problem (Normalised Single Objective)"
 
 
-def make_NSGAII(problem: PSProblem, max_evaluations: int):
-    return NSGAII(
-        problem=problem,
-        population_size=100,
-        offspring_population_size=100,
-        mutation=IntegerPolynomialMutation(probability=1 / problem.amount_of_parameters,
-                                           distribution_index=20),
-        crossover=IntegerSBXCrossover(probability=0.5, distribution_index=20),
-        termination_criterion=StoppingByEvaluations(max_evaluations=max_evaluations))
-
-
-def make_MOEAD(problem: PSProblem, max_evaluations: int):
-    return MOEAD(
-        problem=problem,
-        population_size=300,
-        crossover=DifferentialEvolutionCrossover(CR=0.5, F=0.5, K=0.5),
-        mutation=IntegerPolynomialMutation(probability=1.0 / problem.amount_of_parameters,
-                                           distribution_index=20),
-        aggregative_function=Tschebycheff(dimension=problem.number_of_objectives()),
-        neighbor_size=20,
-        neighbourhood_selection_probability=0.9,
-        max_number_of_replaced_solutions=2,
-        weight_files_path='resources/MOEAD_weights',
-        termination_criterion=StoppingByEvaluations(max_evaluations)
-    )
-
-
-def make_MOCELL(problem: PSProblem, max_evaluations: int):
-    return MOCell(
-        problem=problem,
-        population_size=100,
-        neighborhood=C9(10, 10),
-        archive=CrowdingDistanceArchive(100),
-        mutation=IntegerPolynomialMutation(probability=1 / problem.amount_of_parameters,
-                                           distribution_index=20),
-        crossover=IntegerSBXCrossover(probability=0.5, distribution_index=20),
-        termination_criterion=StoppingByEvaluations(max_evaluations=max_evaluations)
-    )
-
-
-def make_GDE3(problem: PSProblem, max_evaluations: int):
-    return GDE3(problem=problem,
-                population_size=100,
-                cr=0.5,
-                f=0.5,
-                termination_criterion=StoppingByEvaluations(max_evaluations))
-
-
-def construct_MO_algorithm(which: str, problem: PSProblem, max_evaluations: int):
+def construct_MO_algorithm(which: str,
+                           population_size: int,
+                           problem: PSProblem,
+                           termination_criterion,
+                           mutation_operator):
+    crossover_operator = IntegerSBXCrossover(probability=0.5, distribution_index=20)
     if which == "NSGAII":
-        return make_NSGAII(problem, max_evaluations)
+        return NSGAII(
+            problem=problem,
+            population_size=population_size,
+            offspring_population_size=population_size,
+            mutation=mutation_operator,
+            crossover=crossover_operator,
+            termination_criterion=termination_criterion)
     elif which == "MOEAD":
-        return make_MOEAD(problem, max_evaluations)
+        return MOEAD(
+            problem=problem,
+            population_size=population_size,
+            crossover=DifferentialEvolutionCrossover(CR=0.5, F=0.5, K=0.5),
+            mutation=mutation_operator,
+            aggregative_function=Tschebycheff(dimension=problem.number_of_objectives()),
+            neighbor_size=20,
+            neighbourhood_selection_probability=0.9,
+            max_number_of_replaced_solutions=2,
+            weight_files_path='resources/MOEAD_weights',
+            termination_criterion=termination_criterion)
     elif which == "MOCell":
-        return make_MOCELL(problem, max_evaluations)
+        return MOCell(
+            problem=problem,
+            population_size=population_size,
+            neighborhood=C9(10, 10),
+            archive=CrowdingDistanceArchive(100),
+            mutation=mutation_operator,
+            crossover=crossover_operator,
+            termination_criterion=termination_criterion)
     elif which == "GDE3":
-        return make_GDE3(problem, max_evaluations)
+        return GDE3(problem=problem,
+                    population_size=100,
+                    cr=0.5,
+                    f=0.5,
+                    termination_criterion=termination_criterion)
     else:
         raise Exception(f"The algorithm {which} was not recognised")
 
@@ -183,7 +184,7 @@ def test_PSProblem(benchmark_problem: BenchmarkProblem,
                    show_interactive_plot = False,
                    single_objective=False,
                    save_to_files=False,
-                   max_evaluations=10000):
+                   evaluation_budget=10000):
     if metrics is None:
         metrics = MultipleMetrics([Simplicity(), MeanFitness(), Linkage()])
 
@@ -194,7 +195,13 @@ def test_PSProblem(benchmark_problem: BenchmarkProblem,
     else:
         problem = PSProblem(benchmark_problem, metrics)
 
-    algorithm = construct_MO_algorithm(which_mo_method, problem, max_evaluations)
+    mutation_operator = SpecialisationMutation(probability=1/problem.amount_of_parameters)
+    termination_criterion = StoppingByEvaluations(evaluation_budget)
+    algorithm = construct_MO_algorithm(problem=problem,
+                                       which=which_mo_method,
+                                       population_size=150,
+                                       mutation_operator=mutation_operator,
+                                       termination_criterion=termination_criterion)
 
     print("The metrics are ", metrics.get_labels())
 
@@ -252,7 +259,7 @@ def test_MO_comprehensive(problem: BenchmarkProblem):
                            metrics=MultipleMetrics(metrics),
                            normalised_objectives=True,
                            save_to_files=True,
-                           max_evaluations=15000)
+                           evaluation_budget=15000)
 
     print("Testing with a single objective")
     for algorithm in ["NSGAII", "GDE3"]:
@@ -260,5 +267,5 @@ def test_MO_comprehensive(problem: BenchmarkProblem):
         test_PSProblem(problem,
                        which_mo_method=algorithm,
                        single_objective=True,
-                       max_evaluations=20000,
+                       evaluation_budget=15000,
                        save_to_files=False)

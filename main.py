@@ -33,13 +33,13 @@ if __name__ == '__main__':
     # problem = BTProblem.from_files(employee_data_file=r"C:\Users\gac8\PycharmProjects\PS\resources\BT\employeeData.csv",
     #                               rota_file=r"C:\Users\gac8\PycharmProjects\PS\resources\BT\roster_pattern_days.csv",
     #                               calendar_length=56)
-    problem = Trapk(3, 5)
-    #test_MO_comprehensive(problem)
+    problem = Trapk(5, 5)
+    test_MO_comprehensive(problem)
     # print_separator()
     # print("Now testing with my own algorithm")
 
-    metrics = MultipleMetrics([MeanFitness(), Linkage()], weights=[1, 1])
-    test_archive_miner(problem, show_each_generation=True, metrics=metrics, show_interactive_plot=False)
+    #metrics = MultipleMetrics([MeanFitness(), Linkage()], weights=[1, 1])
+    #test_archive_miner(problem, show_each_generation=True, metrics=metrics, show_interactive_plot=False)
 
     # test_PSProblem(problem,
     #                which_mo_method="NSGAII",
