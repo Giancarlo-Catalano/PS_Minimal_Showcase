@@ -72,3 +72,12 @@ def join_lists(many_lists: Iterable[list]) -> list:
         result.extend(sub_list)
 
     return result
+
+
+
+def harmonic_mean(values: Iterable[float]) -> float:
+    if len(values) == 0:
+        raise Exception("Trying to get the harmonic mean of no values!")
+
+    sum_of_inverses = sum(value**(-1) for value in values)
+    return sum_of_inverses**(-1)

@@ -10,6 +10,7 @@ from PSMetric.Metric import MultipleMetrics
 from PSMetric.Simplicity import Simplicity
 from PSMiners.ArchiveMiner import test_archive_miner
 from PSMiners.SelfAssembly import test_simple_hill_climber
+from PickAndMerge.PickAndMerge import test_pick_and_merge
 
 
 def print_separator():
@@ -33,8 +34,8 @@ if __name__ == '__main__':
     # problem = BTProblem.from_files(employee_data_file=r"C:\Users\gac8\PycharmProjects\PS\resources\BT\employeeData.csv",
     #                               rota_file=r"C:\Users\gac8\PycharmProjects\PS\resources\BT\roster_pattern_days.csv",
     #                               calendar_length=56)
-    problem = Trapk(5, 5)
-    test_MO_comprehensive(problem)
+    #problem = Trapk(5, 5)
+    #test_MO_comprehensive(problem)
     # print_separator()
     # print("Now testing with my own algorithm")
 
@@ -49,3 +50,5 @@ if __name__ == '__main__':
     #                single_objective=False,
     #                save_to_files=True,
     #                max_evaluations=15000)
+
+    test_pick_and_merge()

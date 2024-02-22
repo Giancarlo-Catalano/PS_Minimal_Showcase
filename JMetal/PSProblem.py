@@ -199,7 +199,7 @@ def test_PSProblem(benchmark_problem: BenchmarkProblem,
     termination_criterion = StoppingByEvaluations(evaluation_budget)
     algorithm = construct_MO_algorithm(problem=problem,
                                        which=which_mo_method,
-                                       population_size=150,
+                                       population_size=300,
                                        mutation_operator=mutation_operator,
                                        termination_criterion=termination_criterion)
 

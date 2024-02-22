@@ -22,8 +22,12 @@ class Individual:
         self.metric_scores = None
         self.aggregated_score = 0  # dummy value
     def __repr__(self):
-        metrics_string = ",".join(f"{m:.3f}" for m in self.metric_scores)
-        return f"{self.ps}, metrics = {metrics_string}, as = {self.aggregated_score:.3f}"
+
+        if self.metric_scores:
+            metrics_string = ",".join(f"{m:.3f}" for m in self.metric_scores)
+            return f"{self.ps}, metrics = {metrics_string}, as = {self.aggregated_score:.3f}"
+        else:
+            return f"{self.ps}, as = {self.aggregated_score:.3f}"
 
     def calculate_metrics(self, metrics: MultipleMetrics):
         self.metric_scores = np.array(metrics.get_scores(self.ps))

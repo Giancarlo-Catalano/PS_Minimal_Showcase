@@ -51,7 +51,7 @@ class PS:
         return PS(value_generator(cardinality) for cardinality in search_space.cardinalities)
 
     def is_fully_fixed(self) -> bool:
-        return np.all(self.values == STAR)
+        return np.all(self.values != STAR)
 
     def to_FS(self) -> FullSolution:
         return FullSolution(self.values)
