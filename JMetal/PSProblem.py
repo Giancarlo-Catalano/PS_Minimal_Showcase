@@ -17,7 +17,7 @@ from pandas import DataFrame
 import utils
 from BenchmarkProblems.BenchmarkProblem import BenchmarkProblem
 from JMetal.JMetalUtils import into_PS
-from JMetal.PSOperator import SpecialisationMutation
+from JMetal.PSOperator import SpecialisationMutation, BidirectionalMutation
 from PS import STAR
 from PSMetric.Atomicity import Atomicity
 from PSMetric.Linkage import Linkage
@@ -137,7 +137,7 @@ def construct_MO_algorithm(which: str,
                            problem: PSProblem,
                            termination_criterion,
                            mutation_operator):
-    crossover_operator = IntegerSBXCrossover(probability=0.5, distribution_index=20)
+    crossover_operator = IntegerSBXCrossover(probability=0, distribution_index=20)
     if which == "NSGAII":
         return NSGAII(
             problem=problem,
@@ -195,7 +195,8 @@ def test_PSProblem(benchmark_problem: BenchmarkProblem,
     else:
         problem = PSProblem(benchmark_problem, metrics)
 
-    mutation_operator = SpecialisationMutation(probability=1/problem.amount_of_parameters)
+    # mutation_operator = SpecialisationMutation(probability=1/problem.amount_of_parameters)
+    mutation_operator = BidirectionalMutation(probability = 1/problem.amount_of_parameters)
     termination_criterion = StoppingByEvaluations(evaluation_budget)
     algorithm = construct_MO_algorithm(problem=problem,
                                        which=which_mo_method,
@@ -266,6 +267,7 @@ def test_MO_comprehensive(problem: BenchmarkProblem):
         print(f"\n\nTesting with {algorithm}")
         test_PSProblem(problem,
                        which_mo_method=algorithm,
+                       metrics = MultipleMetrics([MeanFitness(), Linkage()]),
                        single_objective=True,
                        evaluation_budget=15000,
                        save_to_files=False)
