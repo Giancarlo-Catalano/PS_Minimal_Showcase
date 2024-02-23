@@ -29,6 +29,17 @@ class EvaluationBudgetLimit(TerminationCriteria):
         return kwargs["evaluations"] >= self.max_evaluations
 
 
+class AsLongAsWanted(TerminationCriteria):
+    def __init__(self):
+        super().__init__()
+
+    def __repr__(self):
+        return f"AsLongAsWanted"
+
+    def met(self, **kwargs):
+        return False
+
+
 class TimeLimit(TerminationCriteria):
     max_time: float
 

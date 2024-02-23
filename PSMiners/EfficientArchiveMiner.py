@@ -2,6 +2,7 @@ import heapq
 import random
 import warnings
 from math import ceil
+from typing import TypeAlias
 
 from pandas import DataFrame
 
@@ -17,24 +18,24 @@ from PSMetric.Simplicity import Simplicity
 from PSMiners.Individual import Individual, add_metrics, with_aggregated_scores, add_normalised_metrics, \
     with_average_score, with_product_score, partition_by_simplicity
 from SearchSpace import SearchSpace
-from TerminationCriteria import TerminationCriteria, EvaluationBudgetLimit
+from TerminationCriteria import TerminationCriteria, EvaluationBudgetLimit, AsLongAsWanted
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
 import plotly.express as px
 
 
-
 # performance issues:
 # eq, required by set
 
-
+Population: TypeAlias = set[Individual]
+Archive: TypeAlias = set[Individual]
 
 class EfficientArchiveMiner:
     population_size: int
     metrics: MultipleMetrics
 
-    current_population: list[Individual]
-    archive: set[PS]
+    current_population: Population
+    archive: set[Individual]
 
     selection_proportion = 0.3
     tournament_size = 3
@@ -55,58 +56,67 @@ class EfficientArchiveMiner:
 
         print(f"Initialised the ArchiveMiner with metrics {self.metrics.get_labels()}")
 
-        self.current_population = self.calculate_metrics_and_aggregated_score(self.make_initial_population())
+        self.current_population = self.evaluate(self.make_initial_population())
         self.archive = set()
 
-    def calculate_metrics_and_aggregated_score(self, population: list[Individual]) -> list[Individual]:
+    def evaluate(self, population: Population) -> Population:
         for individual in population:
             scores = self.metrics.get_normalised_scores(individual.ps)
             individual.metric_scores = scores
-            individual.aggregated_score = self.metrics.get_aggregated_score(scores)
+            individual.aggregated_score = scores[0] * scores[1]
         return population
 
-    def make_initial_population(self) -> list[Individual]:
+
+    def current_best_atomicity(self) -> float:
+        return max(self.current_population, key=lambda x: x.metric_scores[1]).metric_scores[1]
+
+    def make_initial_population(self) -> Population:
         """ basically takes the elite of the PRef, and converts them into PSs """
         """this is called get_init in the paper"""
-        return [Individual(PS.empty(self.search_space))]
+        return {Individual(PS.empty(self.search_space))}
 
-    def get_localities(self, ps: PS) -> list[PS]:
-        return ps.specialisations(self.search_space)
+    def get_localities(self, individual: Individual) -> list[Individual]:
+        return [Individual(ps) for ps in individual.ps.specialisations(self.search_space)]
 
-    def select_one(self) -> PS:
-        tournament_pool = random.choices(self.current_population, k=self.tournament_size)
+    def select_one(self) -> Individual:
+        tournament_pool = random.choices(self.current_population, k=self.tournament_size)  # TODO
         winning_individual = max(tournament_pool, key=lambda x: x.aggregated_score)
-        return winning_individual.ps
+        return winning_individual
 
     @staticmethod
-    def top(evaluated_population: list[Individual], amount: int) -> list[Individual]:
+    def top(evaluated_population: Population, amount: int) -> list[Individual]:
         return heapq.nlargest(amount, evaluated_population, key=lambda x: x.aggregated_score)
 
-    def make_new_population_efficient(self):
+
+    def select_from_current_population(self) -> list[Individual]:
+        population_as_list = list(self.current_population)
+
+        def select_one():
+            tournament_pool = random.choices(population_as_list, k=self.tournament_size)
+            winning_individual = max(tournament_pool, key=lambda x: x.aggregated_score)
+            return winning_individual
+
+        amount_to_select = ceil(self.population_size * self.selection_proportion)
+        return [select_one() for _ in range(amount_to_select)]
+
+    def update_population(self):
         """Note how this relies on the current population being evaluated,
                 and how at the end it returns an evaluated population"""
-        selected = [self.select_one() for _ in range(ceil(self.population_size * self.selection_proportion))]
-        localities = [local for ps in selected
-                      for local in self.get_localities(ps)]
-        self.archive.update(selected)
+        # select and add to archive, so that they won't appear in the population again
+        selected_individuals = self.select_from_current_population()
+        self.archive.update(selected_individuals)
 
-        # make a population with the current + localities
-        new_population = self.current_population + self.calculate_metrics_and_aggregated_score(
-            [Individual(ps) for ps in localities])
+        # get the neighbourhoods of those selected individuals, add them to the population
+        localities = {local for selected_single in selected_individuals
+                            for local in self.get_localities(selected_single)}
+        localities = self.evaluate(localities)
 
-        # remove selected individuals and those in the archive
-        new_population = [ind for ind in new_population if ind.ps not in self.archive]
+        self.current_population.update(localities)
 
-        # remove duplicates
-        new_population = list(set(new_population))
+        # remove unwanted individuals from the population
+        self.current_population.difference_update(self.archive)
 
-        # convert to individual and evaluate
-        # new_population = self.calculate_metrics_and_aggregated_score(new_population)
-
-        return self.top(new_population, self.population_size)
-
-    def make_new_population(self):
-        return self.make_new_population_efficient()
+        self.current_population = set(self.top(self.current_population, self.population_size))
 
     def show_best_of_current_population(self, how_many: int):
         best = self.top(self.current_population, how_many)
@@ -123,12 +133,16 @@ class EfficientArchiveMiner:
                 warnings.warn("The run is ending because the population is empty!!!")
                 return True
 
+            if iteration > 3 and self.current_best_atomicity() < 0.5:
+                print("Terminating because the current best atomicity is less than 0.5")
+                return True
+
             return termination_criteria.met(iterations=iteration,
                                             evaluations=self.get_used_evaluations(),
                                             evaluated_population=self.current_population)  # TODO change this
 
         while not termination_criteria_met():
-            self.current_population = self.make_new_population()
+            self.update_population()
             if show_each_generation:
                 print(f"Population at iteration {iteration}, used_budget = {self.get_used_evaluations()}--------------")
                 self.show_best_of_current_population(12)
@@ -136,11 +150,10 @@ class EfficientArchiveMiner:
 
         print(f"Execution terminated with {iteration = } and used_budget = {self.get_used_evaluations()}")
 
-    def get_results(self, quantity_returned=None) -> list[(PS, float)]:
+    def get_results(self, quantity_returned=None) -> list[Individual]:
         if quantity_returned is None:
             quantity_returned = len(self.archive)
-        evaluated_archive = self.calculate_metrics_and_aggregated_score([Individual(ps) for ps in self.archive])
-        return self.top(evaluated_archive, quantity_returned)
+        return list(self.top(self.archive, quantity_returned))
 
     def get_used_evaluations(self) -> int:
         return self.metrics.used_evaluations
@@ -153,14 +166,14 @@ def show_plot_of_individuals(individuals: list[Individual], metrics: MultipleMet
     utils.make_interactive_3d_plot(points, labels)
 
 
-def test_archive_miner(problem: BenchmarkProblem,
+def test_efficient_archive_miner(problem: BenchmarkProblem,
                        show_each_generation=True,
-                       show_interactive_plot = False,
+                       show_interactive_plot=False,
                        metrics=None):
     print(f"Testing the modified archive miner")
     pRef: PRef = problem.get_pRef(15000)
 
-    budget_limit = EvaluationBudgetLimit(15000)
+    budget_limit = AsLongAsWanted()
     # iteration_limit = TerminationCriteria.IterationLimit(12)
     # termination_criteria = TerminationCriteria.UnionOfCriteria(budget_limit, iteration_limit)
 
@@ -168,9 +181,9 @@ def test_archive_miner(problem: BenchmarkProblem,
         metrics = MultipleMetrics(metrics=[Simplicity(), MeanFitness(), Linkage()],
                                   weights=[1, 2, 1])
 
-    miner = ArchiveMiner(150,
-                         pRef,
-                         metrics=metrics)
+    miner = EfficientArchiveMiner(150,
+                                  pRef,
+                                  metrics=metrics)
 
     miner.run(budget_limit, show_each_generation=show_each_generation)
 
@@ -185,12 +198,12 @@ def test_archive_miner(problem: BenchmarkProblem,
         print("Displaying the plot")
         show_plot_of_individuals(results, miner.metrics)
 
-    print("Partitioned by complexity, the PSs are")
-    for fixed_count, pss in enumerate(partition_by_simplicity(results)):
-        if len(pss) > 0:
-            print(f"With {fixed_count} fixed vars: --------")
-            for individual in pss:
-                print(individual)
+    # print("Partitioned by complexity, the PSs are")
+    # for fixed_count, pss in enumerate(partition_by_simplicity(results)):
+    #     if len(pss) > 0:
+    #         print(f"With {fixed_count} fixed vars: --------")
+    #         for individual in pss:
+    #             print(individual)
 
     print("The top 12 by mean fitness are")
     sorted_by_mean_fitness = sorted(results, key=lambda i: i.aggregated_score, reverse=True)
