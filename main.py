@@ -13,6 +13,7 @@ from PSMetric.Simplicity import Simplicity
 from PSMiners.ArchiveMiner import test_archive_miner
 from PSMiners.EfficientArchiveMiner import test_efficient_archive_miner
 from PSMiners.SelfAssembly import test_simple_hill_climber
+from PSMiners.ThirdArchiveMiner import test_third_archive_miner
 from PickAndMerge.PickAndMerge import test_pick_and_merge
 
 
@@ -43,7 +44,7 @@ if __name__ == '__main__':
     # print("Now testing with my own algorithm")
 
     metrics = MultipleMetrics([MeanFitness(), Linkage()], weights=[1, 1])
-    # test_efficient_archive_miner(problem, show_each_generation=True, metrics=metrics, show_interactive_plot=False)
+    test_third_archive_miner(problem, show_each_generation=True)
     # test_ouroboros(problem)
 
-    test_single_objective_search(problem)
+    # test_single_objective_search(problem, evaluation_budget=15000)
