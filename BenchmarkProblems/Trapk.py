@@ -2,6 +2,7 @@ import numpy as np
 
 from BenchmarkProblems.BenchmarkProblem import BenchmarkProblem
 from FullSolution import FullSolution
+from PS import PS, STAR
 from SearchSpace import SearchSpace
 
 
@@ -30,3 +31,13 @@ class Trapk(BenchmarkProblem):
         values = values.reshape((-1, self.size_of_cliques))
         unities = np.sum(values, axis=1)
         return sum(map(self.unitary_fitness_function, unities))
+
+
+    def get_targets(self) -> list[PS]:
+        def with_group_activated(which: int):
+            group_start = which * self.size_of_cliques
+            group_end = group_start + self.size_of_cliques
+            return PS([1 if group_start <= var < group_end else STAR
+                       for var in range(self.search_space.amount_of_parameters)])
+
+        return [with_group_activated(which) for which in range(self.amount_of_cliques)]

@@ -33,3 +33,6 @@ class BenchmarkProblem:
 
     def fitness_function(self, fs: FullSolution) -> float:
         raise Exception("An implementation of BenchmarkProblem does not implement the fitness function!!!")
+
+    def get_targets(self) -> list[PS]:
+        raise Exception("An implementation of BenchmarkProblem does not implement get_targets")

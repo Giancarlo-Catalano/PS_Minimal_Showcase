@@ -12,9 +12,11 @@ from PSMetric.Metric import MultipleMetrics
 from PSMetric.Simplicity import Simplicity
 from PSMiners.ArchiveMiner import test_archive_miner
 from PSMiners.EfficientArchiveMiner import test_efficient_archive_miner
+from PSMiners.FourthMiner import test_fourth_archive_miner
 from PSMiners.SelfAssembly import test_simple_hill_climber
 from PSMiners.ThirdArchiveMiner import test_third_archive_miner
 from PickAndMerge.PickAndMerge import test_pick_and_merge
+from PyGAD.Testing import test_pygad, test_pygad_on_benchmark_problem
 
 
 def print_separator():
@@ -43,8 +45,10 @@ if __name__ == '__main__':
     # print_separator()
     # print("Now testing with my own algorithm")
 
-    metrics = MultipleMetrics([MeanFitness(), Linkage()], weights=[1, 1])
-    test_third_archive_miner(problem, show_each_generation=True)
+    #metrics = MultipleMetrics([MeanFitness(), Linkage()], weights=[1, 1])
+    test_fourth_archive_miner(problem, show_each_generation=True)
     # test_ouroboros(problem)
 
     # test_single_objective_search(problem, evaluation_budget=15000)
+
+    #test_pygad_on_benchmark_problem(problem)

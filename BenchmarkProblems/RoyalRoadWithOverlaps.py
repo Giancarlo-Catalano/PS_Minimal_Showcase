@@ -54,3 +54,7 @@ class RoyalRoadWithOverlaps(BenchmarkProblem):
 
     def fitness_function(self, fs: FullSolution) -> float:
         return float(len([ps for ps in self.target_pss if ps.present_in(fs)]))
+
+
+    def get_targets(self) -> list[PS]:
+        return list(self.target_pss)

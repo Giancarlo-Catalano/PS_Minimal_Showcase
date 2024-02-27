@@ -1,5 +1,6 @@
 from BenchmarkProblems.BenchmarkProblem import BenchmarkProblem
 from FullSolution import FullSolution
+from PS import PS
 from SearchSpace import SearchSpace
 
 
@@ -18,3 +19,9 @@ class BinVal(BenchmarkProblem):
             result += header*value
             header *= 2
         return float(result)
+
+
+    def get_targets(self) -> list[PS]:
+        empty = PS.empty(self.search_space)
+        return [empty.with_fixed_value(variable_position=var, fixed_value=1) for var in range(self.amount_of_bits)]
+
