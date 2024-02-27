@@ -1,4 +1,5 @@
 import random
+from typing import Callable
 
 import numpy as np
 import pygad
@@ -69,7 +70,8 @@ def continuous_to_ps(values) -> PS:
     return PS(np.array([round(n) for n in values]))
 
 
-def get_benchmark_problem_PS_fitness_function(benchmark_problem: BenchmarkProblem, sample_count: int):
+def get_benchmark_problem_PS_fitness_function_and_metrics(benchmark_problem: BenchmarkProblem,
+                                                          sample_count: int) -> (Callable, MultipleMetrics):
     pRef = benchmark_problem.get_pRef(sample_count)
     metrics = MultipleMetrics([MeanFitness(), Linkage()])
 
@@ -79,7 +81,7 @@ def get_benchmark_problem_PS_fitness_function(benchmark_problem: BenchmarkProble
         metric_scores = metrics.get_normalised_scores(PS(values))
         return (metric_scores[0] + metric_scores[1]) / 2
 
-    return fitness_func
+    return fitness_func, metrics
 
 
 def get_gene_space_from_benchmark_problem(benchmark_problem: BenchmarkProblem):
@@ -150,7 +152,19 @@ def get_initial_population_for_benchmark_problem(benchmark_problem: BenchmarkPro
 
 
 def test_pygad_on_benchmark_problem(benchmark_problem: BenchmarkProblem):
-    fitness_function = get_benchmark_problem_PS_fitness_function(benchmark_problem, 10000)
+    fitness_function, metrics = get_benchmark_problem_PS_fitness_function_and_metrics(benchmark_problem,
+                                                                                      10000)
+
+    def stop_when_exceeding_evaluatons(amount_of_evaluations: int):
+        """Creates a closure to constructs the termination function"""
+        def stopping_criterion(ga_instance):
+            if metrics.used_evaluations >= amount_of_evaluations:
+                return "stop"
+            else:
+                print(f"Used {metrics.used_evaluations} evaluations")
+                return None
+        return stopping_criterion
+
     num_generations = 50
     num_parents_mating = 4
 
@@ -168,12 +182,10 @@ def test_pygad_on_benchmark_problem(benchmark_problem: BenchmarkProblem):
     gene_space = get_gene_space_from_benchmark_problem(benchmark_problem)
     initial_population = get_initial_population_for_benchmark_problem(benchmark_problem,
                                                                       include_empty=True,
-                                                                      from_random_uniform=49,
+                                                                      from_random_uniform=0,
                                                                       from_random_geometric=50,
-                                                                      from_random_half_fixed=50,
-                                                                      include_targets=True)
-
-    the_population = [PS(values) for values in initial_population]
+                                                                      from_random_half_fixed=0,
+                                                                      include_targets=False)
 
     print("Constructing the ga instance")
 
@@ -189,7 +201,9 @@ def test_pygad_on_benchmark_problem(benchmark_problem: BenchmarkProblem):
                            mutation_type=mutation_type,
                            mutation_percent_genes=mutation_percent_genes,
                            gene_type=int,
-                           gene_space=gene_space)
+                           gene_space=gene_space,
+                           on_generation=stop_when_exceeding_evaluatons(15000),
+                           stop_criteria="saturate_120")
 
     print("Running the GA")
     ga_instance.run()

@@ -7,11 +7,13 @@ from BenchmarkProblems.BenchmarkProblem import BenchmarkProblem
 from FullSolution import FullSolution
 from PRef import PRef
 from PS import PS
+from PSMetric.Averager import Averager
 from PSMetric.Linkage import Linkage
 from PSMetric.MeanFitness import MeanFitness
 from PSMetric.Metric import Metric, MultipleMetrics
 from PSMetric.Novelty import Novelty
 from PSMiners.ArchiveMiner import ArchiveMiner
+from PSMiners.FourthMiner import FourthMiner
 from PickAndMerge.PickAndMerge import FSSampler
 from SearchSpace import SearchSpace
 from TerminationCriteria import EvaluationBudgetLimit, IterationLimit
@@ -44,9 +46,7 @@ class EXEX(Metric):
         exploitation = (mean_fitness + atomicity) / 2.0
         return max(exploitation, novelty)
 
-
 Model: TypeAlias = list[Individual]
-
 
 class Ouroboros:
     search_space: SearchSpace
@@ -55,7 +55,8 @@ class Ouroboros:
     current_pRef: PRef
     current_model: list[Individual]
 
-    exex_evaluator: EXEX
+    exploitative_evaluator: Averager
+    explorative_evaluator: Novelty
 
     increment_per_iteration: int
     model_size: int
@@ -73,8 +74,10 @@ class Ouroboros:
                                                           fitness_function=self.fitness_function,
                                                           amount_of_samples=initial_sample_size)
         self.fs_evaluations = self.current_pRef.sample_size
-        self.exex_evaluator = EXEX()
-        self.exex_evaluator.set_pRef(self.current_pRef)
+        self.exploitative_evaluator = Averager([MeanFitness(), Linkage()])
+        self.exploitative_evaluator.set_pRef(self.current_pRef)
+        self.explorative_evaluator = Novelty()
+        self.explorative_evaluator.set_pRef(self.current_pRef)
         self.increment_per_iteration = increment_per_iteration
         self.current_model = []
 
@@ -83,13 +86,23 @@ class Ouroboros:
     def calculate_model(self) -> Model:
         termination_criteria = IterationLimit(12)
 
-        miner = ArchiveMiner(50,
-                             self.current_pRef,
-                             metrics=MultipleMetrics([self.exex_evaluator]))
+        exploitation_miner = FourthMiner(population_size=150,
+                                         pRef=self.current_pRef,
+                                         offspring_population_size=450,
+                                         metric = Averager([MeanFitness(), Linkage()]))
 
-        miner.run(termination_criteria, show_each_generation=False)
+        exploitation_miner.run(termination_criteria)
 
-        return miner.get_results(quantity_returned=self.model_size)
+        exploration_miner = FourthMiner(population_size=150,
+                                        pRef=self.current_pRef,
+                                        offspring_population_size=450,
+                                        metric = self.explorative_evaluator)
+
+        exploration_miner.run(termination_criteria)
+
+        exploitative_model = exploitation_miner.get_results(quantity_returned=self.model_size)
+        explorative_model = exploration_miner.get_results(quantity_returned=self.model_size)
+        return exploitative_model + explorative_model
 
     def get_extended_pRef(self) -> PRef:
         sampler = FSSampler(self.search_space,
@@ -106,14 +119,14 @@ class Ouroboros:
     def step(self):
         self.current_model = self.calculate_model()
         self.current_pRef = self.get_extended_pRef()
-        self.exex_evaluator.set_pRef(self.current_pRef)
+        self.exploitative_evaluator.set_pRef(self.current_pRef)
+        self.explorative_evaluator.set_pRef(self.current_pRef)
 
     def print_current_state(self):
         print(f"The pRef has {self.current_pRef.sample_size}, and the model is ")
         for item in self.current_model:
-            mean_fitness = self.exex_evaluator.mean_fitness_evaluator.get_single_normalised_score(item.ps)
-            atomicity_fitness = self.exex_evaluator.atomicity_evaluator.get_single_normalised_score(item.ps)
-            novelty = self.exex_evaluator.novelty_evaluator.get_single_normalised_score(item.ps)
+            mean_fitness, atomicity_fitness = self.exploitative_evaluator.get_normalised_scores(item.ps)
+            novelty = self.explorative_evaluator.get_single_normalised_score(item.ps)
 
             print(f"\t{item}, mf = {mean_fitness:.3f}, atomicity = {atomicity_fitness:.3f}, novelty = {novelty:.3f}")
 
@@ -142,7 +155,6 @@ def test_ouroboros(benchmark_problem: BenchmarkProblem):
                     model_size=20)
 
     eda.run(show_every_generation=True)
-
 
     print("The final model is ")
     for individual in eda.current_model:

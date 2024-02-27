@@ -46,8 +46,8 @@ if __name__ == '__main__':
     # print("Now testing with my own algorithm")
 
     #metrics = MultipleMetrics([MeanFitness(), Linkage()], weights=[1, 1])
-    test_fourth_archive_miner(problem, show_each_generation=True)
-    # test_ouroboros(problem)
+    # test_fourth_archive_miner(problem, show_each_generation=True)
+    test_ouroboros(problem)
 
     # test_single_objective_search(problem, evaluation_budget=15000)
 

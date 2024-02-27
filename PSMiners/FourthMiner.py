@@ -11,9 +11,11 @@ from BenchmarkProblems.BenchmarkProblem import BenchmarkProblem
 from PRef import PRef
 from PS import PS
 from PSMetric.Atomicity import Atomicity
+from PSMetric.Averager import Averager
 from PSMetric.Linkage import Linkage
 from PSMetric.MeanFitness import MeanFitness
-from PSMetric.Metric import MultipleMetrics
+from PSMetric.Metric import MultipleMetrics, Metric
+from PSMetric.SecondLinkage import SecondLinkage
 from PSMetric.Simplicity import Simplicity
 from PSMiners.Individual import Individual, add_metrics, with_aggregated_scores, add_normalised_metrics, \
     with_average_score, with_product_score, partition_by_simplicity
@@ -37,30 +39,31 @@ class FourthMiner:
 
     current_population: list[Individual]
     archive: set[Individual]
+    metric: Metric
 
     search_space: SearchSpace
+    used_evaluations: int
 
     def __init__(self,
                  population_size: int,
                  offspring_population_size: int,
+                 metric: Metric,
                  pRef: PRef):
-        self.metrics = MultipleMetrics([MeanFitness(), Linkage()], weights=[2, 1])
-        self.metrics.set_pRef(pRef)
+        self.metric = metric
+        self.used_evaluations = 0
+        self.metric.set_pRef(pRef)
         self.search_space = pRef.search_space
         self.population_size = population_size
         self.offspring_population_size = offspring_population_size
         self.current_population = self.get_initial_population()
         self.archive = set()
 
+
     def evaluate(self, population: Population) -> Population:
         for individual in population:
-            scores = self.metrics.get_normalised_scores(individual.ps)
-            individual.metric_scores = scores
-            individual.aggregated_score = (scores[0] + scores[1]) / 2
+            individual.aggregated_score = self.metric.get_single_normalised_score(individual.ps)
+            self.used_evaluations += len(population)
         return population
-
-    def current_best_atomicity(self) -> float:
-        return max(self.current_population, key=lambda x: x.metric_scores[1]).metric_scores[1]
 
     def get_initial_population(self) -> Population:
         """ basically takes the elite of the PRef, and converts them into PSs """
@@ -89,6 +92,7 @@ class FourthMiner:
                 self.archive.add(selected)
                 offspring.update(self.get_localities(selected))
 
+
         self.current_population = list(remaining_population)
         self.current_population.extend(self.evaluate(list(offspring)))
         self.current_population = self.top(self.population_size)
@@ -110,11 +114,6 @@ class FourthMiner:
                 warnings.warn("The run is ending because the population is empty!!!")
                 return True
 
-            """ This is the new rule: if the atomicity dips below 0.5, it means that the population is irremediably bad"""
-            if iteration > 3 and self.current_best_atomicity() < 0.5:
-                print("Terminating because the current best atomicity is less than 0.5")
-                return True
-
             return termination_criteria.met(iterations=iteration,
                                             evaluations=self.get_used_evaluations(),
                                             evaluated_population=self.current_population)  # TODO change this
@@ -134,7 +133,7 @@ class FourthMiner:
         return heapq.nlargest(quantity_returned, self.archive, key=lambda x: x.aggregated_score)
 
     def get_used_evaluations(self) -> int:
-        return self.metrics.used_evaluations
+        return self.used_evaluations
 
 
 def show_plot_of_individuals(individuals: list[Individual], metrics: MultipleMetrics):
@@ -154,8 +153,9 @@ def test_fourth_archive_miner(problem: BenchmarkProblem,
     # termination_criteria = TerminationCriteria.UnionOfCriteria(budget_limit, iteration_limit)
 
     miner = FourthMiner(150,
-                        offspring_population_size=500,
-                        pRef=pRef)
+                        offspring_population_size=300,
+                        pRef=pRef,
+                        metric = Averager([MeanFitness(), Linkage()]))
 
     miner.run(budget_limit, show_each_generation=show_each_generation)
 
