@@ -2,6 +2,7 @@ import random
 
 import numpy as np
 from jmetal.algorithm.multiobjective import NSGAII, MOEAD, MOCell, GDE3
+from jmetal.algorithm.multiobjective.nsgaiii import NSGAIII, UniformReferenceDirectionFactory
 from jmetal.core.problem import IntegerProblem
 from jmetal.core.solution import IntegerSolution
 from jmetal.lab.visualization import Plot
@@ -70,7 +71,6 @@ class PSProblem(IntegerProblem):
 
         return new_solution
 
-
     def create_empty_solution(self) -> IntegerSolution:
         new_solution = IntegerSolution(
             lower_bound=self.lower_bound,
@@ -80,7 +80,6 @@ class PSProblem(IntegerProblem):
 
         new_solution.variables = [STAR for value in new_solution.lower_bound]
         return new_solution
-
 
     def create_solution(self) -> IntegerSolution:
         return self.create_empty_solution()
@@ -142,9 +141,19 @@ def construct_MO_algorithm(which: str,
         return NSGAII(
             problem=problem,
             population_size=population_size,
-            offspring_population_size=population_size,
+            offspring_population_size=population_size * 10,
             mutation=mutation_operator,
             crossover=crossover_operator,
+            termination_criterion=termination_criterion)
+    if which == "NSGAIII":
+        reference_directions = UniformReferenceDirectionFactory(n_dim=problem.number_of_objectives(),
+                                                                n_points=30)
+        return NSGAIII(
+            reference_directions=reference_directions,
+            problem=problem,
+            mutation=mutation_operator,
+            crossover=crossover_operator,
+            population_size=population_size,
             termination_criterion=termination_criterion)
     elif which == "MOEAD":
         return MOEAD(
@@ -181,7 +190,7 @@ def test_PSProblem(benchmark_problem: BenchmarkProblem,
                    which_mo_method: str,
                    metrics=None,
                    normalised_objectives=True,
-                   show_interactive_plot = False,
+                   show_interactive_plot=False,
                    single_objective=False,
                    save_to_files=False,
                    evaluation_budget=10000):
@@ -196,7 +205,7 @@ def test_PSProblem(benchmark_problem: BenchmarkProblem,
         problem = PSProblem(benchmark_problem, metrics)
 
     # mutation_operator = SpecialisationMutation(probability=1/problem.amount_of_parameters)
-    mutation_operator = BidirectionalMutation(probability = 1/problem.amount_of_parameters)
+    mutation_operator = SpecialisationMutation(probability=1 / problem.amount_of_parameters)
     termination_criterion = StoppingByEvaluations(evaluation_budget)
     algorithm = construct_MO_algorithm(problem=problem,
                                        which=which_mo_method,
@@ -210,28 +219,30 @@ def test_PSProblem(benchmark_problem: BenchmarkProblem,
 
     print("The algorithm has stopped, the results are")
 
-    front = get_non_dominated_solutions(algorithm.get_result())
+    results = algorithm.get_result()
 
-    for item in front:
+    metric_labels = metrics.get_labels()
+    for item in results:
         ps = into_PS(item)
-        print(f"{ps}, {item.objectives}")
+        objectives = item.objectives
+        objectives_string = ", ".join(f"{metric_str} = {-value:.3f}" for metric_str, value in zip(metric_labels, objectives))
+        print(f"{ps}, {objectives_string}")
 
     # save to files
 
     if save_to_files:
         metric_labels = problem.many_metrics.get_labels()
         filename = f"resources\images\{which_mo_method}_{benchmark_problem}(" + "+".join(metric_labels) + ")"
-        print_function_values_to_file(front, filename)
-        print_variables_to_file(front, filename)
+        print_function_values_to_file(results, filename)
+        print_variables_to_file(results, filename)
 
         # plot
         plot_front = Plot(title='Pareto front approximation', axis_labels=metric_labels)
-        plot_front.plot(front, label=filename, filename=filename, format='png')
-
+        plot_front.plot(results, label=filename, filename=filename, format='png')
 
     if show_interactive_plot:
         labels = metrics.get_labels()
-        points = [i.objectives for i in front]
+        points = [i.objectives for i in results]
         points = [[-value for value in coords] for coords in points]
 
         utils.make_interactive_3d_plot(points, labels)
@@ -267,7 +278,7 @@ def test_MO_comprehensive(problem: BenchmarkProblem):
         print(f"\n\nTesting with {algorithm}")
         test_PSProblem(problem,
                        which_mo_method=algorithm,
-                       metrics = MultipleMetrics([MeanFitness(), Linkage()]),
+                       metrics=MultipleMetrics([MeanFitness(), Linkage()]),
                        single_objective=True,
                        evaluation_budget=15000,
                        save_to_files=False)

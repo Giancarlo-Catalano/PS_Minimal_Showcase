@@ -62,7 +62,7 @@ class FourthMiner:
     def evaluate(self, population: Population) -> Population:
         for individual in population:
             individual.aggregated_score = self.metric.get_single_normalised_score(individual.ps)
-            self.used_evaluations += len(population)
+        self.used_evaluations += len(population)
         return population
 
     def get_initial_population(self) -> Population:
@@ -146,9 +146,9 @@ def show_plot_of_individuals(individuals: list[Individual], metrics: MultipleMet
 def test_fourth_archive_miner(problem: BenchmarkProblem,
                               show_each_generation=True):
     print(f"Testing the modified archive miner")
-    pRef: PRef = problem.get_pRef(15000)
+    pRef: PRef = problem.get_pRef(10000)
 
-    budget_limit = AsLongAsWanted()
+    budget_limit = EvaluationBudgetLimit(15000)
     # iteration_limit = TerminationCriteria.IterationLimit(12)
     # termination_criteria = TerminationCriteria.UnionOfCriteria(budget_limit, iteration_limit)
 

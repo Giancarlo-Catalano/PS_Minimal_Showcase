@@ -41,14 +41,22 @@ if __name__ == '__main__':
     #                               rota_file=r"C:\Users\gac8\PycharmProjects\PS\resources\BT\roster_pattern_days.csv",
     #                               calendar_length=56)
     problem = Trapk(5, 5)
-    #test_MO_comprehensive(problem)
+    # test_MO_comprehensive(problem)
     # print_separator()
     # print("Now testing with my own algorithm")
 
     #metrics = MultipleMetrics([MeanFitness(), Linkage()], weights=[1, 1])
-    # test_fourth_archive_miner(problem, show_each_generation=True)
-    test_ouroboros(problem)
+    test_fourth_archive_miner(problem, show_each_generation=True)
+    #test_ouroboros(problem)
 
     # test_single_objective_search(problem, evaluation_budget=15000)
 
-    #test_pygad_on_benchmark_problem(problem)
+    # test_pygad_on_benchmark_problem(problem)
+    # test_PSProblem(benchmark_problem = problem,
+    #                which_mo_method = "NSGAII",
+    #                metrics=MultipleMetrics([MeanFitness(), Linkage()]),
+    #                normalised_objectives=True,
+    #                show_interactive_plot=False,
+    #                single_objective=False,
+    #                save_to_files=True,
+    #                evaluation_budget=15000)
