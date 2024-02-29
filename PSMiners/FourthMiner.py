@@ -2,7 +2,7 @@ import heapq
 import random
 import warnings
 from math import ceil
-from typing import TypeAlias
+from typing import TypeAlias, Callable
 
 from pandas import DataFrame
 
@@ -16,6 +16,7 @@ from PSMetric.Linkage import Linkage
 from PSMetric.MeanFitness import MeanFitness
 from PSMetric.Metric import MultipleMetrics, Metric
 from PSMetric.SecondLinkage import SecondLinkage
+from PSMetric.SignificantlyHighAverage import SignificantlyHighAverage
 from PSMetric.Simplicity import Simplicity
 from PSMiners.Individual import Individual, add_metrics, with_aggregated_scores, add_normalised_metrics, \
     with_average_score, with_product_score, partition_by_simplicity
@@ -36,7 +37,6 @@ class FourthMiner:
     population_size: int
     offspring_population_size: int
 
-
     current_population: list[Individual]
     archive: set[Individual]
     metric: Metric
@@ -44,11 +44,14 @@ class FourthMiner:
     search_space: SearchSpace
     used_evaluations: int
 
+    custom_repr: Callable
+
     def __init__(self,
                  population_size: int,
                  offspring_population_size: int,
                  metric: Metric,
-                 pRef: PRef):
+                 pRef: PRef,
+                 custom_ps_repr = None):
         self.metric = metric
         self.used_evaluations = 0
         self.metric.set_pRef(pRef)
@@ -58,6 +61,7 @@ class FourthMiner:
         self.current_population = self.get_initial_population()
         self.archive = set()
 
+        self.custom_repr = custom_ps_repr
 
     def evaluate(self, population: Population) -> Population:
         for individual in population:
@@ -92,7 +96,6 @@ class FourthMiner:
                 self.archive.add(selected)
                 offspring.update(self.get_localities(selected))
 
-
         self.current_population = list(remaining_population)
         self.current_population.extend(self.evaluate(list(offspring)))
         self.current_population = self.top(self.population_size)
@@ -101,8 +104,15 @@ class FourthMiner:
         return heapq.nlargest(how_many, self.current_population, key=lambda x: x.aggregated_score)
 
     def show_best_of_current_population(self, how_many: int):
+        def show_ps_default(ps):
+            return f"{ps}"
+
+        show_ps = show_ps_default if self.custom_repr is None else self.custom_repr
+
         for individual in self.top(how_many):
-            print(individual)
+            metrics = self.metric.get_normalised_scores(individual.ps)
+            metrics_str = ", ".join(f"{value:.3f}" for value in metrics)
+            print(f"{show_ps(individual.ps)}, \naggr = {individual.aggregated_score:.3f}, scores = {metrics_str}")
 
     def run(self,
             termination_criteria: TerminationCriteria,
@@ -155,7 +165,8 @@ def test_fourth_archive_miner(problem: BenchmarkProblem,
     miner = FourthMiner(150,
                         offspring_population_size=300,
                         pRef=pRef,
-                        metric = Averager([MeanFitness(), Linkage()]))
+                        metric=Averager([SignificantlyHighAverage(), Linkage()]),
+                        custom_ps_repr=problem.repr_ps)
 
     miner.run(budget_limit, show_each_generation=show_each_generation)
 

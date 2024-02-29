@@ -123,7 +123,7 @@ class Ouroboros:
         self.explorative_evaluator.set_pRef(self.current_pRef)
 
     def print_current_state(self):
-        print(f"The pRef has {self.current_pRef.sample_size}, and the model is ")
+        print(f"The pRef has {self.current_pRef.sample_size}, and the model is ", "empty" if len(self.current_model) == 0 else "")
         for item in self.current_model:
             mean_fitness, atomicity_fitness = self.exploitative_evaluator.get_normalised_scores(item.ps)
             novelty = self.explorative_evaluator.get_single_normalised_score(item.ps)
@@ -152,15 +152,15 @@ def test_ouroboros(benchmark_problem: BenchmarkProblem):
                     benchmark_problem.fitness_function,
                     initial_sample_size=1000,
                     increment_per_iteration=1000,
-                    model_size=20)
+                    model_size=6)
 
     eda.run(show_every_generation=True)
 
     print("The final model is ")
     for individual in eda.current_model:
-        print(f"{individual}")
+        print(f"{benchmark_problem.repr_ps(individual.ps)}")
 
     fss = eda.get_best_fs(12)
     print("The Top 12 fss are ")
     for fs in fss:
-        print(f"{fs}, with fitness = {eda.fitness_function(fs)}")
+        print(f"{benchmark_problem.repr_ps(PS.from_FS(fs))}, with fitness = {eda.fitness_function(fs)}")

@@ -63,7 +63,7 @@ class MeanFitness(Metric):
 
     def get_single_normalised_score(self, ps: PS) -> float:
         average_fitness = self.get_single_score(ps)
-        return (average_fitness - self.min_fitness)/self.max_fitness
+        return (average_fitness - self.min_fitness)/(self.max_fitness - self.min_fitness)
 
 
 

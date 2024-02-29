@@ -5,6 +5,7 @@ import numpy as np
 
 from BenchmarkProblems.BenchmarkProblem import BenchmarkProblem
 from FullSolution import FullSolution
+from PS import PS, STAR
 from SearchSpace import SearchSpace
 
 LinkValue: TypeAlias = int
@@ -185,3 +186,19 @@ class IsingSpinGlassProblem(BenchmarkProblem):
         vertical_differentials = np.sum(node_values * cycled_up * self.vertical_link_values)
 
         return horizontal_differentials + vertical_differentials
+
+
+    def repr_ps(self, ps: PS) -> str:
+        def repr_cell(cell_value):
+            if cell_value == STAR:
+                return " "
+            else:
+                return f"{cell_value}"
+
+
+        def repr_row(row: np.ndarray):
+            return "["+(" ".join(repr_cell(cell) for cell in row))+"]"
+
+        grid = ps.values.reshape((self.height, self.width))
+
+        return "\n".join(repr_row(row) for row in grid)

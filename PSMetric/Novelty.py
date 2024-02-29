@@ -38,6 +38,8 @@ class Novelty(Metric):
         if len(observations) >= expected_observations:
             return 0
 
+        return 1.0 - len(observations) / expected_observations  # DEBUG
+
         mean_fitness_bonus = 2 * np.average(observations)
         # the mean fitness bonus (beta) is a value between 0 and 2, since the mean fitness (mu) is in [0, 1]
         # mu < 0.5 ==> beta > 1, malus because the average fitness is below the average
