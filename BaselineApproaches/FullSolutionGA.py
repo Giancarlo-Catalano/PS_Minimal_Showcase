@@ -1,6 +1,7 @@
 import random
 from typing import Callable
 
+import utils
 from BaselineApproaches.Evaluator import Individual, FullSolutionEvaluator
 from FullSolution import FullSolution
 from BaselineApproaches.GA import GA
@@ -55,3 +56,7 @@ class FullSolutionGA(GA):
                             take_from(mother, end_cut, last_index))
 
         return FullSolution(child_value_list)
+
+
+    def get_results(self):
+        return sorted(self.last_evaluated_population, key=utils.second, reverse=True)
