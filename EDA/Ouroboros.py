@@ -18,34 +18,6 @@ from PickAndMerge.PickAndMerge import FSSampler
 from SearchSpace import SearchSpace
 from TerminationCriteria import EvaluationBudgetLimit, IterationLimit
 
-
-class EXEX(Metric):
-    atomicity_evaluator: Metric
-    mean_fitness_evaluator: MeanFitness
-    novelty_evaluator: Novelty
-
-    def __init__(self):
-        super().__init__()
-        self.atomicity_evaluator = Linkage()
-        self.mean_fitness_evaluator = MeanFitness()
-        self.novelty_evaluator = Novelty()
-
-    def __repr__(self):
-        return "Exploration||Exploitation"
-
-    def set_pRef(self, pRef: PRef):
-        self.atomicity_evaluator.set_pRef(pRef)
-        self.mean_fitness_evaluator.set_pRef(pRef)
-        self.novelty_evaluator.set_pRef(pRef)
-
-    def get_single_normalised_score(self, ps: PS) -> float:
-        mean_fitness = self.mean_fitness_evaluator.get_single_normalised_score(ps)
-        atomicity = self.atomicity_evaluator.get_single_normalised_score(ps)
-        novelty = self.novelty_evaluator.get_single_normalised_score(ps)
-
-        exploitation = (mean_fitness + atomicity) / 2.0
-        return max(exploitation, novelty)
-
 Model: TypeAlias = list[Individual]
 
 class Ouroboros:
