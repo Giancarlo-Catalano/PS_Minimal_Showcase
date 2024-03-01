@@ -2,12 +2,10 @@ from typing import TypeAlias, Optional
 
 import numpy as np
 
-import SearchSpace
 import utils
 from PRef import PRef
 from PS import PS, STAR
 from PSMetric.Metric import Metric
-from custom_types import ArrayOfFloats
 
 LinkageTable: TypeAlias = np.ndarray
 
