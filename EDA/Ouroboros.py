@@ -27,8 +27,8 @@ class Ouroboros:
     current_pRef: PRef
     current_model: list[Individual]
 
-    exploitative_evaluator: Averager
-    explorative_evaluator: Novelty
+    exploitative_evaluator: Metric
+    explorative_evaluator: Metric
 
     increment_per_iteration: int
     model_size: int
@@ -48,7 +48,7 @@ class Ouroboros:
         self.fs_evaluations = self.current_pRef.sample_size
         self.exploitative_evaluator = Averager([MeanFitness(), Linkage()])
         self.exploitative_evaluator.set_pRef(self.current_pRef)
-        self.explorative_evaluator = Novelty()
+        self.explorative_evaluator = Averager([Novelty(), Linkage()])
         self.explorative_evaluator.set_pRef(self.current_pRef)
         self.increment_per_iteration = increment_per_iteration
         self.current_model = []
@@ -95,12 +95,10 @@ class Ouroboros:
         self.explorative_evaluator.set_pRef(self.current_pRef)
 
     def print_current_state(self):
-        print(f"The pRef has {self.current_pRef.sample_size}, and the model is ", "empty" if len(self.current_model) == 0 else "")
+        print(f"The pRef has {self.current_pRef.sample_size}, and the model is ",
+              "empty" if len(self.current_model) == 0 else "")
         for item in self.current_model:
-            mean_fitness, atomicity_fitness = self.exploitative_evaluator.get_normalised_scores(item.ps)
-            novelty = self.explorative_evaluator.get_single_normalised_score(item.ps)
-
-            print(f"\t{item}, mf = {mean_fitness:.3f}, atomicity = {atomicity_fitness:.3f}, novelty = {novelty:.3f}")
+            print(f"\t{item}, score = {item.aggregated_score}")
 
     def run(self, show_every_generation=False):
         iteration = 0
