@@ -1,31 +1,19 @@
 import heapq
 import random
 import warnings
-from math import ceil
 from typing import TypeAlias, Callable
-
-from pandas import DataFrame
 
 import utils
 from BenchmarkProblems.BenchmarkProblem import BenchmarkProblem
 from PRef import PRef
 from PS import PS
-from PSMetric.Atomicity import Atomicity
 from PSMetric.Averager import Averager
 from PSMetric.Linkage import Linkage
-from PSMetric.MeanFitness import MeanFitness
 from PSMetric.Metric import MultipleMetrics, Metric
-from PSMetric.SecondLinkage import SecondLinkage
 from PSMetric.SignificantlyHighAverage import SignificantlyHighAverage
-from PSMetric.Simplicity import Simplicity
-from PSMiners.Individual import Individual, add_metrics, with_aggregated_scores, add_normalised_metrics, \
-    with_average_score, with_product_score, partition_by_simplicity
-from PSMiners.SamplableSet import EfficientPopulation
+from PSMiners.Individual import Individual
 from SearchSpace import SearchSpace
-from TerminationCriteria import TerminationCriteria, EvaluationBudgetLimit, AsLongAsWanted
-import matplotlib.pyplot as plt
-from mpl_toolkits.mplot3d import Axes3D
-import plotly.express as px
+from TerminationCriteria import TerminationCriteria, EvaluationBudgetLimit
 
 # performance issues:
 # eq, required by set

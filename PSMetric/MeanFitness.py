@@ -24,17 +24,9 @@ class MeanFitness(Metric):
         self.max_fitness = None
         self.min_fitness = None
 
-    @staticmethod
-    def get_normalised_pRef(pRef: PRef):
-        normalised_fitnesses = utils.remap_array_in_zero_one(pRef.fitness_array)
-        return PRef(full_solutions=pRef.full_solutions,
-                    fitness_array=normalised_fitnesses,  # this is the only thing that changes
-                    full_solution_matrix=pRef.full_solution_matrix,
-                    search_space=pRef.search_space)
-
     def set_pRef(self, pRef: PRef):
         self.pRef = pRef
-        self.normalised_pRef = self.get_normalised_pRef(self.pRef)
+        self.normalised_pRef = self.pRef.get_with_normalised_fitnesses()
 
         self.max_fitness = np.max(pRef.fitness_array)
         self.min_fitness = np.min(pRef.fitness_array)

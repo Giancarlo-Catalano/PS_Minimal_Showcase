@@ -2,6 +2,7 @@ from typing import Iterable, Callable
 
 import numpy as np
 
+import utils
 from FullSolution import FullSolution
 from custom_types import Fitness, BooleanMatrix, ArrayOfFloats
 from SearchSpace import SearchSpace
@@ -82,3 +83,11 @@ class PRef:
         new_full_solution_matrix = np.vstack((a.full_solution_matrix, b.full_solution_matrix))
 
         return cls(new_full_solutions, new_fitness_array, new_full_solution_matrix, a.search_space)
+
+    def get_with_normalised_fitnesses(self):
+        normalised_fitnesses = utils.remap_array_in_zero_one(self.fitness_array)
+        return PRef(full_solutions=self.full_solutions,
+                    fitness_array=normalised_fitnesses,  # this is the only thing that changes
+                    full_solution_matrix=self.full_solution_matrix,
+                    search_space=self.search_space)
+

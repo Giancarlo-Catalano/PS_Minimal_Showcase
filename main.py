@@ -46,7 +46,7 @@ if __name__ == '__main__':
     # problem = Trapk(5, 5)
     print("Reading the problem instance")
     problem = IsingSpinGlassProblem.from_gian_file(
-        r"C:\Users\gac8\PycharmProjects\PS\resources\IsingSpinGlassInstances\SG_16_1.json")
+        r"C:\Users\gac8\PycharmProjects\PS\resources\IsingSpinGlassInstances\SG_25_1.json")
     # test_MO_comprehensive(problem)
     # print_separator()
     # print("Now testing with my own algorithm")

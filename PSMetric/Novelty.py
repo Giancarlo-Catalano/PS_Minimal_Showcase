@@ -23,7 +23,7 @@ class Novelty(Metric):
 
     def set_pRef(self, pRef: PRef):
         self.pRef = pRef
-        self.normalised_pRef = MeanFitness.get_normalised_pRef(self.pRef)
+        self.normalised_pRef = self.pRef.get_with_normalised_fitnesses()
 
     def get_single_normalised_score(self, ps: PS) -> float:
         observations = self.normalised_pRef.fitnesses_of_observations(ps)

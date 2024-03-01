@@ -1,6 +1,8 @@
 from math import ceil, sqrt
 from typing import Callable, TypeAlias
 
+import numpy as np
+
 import utils
 from BaselineApproaches.Evaluator import Individual
 from BenchmarkProblems.BenchmarkProblem import BenchmarkProblem
@@ -12,6 +14,7 @@ from PSMetric.Linkage import Linkage
 from PSMetric.MeanFitness import MeanFitness
 from PSMetric.Metric import Metric, MultipleMetrics
 from PSMetric.Novelty import Novelty
+from PSMetric.Simplicity import Simplicity
 from PSMiners.ArchiveMiner import ArchiveMiner
 from PSMiners.FourthMiner import FourthMiner
 from PickAndMerge.PickAndMerge import FSSampler
@@ -48,7 +51,7 @@ class Ouroboros:
         self.fs_evaluations = self.current_pRef.sample_size
         self.exploitative_evaluator = Averager([MeanFitness(), Linkage()])
         self.exploitative_evaluator.set_pRef(self.current_pRef)
-        self.explorative_evaluator = Averager([Novelty(), Linkage()])
+        self.explorative_evaluator = Averager([Novelty(), Simplicity()])
         self.explorative_evaluator.set_pRef(self.current_pRef)
         self.increment_per_iteration = increment_per_iteration
         self.current_model = []
@@ -97,6 +100,8 @@ class Ouroboros:
     def print_current_state(self):
         print(f"The pRef has {self.current_pRef.sample_size}, and the model is ",
               "empty" if len(self.current_model) == 0 else "")
+        best_fitness = np.max(self.current_pRef.fitness_array)
+        print(f"The current best fitness is {best_fitness}")
         for item in self.current_model:
             print(f"\t{item}, score = {item.aggregated_score}")
 
