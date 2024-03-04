@@ -8,6 +8,10 @@ from custom_types import ArrayOfFloats
 
 
 class Metric:
+    used_evaluations: int
+
+    def __init__(self):
+        self.used_evaluations = 0
     def __repr__(self):
         """ Return a string which describes the Criterion, eg 'Robustness' """
         raise Exception(f"Error: a realisation of PSMetric({self.__repr__()}) does not implement __repr__")

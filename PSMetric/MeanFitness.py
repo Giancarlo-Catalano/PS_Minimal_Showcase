@@ -54,6 +54,7 @@ class MeanFitness(Metric):
         return np.average(observed_fitnesses)
 
     def get_single_normalised_score(self, ps: PS) -> float:
+        self.used_evaluations += 1
         average_fitness = self.get_single_score(ps)
         return (average_fitness - self.min_fitness)/(self.max_fitness - self.min_fitness)
 

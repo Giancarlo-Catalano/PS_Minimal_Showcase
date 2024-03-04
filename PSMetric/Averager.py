@@ -5,7 +5,6 @@ from PSMetric.Metric import Metric
 
 class Averager(Metric):
     metrics: list[Metric]
-    used_evaluations: int
     weights: list[int]
 
     def __init__(self, metrics: list[Metric], weights = None):
@@ -39,4 +38,5 @@ class Averager(Metric):
 
     def get_single_normalised_score(self, ps: PS) -> float:
         self.used_evaluations += 1
-        return sum([score * weight for score, weight in zip(self.get_normalised_scores(ps), self.weights)]) / sum(self.weights)
+        return sum([score * weight
+                    for score, weight in zip(self.get_normalised_scores(ps), self.weights)]) / sum(self.weights)

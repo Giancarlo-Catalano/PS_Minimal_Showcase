@@ -38,6 +38,7 @@ class SignificantlyHighAverage(Metric):
         return "SIA"
 
     def get_single_normalised_score(self, ps: PS) -> float:
+        self.used_evaluations += 1
         observations = self.normalised_pRef.fitnesses_of_observations(ps)
         n = len(observations)
         sample_mean = np.average(observations)
