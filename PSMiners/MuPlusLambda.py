@@ -123,17 +123,17 @@ class MuPlusLambda:
 
         while not should_terminate():
             selected_parents = self.truncation_selection()
+
             new_population = list(selected_parents)
             for parent in selected_parents:
                 new_population.extend(self.evaluate_individuals(self.get_offspring(parent)))
 
             self.current_population = new_population
 
-            iterations +=1
+            iterations += 1
 
     def get_results(self) -> list[Individual]:
-        return heapq.nlargest(n=self.mu_parameter, iterable=self.current_population, key = lambda x: x.aggregated_score)
-
+        return heapq.nlargest(n=self.mu_parameter, iterable=self.current_population, key=lambda x: x.aggregated_score)
 
 
 def test_mu_plus_lambda(benchmark_problem: BenchmarkProblem):
@@ -141,17 +141,16 @@ def test_mu_plus_lambda(benchmark_problem: BenchmarkProblem):
 
     print("Generating a pRef")
     pRef = benchmark_problem.get_pRef(sample_size=10000)
-    mutation_operator = SinglePointMutation(probability= 1 / pRef.search_space.amount_of_parameters,
-                                            chance_of_unfixing= 0.5)
+    mutation_operator = SinglePointMutation(probability=1 / pRef.search_space.amount_of_parameters,
+                                            chance_of_unfixing=0.5)
 
     print("Constructing the algorithm")
     algorithm = MuPlusLambda(mu_parameter=30,
                              lambda_parameter=150,
                              mutation_operator=mutation_operator,
-                             metric = Averager([MeanFitness(), Linkage()]))
+                             metric=Averager([MeanFitness(), Linkage()]))
 
     algorithm.set_pRef(pRef)
-
 
     print("Running the algorithm")
     termination_criteria = TerminationCriteria.IterationLimit(12)
@@ -160,6 +159,3 @@ def test_mu_plus_lambda(benchmark_problem: BenchmarkProblem):
     print("Run has terminated, the results are")
     for individual in algorithm.get_results():
         print(f"{individual.ps}, score = {individual.aggregated_score:.3f}")
-
-
-

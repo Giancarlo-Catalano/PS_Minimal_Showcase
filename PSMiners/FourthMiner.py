@@ -100,7 +100,7 @@ class FourthMiner:
         for individual in self.top(how_many):
             metrics = self.metric.get_normalised_scores(individual.ps)
             metrics_str = ", ".join(f"{value:.3f}" for value in metrics)
-            print(f"{show_ps(individual.ps)}, \naggr = {individual.aggregated_score:.3f}, scores = {metrics_str}")
+            print(f"{show_ps(individual.ps)}, aggr = {individual.aggregated_score:.3f}, scores = {metrics_str}")
 
     def run(self,
             termination_criteria: TerminationCriteria,
@@ -144,6 +144,7 @@ def show_plot_of_individuals(individuals: list[Individual], metrics: MultipleMet
 def test_fourth_archive_miner(problem: BenchmarkProblem,
                               show_each_generation=True):
     print(f"Testing the modified archive miner")
+    print(f"The problem is {problem.long_repr()}")
     pRef: PRef = problem.get_pRef(10000)
 
     budget_limit = EvaluationBudgetLimit(15000)
