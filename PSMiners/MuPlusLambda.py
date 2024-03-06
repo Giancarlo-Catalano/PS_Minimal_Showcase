@@ -43,8 +43,9 @@ class MuPlusLambda:
         self.current_population = []
         self.mutation_operator = mutation_operator
 
-    def set_pRef(self, pRef: PRef):
-        self.metric.set_pRef(pRef)
+    def set_pRef(self, pRef: PRef, set_metrics=True):
+        if set_metrics:
+            self.metric.set_pRef(pRef)
         self.search_space = pRef.search_space
         self.mutation_operator.set_search_space(self.search_space)
         self.current_population = self.get_initial_population(from_uniform=0.33,
@@ -138,6 +139,7 @@ class MuPlusLambda:
 
 def test_mu_plus_lambda(benchmark_problem: BenchmarkProblem):
     print("Testing the mu plus lambda algorithm")
+    print(f"The problem is {benchmark_problem.long_repr()}")
 
     print("Generating a pRef")
     pRef = benchmark_problem.get_pRef(sample_size=10000)
@@ -159,3 +161,39 @@ def test_mu_plus_lambda(benchmark_problem: BenchmarkProblem):
     print("Run has terminated, the results are")
     for individual in algorithm.get_results():
         print(f"{individual.ps}, score = {individual.aggregated_score:.3f}")
+
+
+def test_mu_plus_lambda_with_repeated_trials(benchmark_problem: BenchmarkProblem,
+                                             trials: int):
+    print("Testing the mu plus lambda algorithm with repeated trials")
+    print(f"The problem is {benchmark_problem.long_repr()}")
+
+    print("Generating a pRef")
+    pRef = benchmark_problem.get_pRef(sample_size=10000)
+    mutation_operator = SinglePointMutation(probability=1 / pRef.search_space.amount_of_parameters,
+                                            chance_of_unfixing=0.5)
+
+    metric = Averager([MeanFitness(), Linkage()])
+    metric.set_pRef(pRef)
+    def single_trial() -> Individual:
+        # print("Constructing the algorithm")
+        algorithm = MuPlusLambda(mu_parameter=12,
+                                 lambda_parameter=60,
+                                 mutation_operator=mutation_operator,
+                                 metric=metric)
+
+        algorithm.set_pRef(pRef, set_metrics=False)
+
+        # print("Running the algorithm")
+        termination_criteria = TerminationCriteria.IterationLimit(benchmark_problem.search_space.hot_encoded_length)
+        algorithm.run(termination_criteria)
+
+        return max(algorithm.get_results(), key=lambda x: x.aggregated_score)
+
+    winners = []
+    for trial in range(trials):
+        print(f"Starting trial #{trial}")
+        winners.append(single_trial())
+
+    for winner in winners:
+        print(f"{benchmark_problem.repr_ps(winner.ps)}, score = {winner.aggregated_score:.3f}\n")

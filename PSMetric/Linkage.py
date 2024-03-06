@@ -88,7 +88,7 @@ class Linkage(Metric):
     def get_normalised_linkage_scores(self, ps: PS) -> np.ndarray:
         fixed = ps.values != STAR
         fixed_combinations: np.array = np.outer(fixed, fixed)
-        fixed_combinations = np.triu(fixed_combinations, k=0)
+        fixed_combinations = np.triu(fixed_combinations, k=1)
         return self.normalised_linkage_table[fixed_combinations]
 
     def get_single_score_using_avg(self, ps: PS) -> float:
@@ -99,7 +99,7 @@ class Linkage(Metric):
 
     def get_single_normalised_score(self, ps: PS) -> float:
         self.used_evaluations += 1
-        if ps.fixed_count() < 1:
+        if ps.fixed_count() < 2:
             return 0
         else:
             return np.average(self.get_normalised_linkage_scores(ps))

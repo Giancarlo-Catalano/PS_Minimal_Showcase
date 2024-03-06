@@ -9,6 +9,7 @@ from PRef import PRef
 from PS import PS
 from PSMetric.Averager import Averager
 from PSMetric.Linkage import Linkage
+from PSMetric.MeanFitness import MeanFitness
 from PSMetric.Metric import MultipleMetrics, Metric
 from PSMetric.SignificantlyHighAverage import SignificantlyHighAverage
 from PSMiners.Individual import Individual
@@ -154,7 +155,7 @@ def test_fourth_archive_miner(problem: BenchmarkProblem,
     miner = FourthMiner(150,
                         offspring_population_size=300,
                         pRef=pRef,
-                        metric=Averager([SignificantlyHighAverage(), Linkage()]),
+                        metric=Averager([MeanFitness(), Linkage()]),
                         custom_ps_repr=problem.repr_ps)
 
     miner.run(budget_limit, show_each_generation=show_each_generation)
