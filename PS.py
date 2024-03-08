@@ -27,10 +27,9 @@ class PS:
 
     def __hash__(self):
         # NOTE: using
-        # val_hash = hash(tuple(self.variable_mask))
+        return hash(tuple(self.values))
         # also works well.
-        val_hash = hash(np.bitwise_xor.reduce(self.values))
-        return val_hash
+        # alternative is hash(np.bitwise_xor.reduce(self.values))
 
     @classmethod
     def empty(cls, search_space: SearchSpace):

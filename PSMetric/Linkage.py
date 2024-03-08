@@ -25,7 +25,7 @@ class Linkage(Metric):
     def set_pRef(self, pRef: PRef):
         print("Calculating linkages...")
         self.linkage_table = self.get_linkage_table(pRef)
-        self.normalised_linkage_table = self.get_normalised_linkage_table(self.linkage_table)
+        self.normalised_linkage_table = self.get_quantized_linkage_table(self.linkage_table)
 
     @staticmethod
     def get_linkage_table(pRef: PRef) -> LinkageTable:
@@ -78,6 +78,14 @@ class Linkage(Metric):
         normalised_linkage_table: LinkageTable = (linkage_table - triu_min) / triu_max
 
         return normalised_linkage_table
+
+
+    @staticmethod
+    def get_quantized_linkage_table(linkage_table: LinkageTable):
+        where_to_consider = np.triu(np.full_like(linkage_table, True, dtype=bool), k=1)
+        average = np.average(linkage_table[where_to_consider])
+        quantized_linkage_table: LinkageTable = np.array(linkage_table >= average, dtype=float)
+        return quantized_linkage_table
 
     def get_linkage_scores(self, ps: PS) -> np.ndarray:
         fixed = ps.values != STAR

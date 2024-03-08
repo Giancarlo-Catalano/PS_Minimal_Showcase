@@ -13,7 +13,7 @@ from PSMetric.Linkage import Linkage
 from PSMetric.MeanFitness import MeanFitness
 from PSMetric.Metric import Metric
 from PSMiners.Individual import Individual
-from PSMiners.PSMutationOperator import PSMutationOperator, SinglePointMutation
+from PSMiners.PSMutationOperator import PSMutationOperator, SinglePointMutation, MultimodalMutationOperator
 from SearchSpace import SearchSpace
 import TerminationCriteria
 
@@ -130,11 +130,14 @@ class MuPlusLambda:
                 new_population.extend(self.evaluate_individuals(self.get_offspring(parent)))
 
             self.current_population = new_population
+            self.current_population = list(set(self.current_population))
 
             iterations += 1
 
-    def get_results(self) -> list[Individual]:
-        return heapq.nlargest(n=self.mu_parameter, iterable=self.current_population, key=lambda x: x.aggregated_score)
+    def get_results(self, amount_to_return=None) -> list[Individual]:
+        if amount_to_return == None:
+            amount_to_return = self.mu_parameter
+        return heapq.nlargest(n=amount_to_return, iterable=self.current_population, key=lambda x: x.aggregated_score)
 
 
 def test_mu_plus_lambda(benchmark_problem: BenchmarkProblem):
@@ -175,6 +178,7 @@ def test_mu_plus_lambda_with_repeated_trials(benchmark_problem: BenchmarkProblem
 
     metric = Averager([MeanFitness(), Linkage()])
     metric.set_pRef(pRef)
+
     def single_trial() -> Individual:
         # print("Constructing the algorithm")
         algorithm = MuPlusLambda(mu_parameter=12,
@@ -197,3 +201,38 @@ def test_mu_plus_lambda_with_repeated_trials(benchmark_problem: BenchmarkProblem
 
     for winner in winners:
         print(f"{benchmark_problem.repr_ps(winner.ps)}, score = {winner.aggregated_score:.3f}\n")
+
+
+def test_mu_plus_lambda_with_MMM(benchmark_problem: BenchmarkProblem):
+    print("Testing the mu plus lambda algorithm with the multi modal mutation method")
+    print(f"The problem is {benchmark_problem.long_repr()}")
+
+    print("Generating a pRef")
+    pRef = benchmark_problem.get_pRef(sample_size=10000)
+
+    metric = Averager([MeanFitness(), Linkage()])
+    metric.set_pRef(pRef)
+    print("pRef was set")
+
+    def mutation_operator_trial(mutation_operator: PSMutationOperator):
+        print(f"Constructing the algorithm with MMMM = {mutation_operator}")
+        algorithm = MuPlusLambda(mu_parameter=50,
+                                 lambda_parameter=300,
+                                 mutation_operator=mutation_operator,
+                                 metric=metric)
+
+        algorithm.set_pRef(pRef, set_metrics=False)
+
+        # print("Running the algorithm")
+        termination_criteria = TerminationCriteria.IterationLimit(benchmark_problem.search_space.hot_encoded_length)
+        algorithm.run(termination_criteria)
+
+        winners = algorithm.get_results(12)
+        for winner in winners:
+            print(f"{benchmark_problem.repr_ps(winner.ps)}, score = {winner.aggregated_score:.3f}")
+
+        print(f"The used budget is {algorithm.metric.used_evaluations}")
+
+    for rate in range(20):
+        mutation_operator = MultimodalMutationOperator(rate / 20)
+        mutation_operator_trial(mutation_operator)
