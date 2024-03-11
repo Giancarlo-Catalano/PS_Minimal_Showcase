@@ -17,6 +17,7 @@ from PSMetric.Simplicity import Simplicity
 from PSMiners.ArchiveMiner import test_archive_miner
 from PSMiners.EfficientArchiveMiner import test_efficient_archive_miner
 from PSMiners.FourthMiner import test_fourth_archive_miner
+from PSMiners.MPLSS import test_MLPSS_with_MMM
 from PSMiners.MuPlusLambda import test_mu_plus_lambda, test_mu_plus_lambda_with_repeated_trials, \
     test_mu_plus_lambda_with_MMM
 from PSMiners.SelfAssembly import test_simple_hill_climber
@@ -45,4 +46,4 @@ if __name__ == '__main__':
     # problem = GraphColouring.random(8, 3, 0.3)
     #test_fourth_archive_miner(problem, show_each_generation=True)
     # test_ouroboros(problem)
-    test_mu_plus_lambda_with_MMM(problem)
+    test_MLPSS_with_MMM(problem)

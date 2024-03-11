@@ -1,3 +1,4 @@
+import random
 from typing import Iterable, Sized
 
 import numpy as np
@@ -38,3 +39,7 @@ class SearchSpace(Sized):
     def concatenate_search_spaces(cls, to_concat: Iterable):
         cardinalities = tuple(ss.cardinalities for ss in to_concat)
         return cls(np.concatenate(cardinalities))
+
+
+    def random_digit(self, position: int) -> int:
+        return random.randrange(self.cardinalities[position])

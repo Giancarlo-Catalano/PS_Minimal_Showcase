@@ -1,4 +1,5 @@
 import itertools
+import random
 from typing import Any, Iterable
 
 import numpy as np
@@ -81,3 +82,10 @@ def harmonic_mean(values: Iterable[float]) -> float:
 
     sum_of_inverses = sum(value**(-1) for value in values)
     return (sum_of_inverses/len(sum_of_inverses))**(-1)
+
+
+def sample_from_geometric_distribution(chance_of_success: float) -> int:
+    counter = 0
+    while random.random() < chance_of_success:
+        counter +=1
+    return counter
