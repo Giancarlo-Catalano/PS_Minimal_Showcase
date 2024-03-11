@@ -201,7 +201,7 @@ class IsingSpinGlassProblem(BenchmarkProblem):
 
         grid = ps.values.reshape((self.height, self.width))
 
-        return "\n".join(repr_row(row) for row in grid)
+        return "\n"+("\n".join(repr_row(row) for row in grid))
 
 
     def __repr__(self):

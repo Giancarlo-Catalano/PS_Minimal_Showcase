@@ -17,11 +17,14 @@ from PSMetric.Novelty import Novelty
 from PSMetric.Simplicity import Simplicity
 from PSMiners.ArchiveMiner import ArchiveMiner
 from PSMiners.FourthMiner import FourthMiner
+from PSMiners.MPLSS import MPLSS
+from PSMiners.PSMutationOperator import MultimodalMutationOperator
 from PickAndMerge.PickAndMerge import FSSampler
 from SearchSpace import SearchSpace
 from TerminationCriteria import EvaluationBudgetLimit, IterationLimit
 
 Model: TypeAlias = list[Individual]
+
 
 class Ouroboros:
     search_space: SearchSpace
@@ -29,9 +32,6 @@ class Ouroboros:
     fs_evaluations: int
     current_pRef: PRef
     current_model: list[Individual]
-
-    exploitative_evaluator: Metric
-    explorative_evaluator: Metric
 
     increment_per_iteration: int
     model_size: int
@@ -49,10 +49,6 @@ class Ouroboros:
                                                           fitness_function=self.fitness_function,
                                                           amount_of_samples=initial_sample_size)
         self.fs_evaluations = self.current_pRef.sample_size
-        self.exploitative_evaluator = Averager([MeanFitness(), Linkage()])
-        self.exploitative_evaluator.set_pRef(self.current_pRef)
-        self.explorative_evaluator = Averager([Novelty(), Simplicity()])
-        self.explorative_evaluator.set_pRef(self.current_pRef)
         self.increment_per_iteration = increment_per_iteration
         self.current_model = []
 
@@ -61,18 +57,20 @@ class Ouroboros:
     def calculate_model(self) -> Model:
         termination_criteria = IterationLimit(12)
 
-        exploitation_miner = FourthMiner(population_size=150,
-                                         pRef=self.current_pRef,
-                                         offspring_population_size=450,
-                                         metric = Averager([MeanFitness(), Linkage()]))
-
+        exploitation_miner = MPLSS(mu_parameter=50,
+                                   lambda_parameter=300,
+                                   diversity_offspring_amount=100,
+                                   mutation_operator=MultimodalMutationOperator(0.5),
+                                   metric=Averager([MeanFitness(), Linkage()]))
+        exploitation_miner.set_pRef(self.current_pRef)
         exploitation_miner.run(termination_criteria)
 
-        exploration_miner = FourthMiner(population_size=150,
-                                        pRef=self.current_pRef,
-                                        offspring_population_size=450,
-                                        metric = self.explorative_evaluator)
-
+        exploration_miner = MPLSS(mu_parameter=50,
+                                  lambda_parameter=300,
+                                  diversity_offspring_amount=100,
+                                  mutation_operator=MultimodalMutationOperator(0.5),
+                                  metric=Averager([Novelty(), Simplicity()]))
+        exploration_miner.set_pRef(self.current_pRef)
         exploration_miner.run(termination_criteria)
 
         exploitative_model = exploitation_miner.get_results(quantity_returned=self.model_size)
@@ -94,8 +92,6 @@ class Ouroboros:
     def step(self):
         self.current_model = self.calculate_model()
         self.current_pRef = self.get_extended_pRef()
-        self.exploitative_evaluator.set_pRef(self.current_pRef)
-        self.explorative_evaluator.set_pRef(self.current_pRef)
 
     def print_current_state(self):
         print(f"The pRef has {self.current_pRef.sample_size}, and the model is ",

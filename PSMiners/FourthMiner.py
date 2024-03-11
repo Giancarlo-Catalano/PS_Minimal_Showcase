@@ -148,7 +148,7 @@ def test_fourth_archive_miner(problem: BenchmarkProblem,
     print(f"The problem is {problem.long_repr()}")
     pRef: PRef = problem.get_pRef(10000)
 
-    budget_limit = EvaluationBudgetLimit(15000)
+    budget_limit = EvaluationBudgetLimit(17000)
     # iteration_limit = TerminationCriteria.IterationLimit(12)
     # termination_criteria = TerminationCriteria.UnionOfCriteria(budget_limit, iteration_limit)
 

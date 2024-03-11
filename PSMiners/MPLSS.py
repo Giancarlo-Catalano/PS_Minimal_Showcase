@@ -3,7 +3,7 @@
 import heapq
 import random
 from math import ceil
-from typing import Optional
+from typing import Optional, Callable
 
 import numpy as np
 
@@ -133,13 +133,13 @@ class MPLSS:
 
     def get_diverse_individuals(self):
         fixed_var_proportions = self.get_fixed_var_proportions()
-        sampling_chances = 1 - fixed_var_proportions
+        sampling_chances = 1 - utils.remap_array_in_zero_one(fixed_var_proportions)
 
         no_set_values = np.full(shape=self.search_space.amount_of_parameters, fill_value=-1, dtype=int)
         all_var_indexes = list(range(self.search_space.amount_of_parameters))
 
         def generate_single_individual():
-            length = utils.sample_from_geometric_distribution(0.8)
+            length = utils.sample_from_geometric_distribution(0.6)
             fixed_positions = random.choices(population=all_var_indexes, weights=sampling_chances, k=length)
             resulting_values = np.copy(no_set_values)
             for position in fixed_positions:
@@ -148,7 +148,10 @@ class MPLSS:
 
         return [generate_single_individual() for _ in range(self.diversity_offspring_amount)]
 
-    def run(self, termination_criteria: TerminationCriteria):
+    def run(self,
+            termination_criteria: TerminationCriteria,
+            custom_ps_repr: Optional[Callable] = None,
+            show_each_generation=False):
         iterations = 0
 
         def should_terminate():
@@ -156,6 +159,9 @@ class MPLSS:
                                             used_evaluations=self.metric.used_evaluations)
 
         while not should_terminate():
+            if show_each_generation:
+                self.show_current_state(custom_ps_repr)
+
             # select parents
             selected_parents = self.truncation_selection()
 
@@ -167,7 +173,8 @@ class MPLSS:
                 new_population.extend(self.evaluate_individuals(self.get_offspring(parent)))
 
             # C: the diversity children
-            new_population.extend(self.get_diverse_individuals())
+            diverse_children = self.get_diverse_individuals()
+            new_population.extend(diverse_children)
 
             self.current_population = new_population
             # remove duplicates
@@ -175,10 +182,23 @@ class MPLSS:
 
             iterations += 1
 
-    def get_results(self, amount_to_return=None) -> list[Individual]:
-        if amount_to_return == None:
-            amount_to_return = self.mu_parameter
-        return heapq.nlargest(n=amount_to_return, iterable=self.current_population, key=lambda x: x.aggregated_score)
+    def get_results(self, quantity_returned=None) -> list[Individual]:
+        if quantity_returned == None:
+            quantity_returned = self.mu_parameter
+        return heapq.nlargest(n=quantity_returned, iterable=self.current_population, key=lambda x: x.aggregated_score)
+
+    def show_current_state(self, custom_ps_repr = None):
+        def default_ps_repr(ps):
+            return f"{ps}"
+        if custom_ps_repr is None:
+            custom_ps_repr = default_ps_repr
+
+        amount_to_show = 12
+        best_of_population = heapq.nlargest(n=amount_to_show, iterable=self.current_population,
+                                            key=lambda x: x.aggregated_score)
+        print("\nThe current state is ")
+        for best in best_of_population:
+            print(f"{custom_ps_repr(best.ps)}, score = {best.aggregated_score:.3f}")
 
 
 def test_MLPSS_with_MMM(benchmark_problem: BenchmarkProblem):
@@ -197,14 +217,14 @@ def test_MLPSS_with_MMM(benchmark_problem: BenchmarkProblem):
         algorithm = MPLSS(mu_parameter=50,
                           lambda_parameter=300,
                           mutation_operator=mutation_operator,
-                          diversity_offspring_amount=30,
+                          diversity_offspring_amount=100,
                           metric=metric)
 
         algorithm.set_pRef(pRef, set_metrics=False)
 
         # print("Running the algorithm")
         termination_criteria = TerminationCriteria.IterationLimit(benchmark_problem.search_space.hot_encoded_length)
-        algorithm.run(termination_criteria)
+        algorithm.run(termination_criteria, show_each_generation=False, custom_ps_repr=benchmark_problem.repr_ps)
 
         winners = algorithm.get_results(12)
         for winner in winners:
