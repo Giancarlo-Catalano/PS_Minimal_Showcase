@@ -3,9 +3,11 @@ from typing import Callable
 
 import utils
 from BaselineApproaches.Evaluator import Individual, FullSolutionEvaluator
+from BenchmarkProblems.BenchmarkProblem import BenchmarkProblem
 from FullSolution import FullSolution
 from BaselineApproaches.GA import GA
 from SearchSpace import SearchSpace
+from TerminationCriteria import EvaluationBudgetLimit
 
 
 class FullSolutionGA(GA):
@@ -60,3 +62,26 @@ class FullSolutionGA(GA):
 
     def get_results(self):
         return sorted(self.last_evaluated_population, key=utils.second, reverse=True)
+
+
+
+def test_FSGA(benchmark_problem: BenchmarkProblem):
+    print("Testing the full solution GA")
+    algorithm = FullSolutionGA(search_space=benchmark_problem.search_space,
+                               mutation_rate=1/benchmark_problem.search_space.amount_of_parameters,
+                               crossover_rate=0.5,
+                               elite_size=2,
+                               tournament_size=3,
+                               population_size=500,
+                               fitness_function=benchmark_problem.fitness_function)
+
+    print("Now running the algorithm")
+    termination_criterion = EvaluationBudgetLimit(40000)
+    algorithm.run(termination_criterion, show_every_generation=True)
+
+    print("The algorithm has terminated, and the results are")
+    results = algorithm.get_results()[:12]
+
+
+    for individual, score in results:
+        print(f"{individual}, score = {score}")

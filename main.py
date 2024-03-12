@@ -1,5 +1,5 @@
 import utils
-from BaselineApproaches.FullSolutionGA import FullSolutionGA
+from BaselineApproaches.FullSolutionGA import FullSolutionGA, test_FSGA
 from BenchmarkProblems.BT.BTProblem import BTProblem
 from BenchmarkProblems.IsingSpinGlassProblem import IsingSpinGlassProblem
 from BenchmarkProblems.GraphColouring import GraphColouring
@@ -36,10 +36,10 @@ if __name__ == '__main__':
     # problem = BTProblem.from_files(employee_data_file=r"C:\Users\gac8\PycharmProjects\PS\resources\BT\employeeData.csv",
     #                               rota_file=r"C:\Users\gac8\PycharmProjects\PS\resources\BT\roster_pattern_days.csv",
     #                               calendar_length=56)
-    # problem = Trapk(6, 5)
+    problem = Trapk(6, 5)
     # print("Reading the problem instance")
-    problem = IsingSpinGlassProblem.from_gian_file(
-       r"C:\Users\gac8\PycharmProjects\PS\resources\IsingSpinGlassInstances\SG_36_1.json")
+    # problem = IsingSpinGlassProblem.from_gian_file(
+    #    r"C:\Users\gac8\PycharmProjects\PS\resources\IsingSpinGlassInstances\SG_36_1.json")
 
 
     # problem = SATProblem.from_json_file(r"C:\Users\gac8\PycharmProjects\PS\resources\SATlibInstances\uf20-01.json")
@@ -47,3 +47,6 @@ if __name__ == '__main__':
     # test_fourth_archive_miner(problem, show_each_generation=True)
     test_ouroboros(problem)
     # test_MLPSS_with_MMM(problem)
+
+
+    #test_FSGA(problem)

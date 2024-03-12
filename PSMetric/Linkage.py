@@ -26,9 +26,11 @@ class Linkage(Metric):
         print("Calculating linkages...")
         self.linkage_table = self.get_linkage_table(pRef)
         self.normalised_linkage_table = self.get_quantized_linkage_table(self.linkage_table)
+        #self.normalised_linkage_table = self.get_normalised_linkage_table(self.linkage_table)
 
     @staticmethod
     def get_linkage_table(pRef: PRef) -> LinkageTable:
+        """TODO this is incredibly slow..."""
         overall_avg_fitness = np.average(pRef.fitness_array)
 
         empty = PS.empty(pRef.search_space)

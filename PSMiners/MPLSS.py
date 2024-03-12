@@ -54,9 +54,9 @@ class MPLSS:
             self.metric.set_pRef(pRef)
         self.search_space = pRef.search_space
         self.mutation_operator.set_search_space(self.search_space)
-        self.current_population = self.get_initial_population(from_uniform=0.33,
-                                                              from_half_fixed=0.33,
-                                                              from_geometric=0.34)
+        self.current_population = [Individual(PS.empty(pRef.search_space))]
+
+        # self.get_initial_population(from_uniform=0.33,from_half_fixed=0.33,from_geometric=0.34)
         self.current_population = self.evaluate_individuals(self.current_population)
 
     def get_initial_population(self,
@@ -156,7 +156,7 @@ class MPLSS:
 
         def should_terminate():
             return termination_criteria.met(iterations=iterations,
-                                            used_evaluations=self.metric.used_evaluations)
+                                            evaluations=self.metric.used_evaluations)
 
         while not should_terminate():
             if show_each_generation:

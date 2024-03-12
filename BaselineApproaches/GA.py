@@ -87,7 +87,9 @@ class GA:
                     for _ in range(self.population_size - self.elite_size)]
         return self.evaluator.evaluate_population(elite + children)
 
-    def run(self, termination_criteria: TerminationCriteria):
+    def run(self,
+            termination_criteria: TerminationCriteria,
+            show_every_generation = False):
         iteration = 0
 
         def termination_criteria_met():
@@ -96,6 +98,8 @@ class GA:
                                             evaluated_population=self.last_evaluated_population)
 
         while not termination_criteria_met():
+            if show_every_generation:
+                self.show_current_state()
             self.last_evaluated_population = self.make_new_evaluated_population()
             iteration += 1
 
@@ -106,3 +110,6 @@ class GA:
 
     def get_best_of_last_run(self, quantity_returned=1) -> EvaluatedPopulation:
         return heapq.nlargest(quantity_returned, self.last_evaluated_population, key=utils.second)
+
+    def show_current_state(self):
+        print(f"The current best fitness is {self.get_current_best()}.")

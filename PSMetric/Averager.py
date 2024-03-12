@@ -40,3 +40,7 @@ class Averager(Metric):
         self.used_evaluations += 1
         return sum([score * weight
                     for score, weight in zip(self.get_normalised_scores(ps), self.weights)]) / sum(self.weights)
+
+
+    def get_scores_for_debug(self, ps: PS) -> list[float]:
+        return [metric.get_single_normalised_score(ps) for metric in self.metrics]

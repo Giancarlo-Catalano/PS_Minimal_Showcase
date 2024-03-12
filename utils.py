@@ -89,3 +89,7 @@ def sample_from_geometric_distribution(chance_of_success: float) -> int:
     while random.random() < chance_of_success:
         counter +=1
     return counter
+
+
+def get_descriptive_stats(data: np.ndarray) -> (float, float, float, float, float):
+    return np.min(data), np.median(data), np.max(data), np.average(data), np.std(data)
