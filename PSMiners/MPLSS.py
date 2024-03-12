@@ -115,7 +115,7 @@ class MPLSS:
         return individuals
 
     def truncation_selection(self) -> list[Individual]:
-        return heapq.nlargest(n=self.mu_parameter, iterable=self.current_population, key=lambda x: x.aggregated_score)
+        return self.top(self.mu_parameter)
 
     def get_offspring(self, individual: Individual) -> list[Individual]:
         return [Individual(self.mutation_operator.mutated(individual.ps))
@@ -182,10 +182,13 @@ class MPLSS:
 
             iterations += 1
 
+
+    def top(self, quantity_returned: int) -> list[Individual]:
+        return heapq.nlargest(n=quantity_returned, iterable=self.current_population)
     def get_results(self, quantity_returned=None) -> list[Individual]:
         if quantity_returned == None:
             quantity_returned = self.mu_parameter
-        return heapq.nlargest(n=quantity_returned, iterable=self.current_population, key=lambda x: x.aggregated_score)
+        return self.top(quantity_returned)
 
     def show_current_state(self, custom_ps_repr = None):
         def default_ps_repr(ps):
@@ -193,9 +196,7 @@ class MPLSS:
         if custom_ps_repr is None:
             custom_ps_repr = default_ps_repr
 
-        amount_to_show = 12
-        best_of_population = heapq.nlargest(n=amount_to_show, iterable=self.current_population,
-                                            key=lambda x: x.aggregated_score)
+        best_of_population = self.top(quantity_returned=12)
         print("\nThe current state is ")
         for best in best_of_population:
             print(f"{custom_ps_repr(best.ps)}, score = {best.aggregated_score:.3f}")

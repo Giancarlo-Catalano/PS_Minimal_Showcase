@@ -109,9 +109,9 @@ class Ouroboros:
 
     def calculate_exploitative_model(self) -> Model:
         """ Generates the PSs which make up the exploitative model """
-        exploitation_miner = MPLSS(mu_parameter=50,
-                                   lambda_parameter=300,
-                                   diversity_offspring_amount=150,
+        exploitation_miner = MPLSS(mu_parameter=20,
+                                   lambda_parameter=100,
+                                   diversity_offspring_amount=50,
                                    mutation_operator=MultimodalMutationOperator(0.5),
                                    metric=Averager([MeanFitness(), Linkage()]))
         exploitation_miner.set_pRef(self.current_pRef)

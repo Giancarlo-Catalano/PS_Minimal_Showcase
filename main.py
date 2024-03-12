@@ -45,8 +45,8 @@ if __name__ == '__main__':
     # problem = SATProblem.from_json_file(r"C:\Users\gac8\PycharmProjects\PS\resources\SATlibInstances\uf20-01.json")
     # problem = GraphColouring.random(8, 3, 0.3)
     # test_fourth_archive_miner(problem, show_each_generation=True)
-    test_ouroboros(problem)
+    #test_ouroboros(problem)
     # test_MLPSS_with_MMM(problem)
 
 
-    #test_FSGA(problem)
+    test_FSGA(problem)
