@@ -76,7 +76,7 @@ def test_FSGA(benchmark_problem: BenchmarkProblem):
                                fitness_function=benchmark_problem.fitness_function)
 
     print("Now running the algorithm")
-    termination_criterion = EvaluationBudgetLimit(40000)
+    termination_criterion = EvaluationBudgetLimit(20000)
     algorithm.run(termination_criterion, show_every_generation=True)
 
     print("The algorithm has terminated, and the results are")

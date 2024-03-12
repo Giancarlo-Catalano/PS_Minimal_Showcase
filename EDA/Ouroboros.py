@@ -63,8 +63,11 @@ class Ouroboros:
     fitness_function: Callable
     fs_evaluations: int
     current_pRef: PRef
-    current_exploitative_model: list[Individual]
-    current_explorative_model: list[Individual]
+    historical_pRef: PRef
+
+    historical_model: Model
+    current_exploitative_model: Model
+    current_explorative_model: Model
 
     pRef_sample_size: int
     model_size: int
@@ -88,13 +91,14 @@ class Ouroboros:
         self.current_pRef = PRef.sample_from_search_space(search_space=self.search_space,
                                                           fitness_function=self.fitness_function,
                                                           amount_of_samples=pRef_sample_size)
+        self.historical_pRef = self.current_pRef
         self.fs_evaluations = self.current_pRef.sample_size
 
+        self.historical_model = []
         self.current_exploitative_model = []
         self.current_explorative_model = []
 
-
-    def embellish_with_scores(self, individuals: list[Individual], algorithm: MPLSS) -> list[Individual]:
+    def embellish_with_scores(self, individuals: list[Individual], metric: Metric) -> list[Individual]:
         """
         This debug function will add the metric scores onto individuals using the algorithm that generated them.
         This is mainly used to tell which metric is misbehaving when nan values arise
@@ -102,26 +106,109 @@ class Ouroboros:
         :param algorithm: the algorithm which generated those individuals (or anything with the same metrics!)
         :return: the same individuals, in the same order, but now the .metrics attribute has a list of floats
         """
+        assert (isinstance(metric, Averager))
         for individual in individuals:
-            assert (isinstance(algorithm.metric, Averager))
-            individual.metric_scores = algorithm.metric.get_scores_for_debug(individual.ps)
+            individual.metric_scores = metric.get_scores_for_debug(individual.ps)
             return individuals
 
+    @utils.print_entry_and_exit
+    def calculate_historical_model(self):
+        historical_miner = MPLSS(mu_parameter=20,
+                                 lambda_parameter=100,
+                                 diversity_offspring_amount=100,
+                                 mutation_operator=MultimodalMutationOperator(0.5),
+                                 metric=Averager([MeanFitness(), Linkage()]))
+        historical_miner.set_pRef(self.historical_pRef)
+        historical_miner.run(EvaluationBudgetLimit(15000))
+
+        historical_model = historical_miner.get_results(quantity_returned=self.model_size)
+        self.embellish_with_scores(historical_model, historical_miner.metric)
+        return historical_model
+
+    @utils.print_entry_and_exit
+    def calculate_exploitative_model_classic(self):
+        def prepare_metrics():
+            mean_fitness = MeanFitness()
+            linkage = Linkage()
+
+            mean_fitness.set_pRef(self.current_pRef)
+            linkage.set_pRef(self.historical_pRef)  # note how we use the historical pRef here
+
+            return Averager([mean_fitness, linkage])
+
+        exploitation_miner = FourthMiner(population_size=300,
+                                         offspring_population_size=300,
+                                         metric=prepare_metrics(),
+                                         pRef=self.current_pRef)
+        exploitation_miner.run(EvaluationBudgetLimit(15000))
+
+        exploitative_model = exploitation_miner.get_results(quantity_returned=self.model_size)
+        self.embellish_with_scores(exploitative_model, exploitation_miner.metric)
+        return exploitative_model
+
+    @utils.print_entry_and_exit
     def calculate_exploitative_model(self) -> Model:
         """ Generates the PSs which make up the exploitative model """
         exploitation_miner = MPLSS(mu_parameter=20,
                                    lambda_parameter=100,
-                                   diversity_offspring_amount=50,
+                                   diversity_offspring_amount=100,
                                    mutation_operator=MultimodalMutationOperator(0.5),
                                    metric=Averager([MeanFitness(), Linkage()]))
         exploitation_miner.set_pRef(self.current_pRef)
         exploitation_miner.run(EvaluationBudgetLimit(15000))
 
         exploitative_model = exploitation_miner.get_results(quantity_returned=self.model_size)
-        self.embellish_with_scores(exploitative_model, exploitation_miner)
+        self.embellish_with_scores(exploitative_model, exploitation_miner.metric)
         return exploitative_model
 
+    def calculate_exploitative_and_historical_models(self) -> (Model, Model):
+        def prepare_metrics():
+            mean_fitness = MeanFitness()
+            linkage = Linkage()
 
+            mean_fitness.set_pRef(self.current_pRef)
+            linkage.set_pRef(self.historical_pRef)  # note how we use the historical pRef here
+
+            return Averager([mean_fitness, linkage])
+
+        metrics = prepare_metrics()
+        print("The metrics have been prepared")
+
+        @utils.print_entry_and_exit
+        def get_historical_miner():
+            historical_miner = MPLSS(mu_parameter=20,
+                                     lambda_parameter=100,
+                                     diversity_offspring_amount=100,
+                                     mutation_operator=MultimodalMutationOperator(0.5),
+                                     metric=metrics)
+            historical_miner.set_pRef(self.historical_pRef)
+            historical_miner.run(EvaluationBudgetLimit(15000))
+
+            historical_model = historical_miner.get_results(quantity_returned=self.model_size)
+            self.embellish_with_scores(historical_model, historical_miner.metric)
+            return historical_model
+
+        @utils.print_entry_and_exit
+        def get_exploitative_miner():
+            exploitation_miner = MPLSS(mu_parameter=20,
+                                       lambda_parameter=100,
+                                       diversity_offspring_amount=100,
+                                       mutation_operator=MultimodalMutationOperator(0.5),
+                                       metric=metrics)
+            exploitation_miner.set_pRef(self.current_pRef)
+            exploitation_miner.run(EvaluationBudgetLimit(15000))
+
+            exploitative_model = exploitation_miner.get_results(quantity_returned=self.model_size)
+            self.embellish_with_scores(exploitative_model, exploitation_miner.metric)
+            return exploitative_model
+
+        history_model = get_historical_miner()
+        metrics.used_evaluations = 0  # reset the evaluation counter
+        explotation_model = get_exploitative_miner()
+
+        return explotation_model, history_model
+
+    @utils.print_entry_and_exit
     def calculate_explorative_model(self):
         """ Generates the PSs which make up the explorative model """
         exploration_miner = MPLSS(mu_parameter=20,
@@ -133,9 +220,8 @@ class Ouroboros:
         exploration_miner.run(EvaluationBudgetLimit(15000))
 
         explorative_model = exploration_miner.get_results(quantity_returned=self.model_size)
-        self.embellish_with_scores(explorative_model, exploration_miner)
+        self.embellish_with_scores(explorative_model, exploration_miner.metric)
         return explorative_model
-
 
     def update_elite(self):
         best_of_current_pref = self.get_best_fs(self.elite_size)
@@ -144,7 +230,6 @@ class Ouroboros:
         self.current_elite = list(set(self.current_elite))  # remove duplicates
         self.current_elite.sort(reverse=True)
         self.current_elite = self.current_elite[:self.elite_size]
-
 
     def get_pRef_sampled_from_models(self) -> PRef:
         """
@@ -157,12 +242,12 @@ class Ouroboros:
         :return: the resulting reference population, disregarding the previous one
         """
         proportion_for_random = 0.2
-        amount_from_models = ceil(self.pRef_sample_size * (1-proportion_for_random))
+        amount_from_models = ceil(self.pRef_sample_size * (1 - proportion_for_random))
         amount_from_random = self.pRef_sample_size - amount_from_models
 
         # add those sampled from the models
         sampler = FSSampler(self.search_space,
-                            individuals=self.current_exploitative_model + self.current_explorative_model,
+                            individuals=self.current_exploitative_model + self.current_explorative_model + self.historical_model,
                             merge_limit=ceil(sqrt(self.search_space.amount_of_parameters)))
         new_samples = [sampler.sample() for _ in range(amount_from_models)]
 
@@ -180,9 +265,9 @@ class Ouroboros:
         return PRef.from_full_solutions(new_samples, fitnesses, self.search_space)
 
     def print_current_state(self):
-        def state_of_pRef():
-            stats = utils.get_descriptive_stats(self.current_pRef.fitness_array)
-            return (f"\t#samples = {self.current_pRef.sample_size}, "
+        def state_of_pRef(pRef):
+            stats = utils.get_descriptive_stats(pRef.fitness_array)
+            return (f"\t#samples = {pRef.sample_size}, "
                     f"\n\tmin={stats[0]:.2f}, median={stats[1]:.2f}, max={stats[2]:.2f}, "
                     f"\n\tavg={stats[3]:.2f}, stdev={stats[4]:.2f}")
 
@@ -193,16 +278,18 @@ class Ouroboros:
                 for item in model:
                     print(f"\t{item.ps}, score = {item.aggregated_score:.3f}")
 
-
         def show_elite():
-            if len(self.current_elite) ==0:
+            if len(self.current_elite) == 0:
                 print("\tempty")
                 return
 
             for fs_individual in self.current_elite:
                 print(f"\t{fs_individual.full_solution}, fitness = {fs_individual.fitness}")
 
-        print(f"The current pRef is \n{state_of_pRef()}")
+        print(f"The current pRef is \n{state_of_pRef(self.current_pRef)}")
+        print(f"The historical pRef is \n{state_of_pRef(self.historical_pRef)}")
+        print("The historical model is")
+        show_model(self.historical_model)
         print("The exploitative model is")
         show_model(self.current_exploitative_model)
         print("The explorative model is")
@@ -223,10 +310,12 @@ class Ouroboros:
             if show_every_generation:
                 self.print_current_state()
             self.current_exploitative_model = self.calculate_exploitative_model()
+
+            self.current_exploitative_model, self.historical_model = self.calculate_exploitative_and_historical_models()
             self.current_explorative_model = self.calculate_explorative_model()
+            self.historical_model = self.calculate_historical_model()
             self.current_pRef = self.get_pRef_sampled_from_models()
-            """ note that while the old and new Prefs could be concatenated, having an increasingly large pRef 
-                will absolutely destroy the performance of the algorithm. """
+            self.historical_pRef = PRef.concat(self.historical_pRef, self.current_pRef)
 
     def get_best_fs(self, qty_ret: int) -> list[FSIndividual]:
         indexes_with_scores = list(enumerate(self.current_pRef.fitness_array))
@@ -236,13 +325,11 @@ class Ouroboros:
                 for index, score in indexes_with_scores[:qty_ret]]
 
 
-
-
 def test_ouroboros(benchmark_problem: BenchmarkProblem):
     print("Initialising the EDA")
     eda = Ouroboros(benchmark_problem.search_space,
                     benchmark_problem.fitness_function,
-                    pRef_sample_size=2000,
+                    pRef_sample_size=10000,
                     model_size=6,
                     elite_size=5)
 

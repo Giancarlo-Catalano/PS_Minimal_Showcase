@@ -93,3 +93,13 @@ def sample_from_geometric_distribution(chance_of_success: float) -> int:
 
 def get_descriptive_stats(data: np.ndarray) -> (float, float, float, float, float):
     return np.min(data), np.median(data), np.max(data), np.average(data), np.std(data)
+
+
+
+def print_entry_and_exit(func):
+    def wrapper(*args, **kwargs):
+        print(f"Starting {func.__name__}")
+        result = func(*args, **kwargs)
+        print(f"Terminating {func.__name__}")
+        return result
+    return wrapper

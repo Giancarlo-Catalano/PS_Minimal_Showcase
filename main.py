@@ -36,7 +36,7 @@ if __name__ == '__main__':
     # problem = BTProblem.from_files(employee_data_file=r"C:\Users\gac8\PycharmProjects\PS\resources\BT\employeeData.csv",
     #                               rota_file=r"C:\Users\gac8\PycharmProjects\PS\resources\BT\roster_pattern_days.csv",
     #                               calendar_length=56)
-    problem = Trapk(6, 5)
+    problem = Trapk(4, 5)
     # print("Reading the problem instance")
     # problem = IsingSpinGlassProblem.from_gian_file(
     #    r"C:\Users\gac8\PycharmProjects\PS\resources\IsingSpinGlassInstances\SG_36_1.json")
@@ -45,8 +45,8 @@ if __name__ == '__main__':
     # problem = SATProblem.from_json_file(r"C:\Users\gac8\PycharmProjects\PS\resources\SATlibInstances\uf20-01.json")
     # problem = GraphColouring.random(8, 3, 0.3)
     # test_fourth_archive_miner(problem, show_each_generation=True)
-    #test_ouroboros(problem)
+    test_ouroboros(problem)
     # test_MLPSS_with_MMM(problem)
 
 
-    test_FSGA(problem)
+    #test_FSGA(problem)
