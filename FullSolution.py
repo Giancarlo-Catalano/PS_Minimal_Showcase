@@ -21,7 +21,7 @@ class FullSolution:
         return self.values == other.values
 
     def __hash__(self):
-        return self.values.__hash__()
+        return hash(tuple(self.values))
 
     def __len__(self):
         return len(self.values)

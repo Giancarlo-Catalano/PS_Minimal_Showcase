@@ -6,6 +6,7 @@ import numpy as np
 import utils
 from BaselineApproaches.Evaluator import Individual
 from BenchmarkProblems.BenchmarkProblem import BenchmarkProblem
+from EDA.FSIndividual import FSIndividual
 from FullSolution import FullSolution
 from PRef import PRef
 from PS import PS
@@ -54,9 +55,9 @@ Current issues:
     * the models are not very clean at all, which defeats the purpose of explainability
     * quite slow
     
-    
-    
 """
+
+
 class Ouroboros:
     search_space: SearchSpace
     fitness_function: Callable
@@ -67,16 +68,22 @@ class Ouroboros:
 
     pRef_sample_size: int
     model_size: int
+    elite_size: int
+
+    current_elite: list[FSIndividual]
 
     def __init__(self,
                  search_space: SearchSpace,
                  fitness_function: Callable,
                  pRef_sample_size: int,
-                 model_size: int):
+                 model_size: int,
+                 elite_size: int):
         self.search_space = search_space
         self.fitness_function = fitness_function
         self.pRef_sample_size = pRef_sample_size
         self.model_size = model_size
+        self.elite_size = elite_size
+        self.current_elite = []
 
         self.current_pRef = PRef.sample_from_search_space(search_space=self.search_space,
                                                           fitness_function=self.fitness_function,
@@ -129,25 +136,43 @@ class Ouroboros:
         self.embellish_with_scores(explorative_model, exploration_miner)
         return explorative_model
 
+
+    def update_elite(self):
+        best_of_current_pref = self.get_best_fs(self.elite_size)
+
+        self.current_elite.extend(best_of_current_pref)
+        self.current_elite = list(set(self.current_elite))  # remove duplicates
+        self.current_elite.sort(reverse=True)
+        self.current_elite = self.current_elite[:self.elite_size]
+
+
     def get_pRef_sampled_from_models(self) -> PRef:
         """
         Using the current models, a new reference population is sampled and returned.
         Additionally, some completely random individuals are also added, mainly so that
             * there is no convergence prematurely
             * the linkage information can still be obtained, even when the population is really empty
+
+        Finally, the fss from the current elite are added
         :return: the resulting reference population, disregarding the previous one
         """
         proportion_for_random = 0.2
         amount_from_models = ceil(self.pRef_sample_size * (1-proportion_for_random))
         amount_from_random = self.pRef_sample_size - amount_from_models
 
+        # add those sampled from the models
         sampler = FSSampler(self.search_space,
                             individuals=self.current_exploitative_model + self.current_explorative_model,
                             merge_limit=ceil(sqrt(self.search_space.amount_of_parameters)))
         new_samples = [sampler.sample() for _ in range(amount_from_models)]
 
+        # add those sampled randomly
         uniform_random_samples = [FullSolution.random(self.search_space) for _ in range(amount_from_random)]
         new_samples.extend(uniform_random_samples)
+
+        # add those from the elite
+        self.update_elite()
+        new_samples.extend([fs_individual.full_solution for fs_individual in self.current_elite])
 
         self.fs_evaluations += len(new_samples)
         fitnesses = [self.fitness_function(sample) for sample in new_samples]
@@ -168,11 +193,22 @@ class Ouroboros:
                 for item in model:
                     print(f"\t{item.ps}, score = {item.aggregated_score:.3f}")
 
+
+        def show_elite():
+            if len(self.current_elite) ==0:
+                print("\tempty")
+                return
+
+            for fs_individual in self.current_elite:
+                print(f"\t{fs_individual.full_solution}, fitness = {fs_individual.fitness}")
+
         print(f"The current pRef is \n{state_of_pRef()}")
         print("The exploitative model is")
         show_model(self.current_exploitative_model)
         print("The explorative model is")
         show_model(self.current_explorative_model)
+        print("The elite is")
+        show_elite()
 
     def run(self, show_every_generation=False):
         """
@@ -192,11 +228,12 @@ class Ouroboros:
             """ note that while the old and new Prefs could be concatenated, having an increasingly large pRef 
                 will absolutely destroy the performance of the algorithm. """
 
-    def get_best_fs(self, qty_ret: int):
+    def get_best_fs(self, qty_ret: int) -> list[FSIndividual]:
         indexes_with_scores = list(enumerate(self.current_pRef.fitness_array))
         indexes_with_scores.sort(key=utils.second, reverse=True)
 
-        return [self.current_pRef.full_solutions[index] for index, score in indexes_with_scores[:qty_ret]]
+        return [FSIndividual(self.current_pRef.full_solutions[index], score)
+                for index, score in indexes_with_scores[:qty_ret]]
 
 
 
@@ -206,7 +243,8 @@ def test_ouroboros(benchmark_problem: BenchmarkProblem):
     eda = Ouroboros(benchmark_problem.search_space,
                     benchmark_problem.fitness_function,
                     pRef_sample_size=2000,
-                    model_size=6)
+                    model_size=6,
+                    elite_size=5)
 
     eda.run(show_every_generation=True)
 
@@ -215,5 +253,8 @@ def test_ouroboros(benchmark_problem: BenchmarkProblem):
 
     fss = eda.get_best_fs(12)
     print("The Top 12 fss are ")
-    for fs in fss:
-        print(f"{benchmark_problem.repr_ps(PS.from_FS(fs))}, with fitness = {eda.fitness_function(fs)}")
+    for fs_individual in fss:
+        fs = fs_individual.full_solution
+        as_ps = PS.from_FS(fs)
+        fitness = eda.fitness_function(fs)
+        print(f"{benchmark_problem.repr_ps(as_ps)}, with fitness = {fitness}")
