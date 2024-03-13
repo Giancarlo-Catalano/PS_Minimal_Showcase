@@ -7,6 +7,7 @@ with the following requirements:
 from typing import TypeAlias, Callable
 
 import numpy as np
+from scipy.stats import f_oneway
 
 import utils
 from BenchmarkProblems.BenchmarkProblem import BenchmarkProblem
@@ -174,16 +175,57 @@ def use_truncated_pRef(linkage_table_generating_function: Callable[[PRef], Linka
     return apply
 
 
+def via_ANOVA(pRef: PRef) -> LinkageTable:
+    solutions = pRef.full_solution_matrix
+    num_variables = solutions.shape[1]
+    linkage_matrix = np.zeros((num_variables, num_variables))
+
+    for i in range(num_variables):
+        for j in range(i, num_variables):
+            var_i_values = solutions[:, i]
+            var_j_values = solutions[:, j]
+
+            # Perform ANOVA to calculate linkage value
+            f_statistic, p_value = f_oneway(var_i_values, var_j_values)
+            linkage_matrix[i, j] = p_value
+
+    return mirror_diagonal(linkage_matrix)
+
+def via_ANOVA_adjusted(pRef: PRef) -> LinkageTable:
+    solutions = pRef.full_solution_matrix
+    fitnesses = pRef.fitness_array
+    num_variables = solutions.shape[1]
+    linkage_matrix = np.zeros((num_variables, num_variables))
+
+    for i in range(num_variables):
+        for j in range(i, num_variables):
+            var_i_values = solutions[:, i]
+            var_j_values = solutions[:, j]
+
+            # Perform ANOVA to calculate linkage value
+            f_statistic, p_value = f_oneway(var_i_values, var_j_values)
+
+            # Weight the contribution of the variable pair by the inverse of fitness
+            linkage_matrix[i, j] = p_value / (1 + abs(fitnesses[i] - fitnesses[j]))
+
+    return mirror_diagonal(linkage_matrix)
+
+
 def test_linkage_tables(benchmark_problem: BenchmarkProblem):
     sample_sizes = [1000, 10000]
-    methods = [get_linkage_table_alpha,
-               get_linkage_table_beta,
-               get_linkage_table_gamma,
-               use_truncated_pRef(get_linkage_table_beta),
-               use_truncated_pRef(get_linkage_table_gamma)]
+    methods = {"original": get_linkage_table_alpha,
+               "marginal_median": get_linkage_table_beta,
+               "marginal_mean": get_linkage_table_gamma,
+               "truncated_marginal_median": use_truncated_pRef(get_linkage_table_beta),
+               "truncated_marginal_mean": use_truncated_pRef(get_linkage_table_gamma),
+               "anova": via_ANOVA,
+               "truncated_anova": use_truncated_pRef(via_ANOVA),
+               "adj_anova": via_ANOVA_adjusted,
+               "truncated_adj_anova": use_truncated_pRef(via_ANOVA_adjusted)}
 
     for sample_size in sample_sizes:
         pRef = benchmark_problem.get_pRef(sample_size)
-        for method in methods:
-            linkage_table = method(pRef)
+        for method_key in methods:
+            function = methods[method_key]
+            linkage_table = function(pRef)
             print("Finished obtaining the table, hopefully you're debugging")
