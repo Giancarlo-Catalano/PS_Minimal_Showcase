@@ -15,6 +15,8 @@ from PRef import PRef
 from PS import PS
 from SearchSpace import SearchSpace
 
+from scipy.stats import pearsonr, spearmanr, kendalltau, kruskal, chi2_contingency
+
 LinkageValue: TypeAlias = float
 LinkageTable: TypeAlias = np.ndarray
 
@@ -154,19 +156,20 @@ def get_linkage_table_gamma(pRef: PRef) -> LinkageTable:
     return mutual_information_linkage_table(pRef.search_space, get_p)
 
 
+def truncation_selection_pRef(pRef: PRef) -> PRef:
+    items = list(zip(pRef.full_solutions, pRef.fitness_array))
+    items.sort(key=utils.second, reverse=True)
+
+    amount_to_keep = len(items) // 2
+    items = items[:amount_to_keep]
+    full_solutions, fitness_values = utils.unzip(items)
+    return PRef.from_full_solutions(full_solutions=full_solutions,
+                                    fitness_values=fitness_values,
+                                    search_space=pRef.search_space)
 @utils.print_entry_and_exit
 def use_truncated_pRef(linkage_table_generating_function: Callable[[PRef], LinkageTable]) -> Callable[
     [PRef], LinkageTable]:
-    def truncation_selection_pRef(pRef: PRef) -> PRef:
-        items = list(zip(pRef.full_solutions, pRef.fitness_array))
-        items.sort(key=utils.second, reverse=True)
 
-        amount_to_keep = len(items) // 2
-        items = items[:amount_to_keep]
-        full_solutions, fitness_values = utils.unzip(items)
-        return PRef.from_full_solutions(full_solutions=full_solutions,
-                                        fitness_values=fitness_values,
-                                        search_space=pRef.search_space)
 
     def apply(pRef: PRef):
         truncated_pRef = truncation_selection_pRef(pRef)
@@ -175,57 +178,60 @@ def use_truncated_pRef(linkage_table_generating_function: Callable[[PRef], Linka
     return apply
 
 
-def via_ANOVA(pRef: PRef) -> LinkageTable:
-    solutions = pRef.full_solution_matrix
+def calculate_linkage_using_statistics(solutions, test: str):
     num_variables = solutions.shape[1]
     linkage_matrix = np.zeros((num_variables, num_variables))
 
     for i in range(num_variables):
-        for j in range(i, num_variables):
+        for j in range(i+1, num_variables):
             var_i_values = solutions[:, i]
             var_j_values = solutions[:, j]
 
-            # Perform ANOVA to calculate linkage value
-            f_statistic, p_value = f_oneway(var_i_values, var_j_values)
-            linkage_matrix[i, j] = p_value
+            if test == 'pearson':
+                correlation, p_value = pearsonr(var_i_values, var_j_values)
+            elif test == 'anova':
+                correlation, p_value = f_oneway(var_i_values, var_j_values)
+            elif test == 'spearman':
+                correlation, p_value = spearmanr(var_i_values, var_j_values)
+            elif test == 'kendall':
+                correlation, p_value = kendalltau(var_i_values, var_j_values)
+            elif test == 'kruskal':
+                correlation, p_value = kruskal(var_i_values, var_j_values)
+            elif test == 'chi_square':
+                contingency_table = np.array([var_i_values, var_j_values])
+                correlation, p_value, _, _ = chi2_contingency(contingency_table)
+            else:
+                raise ValueError(
+                    "Invalid test type. Choose from 'pearson', 'spearman', 'kendall', 'kruskal', or 'chi_square'.")
+
+            linkage_matrix[i, j] = correlation
 
     return mirror_diagonal(linkage_matrix)
 
-def via_ANOVA_adjusted(pRef: PRef) -> LinkageTable:
-    solutions = pRef.full_solution_matrix
-    fitnesses = pRef.fitness_array
-    num_variables = solutions.shape[1]
-    linkage_matrix = np.zeros((num_variables, num_variables))
 
-    for i in range(num_variables):
-        for j in range(i, num_variables):
-            var_i_values = solutions[:, i]
-            var_j_values = solutions[:, j]
+def linkage_using_method(test: str):
+    def apply(pRef: PRef):
+        truncated_pRef = truncation_selection_pRef(pRef)
+        solutions = truncated_pRef.full_solution_matrix
 
-            # Perform ANOVA to calculate linkage value
-            f_statistic, p_value = f_oneway(var_i_values, var_j_values)
+        return calculate_linkage_using_statistics(solutions, test = test)
 
-            # Weight the contribution of the variable pair by the inverse of fitness
-            linkage_matrix[i, j] = p_value / (1 + abs(fitnesses[i] - fitnesses[j]))
-
-    return mirror_diagonal(linkage_matrix)
+    return apply
 
 
 def test_linkage_tables(benchmark_problem: BenchmarkProblem):
-    sample_sizes = [1000, 10000]
+    sample_sizes = [10000]
     methods = {"original": get_linkage_table_alpha,
-               "marginal_median": get_linkage_table_beta,
-               "marginal_mean": get_linkage_table_gamma,
                "truncated_marginal_median": use_truncated_pRef(get_linkage_table_beta),
-               "truncated_marginal_mean": use_truncated_pRef(get_linkage_table_gamma),
-               "anova": via_ANOVA,
-               "truncated_anova": use_truncated_pRef(via_ANOVA),
-               "adj_anova": via_ANOVA_adjusted,
-               "truncated_adj_anova": use_truncated_pRef(via_ANOVA_adjusted)}
+               "truncated_marginal_mean": use_truncated_pRef(get_linkage_table_gamma)}
+
+    methods.update({method: linkage_using_method(method)
+                    for method in {"pearson", "anova", "spearman", "kendall", "kruskal"}})
 
     for sample_size in sample_sizes:
         pRef = benchmark_problem.get_pRef(sample_size)
         for method_key in methods:
             function = methods[method_key]
             linkage_table = function(pRef)
+            linkage_table = np.nan_to_num(linkage_table, nan=0)
             print("Finished obtaining the table, hopefully you're debugging")
