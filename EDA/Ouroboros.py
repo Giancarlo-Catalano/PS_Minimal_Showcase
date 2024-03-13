@@ -125,6 +125,20 @@ class Ouroboros:
         self.embellish_with_scores(historical_model, historical_miner.metric)
         return historical_model
 
+
+    def merge_and_truncate_models(self, old_model: Model, new_model: Model):
+        """This function essentially tries to keep the best of the new and old models,
+        by calculating the scores of their PSs using the historical Pref"""
+        final_model = old_model + new_model
+        metric = Averager([MeanFitness(), Linkage()])
+        metric.set_pRef(self.historical_pRef) ## note that this is what makes it slow
+        for item in final_model:
+            item.aggregated_score = metric.get_single_normalised_score(item.ps)
+
+        final_model.sort(reverse=True)
+        final_model = final_model[:self.model_size]
+        return final_model
+
     @utils.print_entry_and_exit
     def calculate_exploitative_model_classic(self):
         def prepare_metrics():
@@ -313,7 +327,7 @@ class Ouroboros:
 
             self.current_exploitative_model, self.historical_model = self.calculate_exploitative_and_historical_models()
             self.current_explorative_model = self.calculate_explorative_model()
-            self.historical_model = self.calculate_historical_model()
+            self.historical_model = self.merge_and_truncate_models(self.historical_model, self.current_exploitative_model)
             self.current_pRef = self.get_pRef_sampled_from_models()
             self.historical_pRef = PRef.concat(self.historical_pRef, self.current_pRef)
 

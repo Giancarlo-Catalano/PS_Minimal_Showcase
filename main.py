@@ -7,6 +7,7 @@ from BenchmarkProblems.RoyalRoad import RoyalRoad
 from BenchmarkProblems.RoyalRoadWithOverlaps import RoyalRoadWithOverlaps
 from BenchmarkProblems.SATProblem import SATProblem
 from BenchmarkProblems.Trapk import Trapk
+from EDA.LinkageModel import test_linkage_tables
 from EDA.Ouroboros import test_ouroboros
 from JMetal.PSProblem import test_MO, test_PSProblem, test_MO_comprehensive
 from JMetal.SingleObjective import test_single_objective_search
@@ -45,8 +46,10 @@ if __name__ == '__main__':
     # problem = SATProblem.from_json_file(r"C:\Users\gac8\PycharmProjects\PS\resources\SATlibInstances\uf20-01.json")
     # problem = GraphColouring.random(8, 3, 0.3)
     # test_fourth_archive_miner(problem, show_each_generation=True)
-    test_ouroboros(problem)
+    # test_ouroboros(problem)
     # test_MLPSS_with_MMM(problem)
 
 
     #test_FSGA(problem)
+
+    test_linkage_tables(problem)
