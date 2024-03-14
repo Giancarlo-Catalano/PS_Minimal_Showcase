@@ -34,3 +34,7 @@ class FSEvaluator:
                                         amount_of_samples: int) -> PRef:
         samples = [FullSolution.random(search_space) for _ in range(amount_of_samples)]
         return self.generate_pRef_from_full_solutions(search_space, samples)
+
+
+    def __repr__(self):
+        return f"FS Evaluator, used_budget = {self.used_evaluations}"

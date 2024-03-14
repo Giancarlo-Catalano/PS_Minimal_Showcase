@@ -27,9 +27,12 @@ FitnessFunction: TypeAlias = Callable[[FullSolution], Fitness]
 
 
 
-def merge_populations(first: list[Any], second: list[Any], quantity_returned: int) -> list[Any]:
+def merge_populations(first: list[Any], second: list[Any], quantity_returned: int,
+                      remove_duplicates=False) -> list[Any]:
     """Given a population of orderable items, it merges them and returns the top n """
     returned_population = first + second
+    if remove_duplicates:
+        returned_population = list(set(returned_population))
     returned_population.sort(reverse = True)
     return returned_population[:quantity_returned]
 
@@ -37,15 +40,16 @@ def merge_populations(first: list[Any], second: list[Any], quantity_returned: in
 
 class SteadyStateEDA:
     current_pRef: PRef
+    historical_pRef: PRef
 
     cutting_edge_model: Model
     novelty_model: Model
     historical_model: Model
 
-    linkage_metric: Metric
-    mean_fitness_metric: Metric
-    novelty_metric: Metric
-    simplicity_metric: Metric
+    linkage_metric: BiVariateANOVALinkage
+    mean_fitness_metric: MeanFitness
+    novelty_metric: Novelty
+    simplicity_metric: Simplicity
 
     # main parameters for EDA
     population_size: int
@@ -71,6 +75,7 @@ class SteadyStateEDA:
 
         self.fitness_function_evaluator = FSEvaluator(fitness_function)
         self.current_pRef = self.fitness_function_evaluator.generate_pRef_from_search_space(self.search_space, self.population_size)
+        self.historical_pRef = self.current_pRef
 
         self.cutting_edge_model = []
         self.novelty_model = []
@@ -106,8 +111,8 @@ class SteadyStateEDA:
         show_model(self.novelty_model)
 
     def update_metrics_and_linkage_model(self):
-        self.linkage_metric.set_pRef(self.current_pRef)
-        self.mean_fitness_metric.set_pRef(self.current_pRef)
+        self.linkage_metric.set_pRef(self.current_pRef)  # maybe put historical here
+        self.mean_fitness_metric.set_pRef(self.current_pRef) # and here
         self.novelty_metric.set_pRef(self.current_pRef)
         self.simplicity_metric.set_pRef(self.current_pRef)
 
@@ -118,8 +123,8 @@ class SteadyStateEDA:
                                    diversity_offspring_amount=100,
                                    mutation_operator=MultimodalMutationOperator(0.5),
                                    metric=Averager([self.mean_fitness_metric, self.linkage_metric]))
-        ce_miner.set_pRef(self.current_pRef)
-        ce_miner.run(EvaluationBudgetLimit(15000))
+        ce_miner.set_pRef(self.current_pRef, set_metrics=False)
+        ce_miner.run(EvaluationBudgetLimit(3000))
 
         ce_model = ce_miner.get_results(quantity_returned=self.model_size)
         return ce_model
@@ -130,8 +135,8 @@ class SteadyStateEDA:
                                    diversity_offspring_amount=100,
                                    mutation_operator=MultimodalMutationOperator(0.5),
                                    metric=Averager([self.novelty_metric, self.simplicity_metric]))
-        novelty_miner.set_pRef(self.current_pRef)
-        novelty_miner.run(EvaluationBudgetLimit(15000))
+        novelty_miner.set_pRef(self.current_pRef, set_metrics=False)
+        novelty_miner.run(EvaluationBudgetLimit(3000))
 
         novelty_model = novelty_miner.get_results(quantity_returned=self.model_size)
         return novelty_model
@@ -140,6 +145,10 @@ class SteadyStateEDA:
     def update_historical_model(self):
         # TODO: the scores in the historical model are now invalid, because the population has changed.
         # perhaps we need to keep a history_pRef?
+        historical_metric = Averager([self.mean_fitness_metric, self.linkage_metric])
+        for individual in self.historical_model:
+            individual.aggregated_score = historical_metric.get_single_normalised_score(individual.ps)
+
         self.historical_model = merge_populations(self.historical_model, self.cutting_edge_model,
                                                   quantity_returned=self.model_size)
 
@@ -167,6 +176,7 @@ class SteadyStateEDA:
 
     def update_population_using_current_models(self):
         self.current_pRef = self.sample_from_models()
+        self.historical_pRef = PRef.concat(self.historical_pRef, self.current_pRef)
 
 
     def run(self,
@@ -174,7 +184,7 @@ class SteadyStateEDA:
             show_every_iteration = False):
         iteration = 0
         def should_terminate():
-            return termination_criteria.met(iteration = iteration,
+            return termination_criteria.met(iterations = iteration,
                                             used_budget = self.fitness_function_evaluator.used_evaluations)
 
         while not should_terminate():
