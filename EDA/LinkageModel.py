@@ -4,10 +4,13 @@ with the following requirements:
 * does not require too many samples
 * does not need for the PRef to be from a uniform distribution
 """
+import itertools
 from typing import TypeAlias, Callable
 
 import numpy as np
-from scipy.stats import f_oneway
+import pandas as pd
+from scipy.stats import f_oneway, pearsonr, spearmanr, kendalltau, kruskal
+from sklearn.metrics import mutual_info_score
 
 import utils
 from BenchmarkProblems.BenchmarkProblem import BenchmarkProblem
@@ -15,7 +18,9 @@ from PRef import PRef
 from PS import PS
 from SearchSpace import SearchSpace
 
-from scipy.stats import pearsonr, spearmanr, kendalltau, kruskal, chi2_contingency
+# from scipy.stats import pearsonr, spearmanr, kendalltau, kruskal, chi2_contingency, cramers_v
+from scipy.stats import chi2_contingency
+from scipy.stats import f
 
 LinkageValue: TypeAlias = float
 LinkageTable: TypeAlias = np.ndarray
@@ -219,18 +224,147 @@ def linkage_using_method(test: str):
     return apply
 
 
-def test_linkage_tables(benchmark_problem: BenchmarkProblem):
-    sample_sizes = [10000]
-    methods = {"original": get_linkage_table_alpha,
-               "truncated_marginal_median": use_truncated_pRef(get_linkage_table_beta),
-               "truncated_marginal_mean": use_truncated_pRef(get_linkage_table_gamma)}
 
-    methods.update({method: linkage_using_method(method)
-                    for method in {"pearson", "anova", "spearman", "kendall", "kruskal"}})
+def calculate_pairwise_interactions_cramers_v(pRef: PRef) -> LinkageTable:
+    solutions = pRef.full_solution_matrix
+    fitnesses = pRef.fitness_array
+
+    num_variables = solutions.shape[1]
+    columns = [f"Var_{i}" for i in range(num_variables)]
+    results_cramers_v = pd.DataFrame(index=columns, columns=columns)
+    results_mutual_info = pd.DataFrame(index=columns, columns=columns)
+
+    for i in range(num_variables):
+        for j in range(i+1, num_variables):
+            contingency_table = pd.crosstab(solutions[:, i], solutions[:, j])
+            joint_table = pd.crosstab(index=solutions[:, i], columns=solutions[:, j], values=fitnesses, aggfunc='mean')
+
+            # Calculate weighted Cramér's V
+            chi2, _, _, _ = chi2_contingency(contingency_table)
+            cramers_v = np.sqrt(chi2 / (solutions.shape[0] * min(contingency_table.shape) - 1))
+            weighted_cramers_v = cramers_v * np.sqrt(joint_table.sum().sum())
+
+            # Calculate weighted mutual information
+            mutual_info = mutual_info_score(solutions[:, i], solutions[:, j])
+            weighted_mutual_info = mutual_info * joint_table.sum().sum()
+
+            results_cramers_v.iloc[i, j] = weighted_cramers_v
+            results_cramers_v.iloc[j, i] = weighted_cramers_v
+            results_mutual_info.iloc[i, j] = weighted_mutual_info
+            results_mutual_info.iloc[j, i] = weighted_mutual_info
+
+    return mirror_diagonal(np.array(results_cramers_v, dtype=float))
+
+
+def calculate_pairwise_interactions_mutual_info(pRef: PRef) -> LinkageTable:
+    solutions = pRef.full_solution_matrix
+    fitnesses = pRef.fitness_array
+
+    num_variables = solutions.shape[1]
+    columns = [f"Var_{i}" for i in range(num_variables)]
+    results_cramers_v = pd.DataFrame(index=columns, columns=columns)
+    results_mutual_info = pd.DataFrame(index=columns, columns=columns)
+
+    for i in range(num_variables):
+        for j in range(i + 1, num_variables):
+            contingency_table = pd.crosstab(solutions[:, i], solutions[:, j])
+            joint_table = pd.crosstab(index=solutions[:, i], columns=solutions[:, j], values=fitnesses, aggfunc='mean')
+
+            # Calculate weighted Cramér's V
+            chi2, _, _, _ = chi2_contingency(contingency_table)
+            cramers_v = np.sqrt(chi2 / (solutions.shape[0] * min(contingency_table.shape) - 1))
+            weighted_cramers_v = cramers_v * np.sqrt(joint_table.sum().sum())
+
+            # Calculate weighted mutual information
+            mutual_info = mutual_info_score(solutions[:, i], solutions[:, j])
+            weighted_mutual_info = mutual_info * joint_table.sum().sum()
+
+            results_cramers_v.iloc[i, j] = cramers_v
+            results_cramers_v.iloc[j, i] = cramers_v
+            results_mutual_info.iloc[i, j] = mutual_info
+            results_mutual_info.iloc[j, i] = mutual_info
+
+    return mirror_diagonal(np.array(results_mutual_info, dtype=float))
+
+
+
+def long_anova_method(pRef: PRef) -> LinkageTable:
+    def interaction_test(data: np.ndarray, fitnesses: np.ndarray):
+        # Perform a 2-factor ANOVA test with interaction term
+        grand_mean = np.mean(fitnesses)
+        dof_total = len(fitnesses) - 1
+        n = data.shape[0]
+
+        # Calculate sums of squares for factors
+        sum_sq_factor1 = np.sum(
+            (np.mean(fitnesses[data[:, 0] == level]) - grand_mean) ** 2 for level in np.unique(data[:, 0]))
+        sum_sq_factor2 = np.sum(
+            (np.mean(fitnesses[data[:, 1] == level]) - grand_mean) ** 2 for level in np.unique(data[:, 1]))
+        sum_sq_interaction = np.sum((np.mean(fitnesses[(data[:, 0] == level[0]) & (data[:, 1] == level[1])]) -
+                                     np.mean(fitnesses[data[:, 0] == level[0]]) -
+                                     np.mean(fitnesses[data[:, 1] == level[1]]) +
+                                     grand_mean) ** 2 for level in
+                                    itertools.product(np.unique(data[:, 0]), np.unique(data[:, 1])))
+
+        # Calculate error sum of squares
+        ss_error = np.sum((fitnesses - np.mean(fitnesses)) ** 2)
+
+        # Calculate degrees of freedom
+        dof_factor1 = len(np.unique(data[:, 0])) - 1
+        dof_factor2 = len(np.unique(data[:, 1])) - 1
+        dof_interaction = dof_factor1 * dof_factor2
+        dof_error = dof_total - (dof_factor1 + dof_factor2 + dof_interaction)
+
+        # Calculate mean squares
+        ms_factor1 = sum_sq_factor1 / dof_factor1
+        ms_factor2 = sum_sq_factor2 / dof_factor2
+        ms_interaction = sum_sq_interaction / dof_interaction
+        ms_error = ss_error / dof_error
+
+        # Calculate F statistic
+        f_statistic = (ms_interaction / ms_error) if ms_error != 0 else np.inf
+
+        # Calculate p-value
+        p_value = 1 - f.cdf(f_statistic, dof_interaction, dof_error)
+        return p_value
+    def calculate_interaction(data: np.ndarray, fitnesses: np.ndarray):
+        num_features = data.shape[1]
+        interaction_table = np.zeros((num_features, num_features))
+        for i, j in itertools.combinations(range(num_features), 2):
+            interaction_data = np.column_stack((data[:, i], data[:, j], data[:, i] * data[:, j]))
+            interaction_table[i, j] = interaction_test(interaction_data, fitnesses)
+        return interaction_table + interaction_table.T  # Make the table symmetric
+
+    solutions = pRef.full_solution_matrix
+    fitnesses = pRef.fitness_array
+
+    return artificially_fill_diagonal(calculate_interaction(solutions, fitnesses))
+
+
+def artificially_fill_diagonal(linkage_table: LinkageTable) -> LinkageTable:
+    table_size = linkage_table.shape[1]
+    places_to_consider = np.logical_not(np.identity(table_size, dtype=bool))
+    replacement = np.min(linkage_table[places_to_consider])
+    np.fill_diagonal(linkage_table, replacement)
+    return linkage_table
+
+def test_linkage_tables(benchmark_problem: BenchmarkProblem):
+    sample_sizes = [10000, 1000]
+    methods = {"original": get_linkage_table_alpha,
+               "long_anova": long_anova_method,
+               # "truncated_marginal_median": use_truncated_pRef(get_linkage_table_beta),
+               # "truncated_marginal_mean": use_truncated_pRef(get_linkage_table_gamma),
+               # "cramer": use_truncated_pRef(calculate_pairwise_interactions_cramers_v)
+               # "mutual_info": use_truncated_pRef(calculate_pairwise_interactions_mutual_info)
+                }
+
+    # methods.update({method: linkage_using_method(method)
+    #                 for method in {"pearson", "anova", "spearman", "kendall", "kruskal"}})
 
     for sample_size in sample_sizes:
         pRef = benchmark_problem.get_pRef(sample_size)
         for method_key in methods:
+            print(f"{sample_size = }, {method_key = }")
             function = methods[method_key]
             linkage_table = function(pRef)
             linkage_table = np.nan_to_num(linkage_table, nan=0)
