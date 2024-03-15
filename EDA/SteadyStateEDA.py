@@ -1,6 +1,8 @@
 from math import ceil, sqrt
 from typing import TypeAlias, Callable, Any
 
+import numpy as np
+
 import utils
 from BaselineApproaches.Evaluator import Individual
 from BenchmarkProblems.BenchmarkProblem import BenchmarkProblem
@@ -13,6 +15,7 @@ from PSMetric.Averager import Averager
 from PSMetric.BiVariateANOVALinkage import BiVariateANOVALinkage
 from PSMetric.MeanFitness import MeanFitness
 from PSMetric.Metric import Metric
+from PSMetric.NoveltyFromModel import NoveltyFromModel
 from PSMetric.NoveltyFromPopulation import NoveltyFromPopulation
 from PSMetric.Simplicity import Simplicity
 from PSMiners.MPLSS import MPLSS
@@ -26,16 +29,14 @@ Fitness: TypeAlias = float
 FitnessFunction: TypeAlias = Callable[[FullSolution], Fitness]
 
 
-
 def merge_populations(first: list[Any], second: list[Any], quantity_returned: int,
                       remove_duplicates=False) -> list[Any]:
     """Given a population of orderable items, it merges them and returns the top n """
     returned_population = first + second
     if remove_duplicates:
         returned_population = list(set(returned_population))
-    returned_population.sort(reverse = True)
+    returned_population.sort(reverse=True)
     return returned_population[:quantity_returned]
-
 
 
 class SteadyStateEDA:
@@ -60,7 +61,6 @@ class SteadyStateEDA:
     search_space: SearchSpace
     fitness_function_evaluator: FSEvaluator
 
-
     def __init__(self,
                  search_space: SearchSpace,
                  fitness_function: FitnessFunction,
@@ -74,7 +74,8 @@ class SteadyStateEDA:
         self.model_size = model_size
 
         self.fitness_function_evaluator = FSEvaluator(fitness_function)
-        self.current_pRef = self.fitness_function_evaluator.generate_pRef_from_search_space(self.search_space, self.population_size)
+        self.current_pRef = self.fitness_function_evaluator.generate_pRef_from_search_space(self.search_space,
+                                                                                            self.population_size)
         self.historical_pRef = self.current_pRef
 
         self.cutting_edge_model = []
@@ -86,7 +87,6 @@ class SteadyStateEDA:
 
         self.novelty_metric = NoveltyFromPopulation()
         self.simplicity_metric = Simplicity()
-
 
     def print_current_state(self):
         def state_of_pRef(pRef):
@@ -111,40 +111,43 @@ class SteadyStateEDA:
         show_model(self.novelty_model)
 
     def update_metrics_and_linkage_model(self):
-        self.linkage_metric.set_pRef(self.current_pRef)  # maybe put historical here
-        self.mean_fitness_metric.set_pRef(self.current_pRef) # and here
+        self.linkage_metric.set_pRef(self.historical_pRef)  # maybe put historical here
+        self.mean_fitness_metric.set_pRef(self.current_pRef)  # and here
         self.novelty_metric.set_pRef(self.current_pRef)
         self.simplicity_metric.set_pRef(self.current_pRef)
 
-
     def get_cutting_edge_model(self):
-        ce_miner = MPLSS(mu_parameter=20,
-                                   lambda_parameter=100,
-                                   diversity_offspring_amount=100,
-                                   mutation_operator=MultimodalMutationOperator(0.5),
-                                   metric=Averager([self.mean_fitness_metric, self.linkage_metric]))
+        print("Generating Exploitative model...",end="")
+        ce_miner = MPLSS(mu_parameter=50,
+                         lambda_parameter=300,
+                         diversity_offspring_amount=100,
+                         mutation_operator=MultimodalMutationOperator(0.5),
+                         metric=Averager([self.mean_fitness_metric, self.linkage_metric]))
         ce_miner.set_pRef(self.current_pRef, set_metrics=False)
         ce_miner.run(EvaluationBudgetLimit(15000))
 
         ce_model = ce_miner.get_results(quantity_returned=self.model_size)
+        print("Finished!")
         return ce_model
 
     def get_novelty_model(self):
+        print("Generating Novelty model...", end="")
+        novelty_from_models = NoveltyFromModel()
+        novelty_from_models.set_pRef(self.current_pRef)
+        novelty_from_models.set_reference_model(self.historical_model + self.cutting_edge_model)
         novelty_miner = MPLSS(mu_parameter=20,
-                                   lambda_parameter=100,
-                                   diversity_offspring_amount=100,
-                                   mutation_operator=MultimodalMutationOperator(0.5),
-                                   metric=Averager([self.novelty_metric, self.simplicity_metric]))
+                              lambda_parameter=100,
+                              diversity_offspring_amount=100,
+                              mutation_operator=MultimodalMutationOperator(0.5),
+                              metric=Averager([novelty_from_models, self.simplicity_metric]))
         novelty_miner.set_pRef(self.current_pRef, set_metrics=False)
         novelty_miner.run(EvaluationBudgetLimit(15000))
 
         novelty_model = novelty_miner.get_results(quantity_returned=self.model_size)
+        print("Finished!")
         return novelty_model
 
-
     def update_historical_model(self):
-        # TODO: the scores in the historical model are now invalid, because the population has changed.
-        # perhaps we need to keep a history_pRef?
         historical_metric = Averager([self.mean_fitness_metric, self.linkage_metric])
         for individual in self.historical_model:
             individual.aggregated_score = historical_metric.get_single_normalised_score(individual.ps)
@@ -152,7 +155,7 @@ class SteadyStateEDA:
         self.historical_model = merge_populations(self.historical_model, self.cutting_edge_model,
                                                   quantity_returned=self.model_size)
 
-    def sample_from_models(self) -> PRef:
+    def generate_new_solutions(self) -> PRef:
         proportion_for_random = 0.2
         amount_from_models = ceil(self.offspring_size * (1 - proportion_for_random))
         amount_from_random = self.offspring_size - amount_from_models
@@ -167,25 +170,43 @@ class SteadyStateEDA:
         uniform_random_samples = [FullSolution.random(self.search_space) for _ in range(amount_from_random)]
         new_samples.extend(uniform_random_samples)
 
-        return self.fitness_function_evaluator.generate_pRef_from_full_solutions(self.search_space, new_samples)
+        return self.fitness_function_evaluator.generate_pRef_from_full_solutions(
+            search_space=self.current_pRef.search_space,
+            samples=new_samples)
+
     def update_models_using_current_population(self):
         self.update_metrics_and_linkage_model()
         self.cutting_edge_model = self.get_cutting_edge_model()
         self.novelty_model = self.get_novelty_model()
         self.update_historical_model()
 
-    def update_population_using_current_models(self):
-        self.current_pRef = self.sample_from_models()
-        self.historical_pRef = PRef.concat(self.historical_pRef, self.current_pRef)
+    def merge_pRefs(self, original_pRef: PRef, new_pRef: PRef) -> PRef:
+        # very inefficient at the moment
+        amount_to_keep = self.population_size
+        all_fitnesses = list(enumerate(np.concatenate((original_pRef.fitness_array, new_pRef.fitness_array))))
+        all_fitnesses.sort(key=utils.second, reverse=True)
 
+        kept_indexes, kept_fitnesses = utils.unzip(all_fitnesses[:amount_to_keep])
+        all_solutions = original_pRef.full_solutions + new_pRef.full_solutions
+
+        kept_solutions = [all_solutions[i] for i in kept_indexes]
+        return PRef.from_full_solutions(kept_solutions,
+                                        fitness_values=kept_fitnesses,
+                                        search_space=original_pRef.search_space)
+
+    def update_population_using_current_models(self):
+        new_pRef = self.generate_new_solutions()
+        self.current_pRef = self.merge_pRefs(self.current_pRef, new_pRef)
+        self.historical_pRef = PRef.concat(self.historical_pRef, new_pRef)
 
     def run(self,
             termination_criteria: TerminationCriteria,
-            show_every_iteration = False):
+            show_every_iteration=False):
         iteration = 0
+
         def should_terminate():
-            return termination_criteria.met(iterations = iteration,
-                                            used_budget = self.fitness_function_evaluator.used_evaluations)
+            return termination_criteria.met(iterations=iteration,
+                                            used_budget=self.fitness_function_evaluator.used_evaluations)
 
         while not should_terminate():
             if show_every_iteration:
@@ -194,14 +215,12 @@ class SteadyStateEDA:
             self.update_models_using_current_population()
             self.update_population_using_current_models()
 
-
     def get_results(self):
         population = [FSIndividual(fs, fitness)
                       for fs, fitness in zip(self.current_pRef.full_solutions,
                                              self.current_pRef.fitness_array)]
         population.sort(reverse=True)
         return population
-
 
 
 def test_sseda(benchmark_problem: BenchmarkProblem):
@@ -225,16 +244,3 @@ def test_sseda(benchmark_problem: BenchmarkProblem):
         as_ps = PS.from_FS(fs)
         fitness = eda.fitness_function(fs)
         print(f"{benchmark_problem.repr_ps(as_ps)}, with fitness = {fitness}")
-
-
-
-
-
-
-
-
-
-
-
-
-

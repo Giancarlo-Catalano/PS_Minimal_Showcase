@@ -37,7 +37,7 @@ class NoveltyFromModel(Metric):
                        for cardinality in search_space.cardinalities]
 
         for item in model:
-            for variable, value in item.ps.values:
+            for variable, value in enumerate(item.ps.values):
                 counts[variable][value+1] += 1.0  # note that we're adding one to convert * -> 0, 0 -> 1 etc
 
         model_size = len(model)
@@ -51,4 +51,4 @@ class NoveltyFromModel(Metric):
 
     def get_single_normalised_score(self, ps: PS) -> float:
         frequencies_of_present_values = [self.frequencies[var][val+1] for var, val in enumerate(ps.values)]
-        return np.average(frequencies_of_present_values)
+        return 1-np.average(frequencies_of_present_values)
