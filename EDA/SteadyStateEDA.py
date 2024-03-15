@@ -124,7 +124,7 @@ class SteadyStateEDA:
                                    mutation_operator=MultimodalMutationOperator(0.5),
                                    metric=Averager([self.mean_fitness_metric, self.linkage_metric]))
         ce_miner.set_pRef(self.current_pRef, set_metrics=False)
-        ce_miner.run(EvaluationBudgetLimit(3000))
+        ce_miner.run(EvaluationBudgetLimit(15000))
 
         ce_model = ce_miner.get_results(quantity_returned=self.model_size)
         return ce_model
@@ -136,7 +136,7 @@ class SteadyStateEDA:
                                    mutation_operator=MultimodalMutationOperator(0.5),
                                    metric=Averager([self.novelty_metric, self.simplicity_metric]))
         novelty_miner.set_pRef(self.current_pRef, set_metrics=False)
-        novelty_miner.run(EvaluationBudgetLimit(3000))
+        novelty_miner.run(EvaluationBudgetLimit(15000))
 
         novelty_model = novelty_miner.get_results(quantity_returned=self.model_size)
         return novelty_model
@@ -208,9 +208,9 @@ def test_sseda(benchmark_problem: BenchmarkProblem):
     print("Initialising the SS EDA")
     eda = SteadyStateEDA(search_space=benchmark_problem.search_space,
                          fitness_function=benchmark_problem.fitness_function,
-                         population_size=200,
-                         offspring_size=200,
-                         model_size=6)
+                         population_size=10000,
+                         offspring_size=1000,
+                         model_size=12)
 
     eda.run(show_every_iteration=True,
             termination_criteria=IterationLimit(12))

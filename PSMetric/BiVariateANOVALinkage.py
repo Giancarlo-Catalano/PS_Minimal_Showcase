@@ -31,7 +31,7 @@ class BiVariateANOVALinkage(Metric):
         print("Finished")
         # self.normalised_linkage_table = self.get_normalised_linkage_table(self.linkage_table)
 
-    def get_ANOVA_interaction_table(self, pRef: PRef) -> LinkageTable:
+    def get_ANOVA_interaction_table_old(self, pRef: PRef) -> LinkageTable:
         """every entry in this table will be a p-value, so in theory smaller values have stronger linkage"""
 
         def interaction_test(data: np.ndarray, fitnesses: np.ndarray):
@@ -86,6 +86,67 @@ class BiVariateANOVALinkage(Metric):
 
         return calculate_interaction(solutions, fitnesses)
 
+    def get_ANOVA_interaction_table(self, pRef: PRef) -> LinkageTable:
+        """every entry in this table will be a p-value, so in theory smaller values have stronger linkage"""
+        solutions = pRef.full_solution_matrix
+        fitnesses = pRef.fitness_array
+
+        grand_mean = np.mean(fitnesses)
+        n = pRef.sample_size
+        dof_total = n - 1
+
+        levels = pRef.search_space.cardinalities
+
+        def interaction_test(i: int, j: int):
+            """ Perform a 2-factor ANOVA test with interaction term """
+
+            values_i = solutions[:, i]
+            values_j = solutions[:, j]
+
+            levels_i = range(levels[i])
+            levels_j = range(levels[j])
+
+            where_values_i = [(values_i == level_i) for level_i in levels_i]
+            where_values_j = [(values_j == level_j) for level_j in levels_j]
+
+            # Calculating the sum of squares for the interaction
+            # (Normally we'd also calculate the marginal sum of squares, but we don't need them here.
+
+            sum_sq_interaction = np.sum((np.mean(fitnesses[where_val_i & where_val_j]) -
+                                         np.mean(fitnesses[where_val_i]) -
+                                         np.mean(fitnesses[where_val_j]) +
+                                         grand_mean) ** 2 for where_val_i, where_val_j in
+                                        itertools.product(where_values_i, where_values_j))
+
+            # Calculate error sum of squares
+            ss_error = np.sum((fitnesses - np.mean(fitnesses)) ** 2)
+
+            # Calculate degrees of freedom
+            dof_factor_i = pRef.search_space.cardinalities[i] - 1
+            dof_factor_j = pRef.search_space.cardinalities[j] - 1
+            dof_interaction = dof_factor_i * dof_factor_j
+            dof_error = dof_total - (dof_factor_i + dof_factor_j + dof_interaction)
+
+            # Calculate mean squares
+            ms_interaction = sum_sq_interaction / dof_interaction
+            ms_error = ss_error / dof_error
+
+            # Calculate F statistic
+            f_statistic = (ms_interaction / ms_error) if ms_error != 0 else np.inf
+
+            # Calculate p-value
+            p_value = 1 - f.cdf(f_statistic, dof_interaction, dof_error)
+            return p_value
+
+        def calculate_interaction(data: np.ndarray):
+            num_features = data.shape[1]
+            interaction_table = np.zeros((num_features, num_features))
+            for i, j in itertools.combinations(range(num_features), 2):
+                interaction_table[i, j] = interaction_test(i, j)
+            return interaction_table + interaction_table.T  # Make the table symmetric
+
+        return calculate_interaction(solutions)
+
     def get_linkage_table(self, pRef: PRef):
         table = 1 - self.get_ANOVA_interaction_table(pRef)
         # for debugging purposes, just so that it looks prettier in the PyCharm debugging window.
@@ -111,11 +172,6 @@ class BiVariateANOVALinkage(Metric):
         quantized_linkage_table: LinkageTable = np.array(linkage_table >= average, dtype=float)
         return quantized_linkage_table
 
-    def get_linkage_scores(self, ps: PS) -> np.ndarray:
-        fixed = ps.values != STAR
-        fixed_combinations: np.array = np.outer(fixed, fixed)
-        fixed_combinations = np.triu(fixed_combinations, k=1)
-        return self.linkage_table[fixed_combinations]
 
     def get_normalised_linkage_scores(self, ps: PS) -> np.ndarray:
         fixed = ps.values != STAR
