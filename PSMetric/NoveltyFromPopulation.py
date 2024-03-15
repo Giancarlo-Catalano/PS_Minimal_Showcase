@@ -9,7 +9,7 @@ from SearchSpace import SearchSpace
 from PSMetric.MeanFitness import MeanFitness
 
 
-class Novelty(Metric):
+class NoveltyFromPopulation(Metric):
     pRef: Optional[PRef]
     normalised_pRef: Optional[PRef]
 
@@ -19,7 +19,7 @@ class Novelty(Metric):
         self.normalised_pRef = None
 
     def __repr__(self):
-        return "Novelty"
+        return "NoveltyFromPopulation"
 
     def set_pRef(self, pRef: PRef):
         self.pRef = pRef

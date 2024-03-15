@@ -14,7 +14,7 @@ from PSMetric.Averager import Averager
 from PSMetric.Linkage import Linkage
 from PSMetric.MeanFitness import MeanFitness
 from PSMetric.Metric import Metric, MultipleMetrics
-from PSMetric.Novelty import Novelty
+from PSMetric.NoveltyFromPopulation import NoveltyFromPopulation
 from PSMetric.SignificantlyHighAverage import SignificantlyHighAverage
 from PSMetric.Simplicity import Simplicity
 from PSMiners.ArchiveMiner import ArchiveMiner
@@ -229,7 +229,7 @@ class Ouroboros:
                                   lambda_parameter=100,
                                   diversity_offspring_amount=20,
                                   mutation_operator=MultimodalMutationOperator(0.5),
-                                  metric=Averager([Novelty(), Simplicity()]))
+                                  metric=Averager([NoveltyFromPopulation(), Simplicity()]))
         exploration_miner.set_pRef(self.current_pRef)
         exploration_miner.run(EvaluationBudgetLimit(15000))
 

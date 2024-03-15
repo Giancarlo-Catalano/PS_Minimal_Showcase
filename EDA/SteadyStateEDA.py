@@ -13,7 +13,7 @@ from PSMetric.Averager import Averager
 from PSMetric.BiVariateANOVALinkage import BiVariateANOVALinkage
 from PSMetric.MeanFitness import MeanFitness
 from PSMetric.Metric import Metric
-from PSMetric.Novelty import Novelty
+from PSMetric.NoveltyFromPopulation import NoveltyFromPopulation
 from PSMetric.Simplicity import Simplicity
 from PSMiners.MPLSS import MPLSS
 from PSMiners.PSMutationOperator import MultimodalMutationOperator
@@ -48,7 +48,7 @@ class SteadyStateEDA:
 
     linkage_metric: BiVariateANOVALinkage
     mean_fitness_metric: MeanFitness
-    novelty_metric: Novelty
+    novelty_metric: NoveltyFromPopulation
     simplicity_metric: Simplicity
 
     # main parameters for EDA
@@ -84,7 +84,7 @@ class SteadyStateEDA:
         self.linkage_metric = BiVariateANOVALinkage()
         self.mean_fitness_metric = MeanFitness()
 
-        self.novelty_metric = Novelty()
+        self.novelty_metric = NoveltyFromPopulation()
         self.simplicity_metric = Simplicity()
 
 
