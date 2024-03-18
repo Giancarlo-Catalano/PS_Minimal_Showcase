@@ -13,6 +13,7 @@ from BenchmarkProblems.BenchmarkProblem import BenchmarkProblem
 from PRef import PRef
 from PS import PS, STAR
 from PSMetric.Averager import Averager
+from PSMetric.BiVariateANOVALinkage import BiVariateANOVALinkage
 from PSMetric.Linkage import Linkage
 from PSMetric.MeanFitness import MeanFitness
 from PSMetric.Metric import Metric
@@ -221,7 +222,6 @@ def test_MLPLR(benchmark_problem: BenchmarkProblem):
     pRef = benchmark_problem.get_pRef(sample_size=10000)
 
     metric = Averager([MeanFitness(), Linkage()])
-    metric.set_pRef(pRef)
     print("pRef was set")
 
     mutation_operator = MultimodalMutationOperator(0.5)
