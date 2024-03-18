@@ -46,6 +46,15 @@ class PRef:
         return cls(full_solutions, fitness_values, matrix, search_space)
 
     @classmethod
+    def from_just_matrix(cls, solution_matrix: np.ndarray,
+                         fitness_array: Iterable[Fitness],
+                         search_space: SearchSpace):
+        return cls(full_solutions=[],  # dummy value
+                   fitness_array=fitness_array,
+                   full_solution_matrix=solution_matrix,
+                   search_space=search_space)
+
+    @classmethod
     def sample_from_search_space(cls, search_space: SearchSpace,
                                  fitness_function: Callable,
                                  amount_of_samples: int):

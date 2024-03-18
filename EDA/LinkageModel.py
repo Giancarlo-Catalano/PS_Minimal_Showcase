@@ -14,8 +14,10 @@ from sklearn.metrics import mutual_info_score
 
 import utils
 from BenchmarkProblems.BenchmarkProblem import BenchmarkProblem
+from FullSolution import FullSolution
 from PRef import PRef
 from PS import PS
+from PSMetric.WUC import get_uc_linkage_table
 from SearchSpace import SearchSpace
 
 # from scipy.stats import pearsonr, spearmanr, kendalltau, kruskal, chi2_contingency, cramers_v
@@ -262,7 +264,6 @@ def calculate_pairwise_interactions_mutual_info(pRef: PRef) -> LinkageTable:
 
     num_variables = solutions.shape[1]
     columns = [f"Var_{i}" for i in range(num_variables)]
-    results_cramers_v = pd.DataFrame(index=columns, columns=columns)
     results_mutual_info = pd.DataFrame(index=columns, columns=columns)
 
     for i in range(num_variables):
@@ -272,15 +273,10 @@ def calculate_pairwise_interactions_mutual_info(pRef: PRef) -> LinkageTable:
 
             # Calculate weighted Cramér's V
             chi2, _, _, _ = chi2_contingency(contingency_table)
-            cramers_v = np.sqrt(chi2 / (solutions.shape[0] * min(contingency_table.shape) - 1))
-            weighted_cramers_v = cramers_v * np.sqrt(joint_table.sum().sum())
 
             # Calculate weighted mutual information
             mutual_info = mutual_info_score(solutions[:, i], solutions[:, j])
-            weighted_mutual_info = mutual_info * joint_table.sum().sum()
 
-            results_cramers_v.iloc[i, j] = cramers_v
-            results_cramers_v.iloc[j, i] = cramers_v
             results_mutual_info.iloc[i, j] = mutual_info
             results_mutual_info.iloc[j, i] = mutual_info
 
@@ -348,24 +344,38 @@ def artificially_fill_diagonal(linkage_table: LinkageTable) -> LinkageTable:
     np.fill_diagonal(linkage_table, replacement)
     return linkage_table
 
+
+def get_oversampled_pRef(benchmark_problem: BenchmarkProblem,
+                         sample_size: int,
+                         factor: int) -> PRef:
+    total_samples = (1+factor) * sample_size
+    samples = [FullSolution.random(benchmark_problem.search_space) for _ in range(total_samples)]
+    fitnesses = list(enumerate(benchmark_problem.fitness_function(fs) for fs in samples))
+    fitnesses.sort(key=utils.second, reverse=True)
+    kept_indexes, kept_fitnesses = utils.unzip(fitnesses)
+    kept_samples = [samples[index] for index in kept_indexes]
+    return PRef.from_full_solutions(full_solutions=kept_samples,
+                                    fitness_values=kept_fitnesses,
+                                    search_space=benchmark_problem.search_space)
+
 def test_linkage_tables(benchmark_problem: BenchmarkProblem):
-    sample_sizes = [10000, 1000]
+    sample_size = 200
     methods = {"original": get_linkage_table_alpha,
                "long_anova": long_anova_method,
                # "truncated_marginal_median": use_truncated_pRef(get_linkage_table_beta),
                # "truncated_marginal_mean": use_truncated_pRef(get_linkage_table_gamma),
-               # "cramer": use_truncated_pRef(calculate_pairwise_interactions_cramers_v)
-               # "mutual_info": use_truncated_pRef(calculate_pairwise_interactions_mutual_info)
+               "cramer": calculate_pairwise_interactions_cramers_v,
+               "mutual_info": calculate_pairwise_interactions_mutual_info,
+               "uncertainty_coefficient": get_uc_linkage_table,
                 }
 
-    # methods.update({method: linkage_using_method(method)
-    #                 for method in {"pearson", "anova", "spearman", "kendall", "kruskal"}})
 
-    for sample_size in sample_sizes:
-        pRef = benchmark_problem.get_pRef(sample_size)
-        for method_key in methods:
-            print(f"{sample_size = }, {method_key = }")
-            function = methods[method_key]
-            linkage_table = function(pRef)
+    for method_key in methods:
+        method = methods[method_key]
+        for oversampling_factor in range(10):
+            pRef = get_oversampled_pRef(benchmark_problem,sample_size, oversampling_factor)
+            linkage_table: np.ndarray = method(pRef)
             linkage_table = np.nan_to_num(linkage_table, nan=0)
-            print("Finished obtaining the table, hopefully you're debugging")
+            print("You should be debugging")
+
+
