@@ -29,7 +29,6 @@ from PSMiners.MuPlusLambda import test_mu_plus_lambda, test_mu_plus_lambda_with_
 from PSMiners.SelfAssembly import test_simple_hill_climber
 from PSMiners.ThirdArchiveMiner import test_third_archive_miner
 from PickAndMerge.PickAndMerge import test_pick_and_merge
-from PyGAD.Testing import test_pygad, test_pygad_on_benchmark_problem
 from TerminationCriteria import IterationLimit
 
 
