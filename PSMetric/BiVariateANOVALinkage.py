@@ -26,8 +26,8 @@ class BiVariateANOVALinkage(Metric):
 
     def set_pRef(self, pRef: PRef):
         print("Calculating linkages...", end="")
-        self.linkage_table = self.get_linkage_table(pRef)
-        self.normalised_linkage_table = self.get_normalised_linkage_table(self.linkage_table)
+        self.normalised_linkage_table = self.get_normalised_linkage_table(self.get_linkage_table(pRef))
+        self.linkage_table = self.get_normalised_linkage_table(self.get_linkage_table(pRef))
         print("Finished")
         # self.normalised_linkage_table = self.get_normalised_linkage_table(self.linkage_table)
 
@@ -148,6 +148,7 @@ class BiVariateANOVALinkage(Metric):
         return calculate_interaction(solutions)
 
     def get_linkage_table(self, pRef: PRef):
+        # from_anova = self.get_ANOVA_interaction_table(pRef)
         table = 1 - self.get_ANOVA_interaction_table(pRef)
         # for debugging purposes, just so that it looks prettier in the PyCharm debugging window.
         np.fill_diagonal(table, 0)

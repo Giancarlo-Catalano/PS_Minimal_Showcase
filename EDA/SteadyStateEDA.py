@@ -111,9 +111,9 @@ class SteadyStateEDA:
         show_model(self.novelty_model)
 
     def update_metrics_and_linkage_model(self):
-        self.linkage_metric.set_pRef(self.historical_pRef)  # maybe put historical here
-        self.mean_fitness_metric.set_pRef(self.current_pRef)  # and here
-        self.novelty_metric.set_pRef(self.current_pRef)
+        self.linkage_metric.set_pRef(self.historical_pRef)
+        self.mean_fitness_metric.set_pRef(self.current_pRef)
+        self.novelty_metric.set_pRef(self.historical_pRef)
         self.simplicity_metric.set_pRef(self.current_pRef)
 
     def get_cutting_edge_model(self):
@@ -122,7 +122,8 @@ class SteadyStateEDA:
                          lambda_parameter=300,
                          diversity_offspring_amount=100,
                          mutation_operator=MultimodalMutationOperator(0.5),
-                         metric=Averager([self.mean_fitness_metric, self.linkage_metric]))
+                         metric=Averager([self.mean_fitness_metric, self.linkage_metric]),
+                         starting_population = self.novelty_model)
         ce_miner.set_pRef(self.current_pRef, set_metrics=False)
         ce_miner.run(EvaluationBudgetLimit(15000))
 
@@ -135,6 +136,8 @@ class SteadyStateEDA:
         novelty_from_models = NoveltyFromModel()
         novelty_from_models.set_pRef(self.current_pRef)
         novelty_from_models.set_reference_model(self.historical_model + self.cutting_edge_model)
+        novelty_from_population = NoveltyFromPopulation()
+        novelty_from_population.set_pRef(self.historical_pRef)
         novelty_miner = MPLSS(mu_parameter=20,
                               lambda_parameter=100,
                               diversity_offspring_amount=100,
@@ -227,7 +230,7 @@ def test_sseda(benchmark_problem: BenchmarkProblem):
     print("Initialising the SS EDA")
     eda = SteadyStateEDA(search_space=benchmark_problem.search_space,
                          fitness_function=benchmark_problem.fitness_function,
-                         population_size=10000,
+                         population_size=1000,
                          offspring_size=1000,
                          model_size=12)
 

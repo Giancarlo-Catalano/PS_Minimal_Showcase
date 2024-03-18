@@ -22,7 +22,7 @@ from SearchSpace import SearchSpace
 
 
 class MPLSS:
-    current_population: list[Individual]
+    current_population: Optional[list[Individual]]
     mu_parameter: int
     lambda_parameter: int
     diversity_offspring_amount: int
@@ -37,7 +37,8 @@ class MPLSS:
                  lambda_parameter: int,
                  diversity_offspring_amount: int,
                  metric: Metric,
-                 mutation_operator: PSMutationOperator):
+                 mutation_operator: PSMutationOperator,
+                 starting_population: Optional[list[Individual]] = None):
         self.mu_parameter = mu_parameter
         self.lambda_parameter = lambda_parameter
         self.metric = metric
@@ -46,7 +47,9 @@ class MPLSS:
         self.offspring_amount = self.lambda_parameter // self.mu_parameter
         assert (self.lambda_parameter % self.mu_parameter == 0)
 
-        self.current_population = []
+        if starting_population is not None and len(starting_population) == 0:
+            starting_population = None
+        self.current_population = starting_population
         self.mutation_operator = mutation_operator
 
     def set_pRef(self, pRef: PRef, set_metrics=True):
@@ -54,7 +57,9 @@ class MPLSS:
             self.metric.set_pRef(pRef)
         self.search_space = pRef.search_space
         self.mutation_operator.set_search_space(self.search_space)
-        self.current_population = [Individual(PS.empty(pRef.search_space))]
+
+        if self.current_population is None:  # in case the population was set already
+            self.current_population = [Individual(PS.empty(pRef.search_space))]
 
         # self.get_initial_population(from_uniform=0.33,from_half_fixed=0.33,from_geometric=0.34)
         self.current_population = self.evaluate_individuals(self.current_population)
