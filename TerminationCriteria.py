@@ -62,7 +62,7 @@ class IterationLimit(TerminationCriteria):
         self.max_iterations = max_iterations
 
     def __repr__(self):
-        return f"TimeLimit({self.max_iterations})"
+        return f"IterationLimit({self.max_iterations})"
 
     def met(self, **kwargs):
         return kwargs["iterations"] >= self.max_iterations
