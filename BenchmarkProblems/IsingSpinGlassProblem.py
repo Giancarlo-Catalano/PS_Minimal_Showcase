@@ -52,7 +52,7 @@ class IsingSpinGlassProblem(BenchmarkProblem):
     height: int
     horizontal_link_values: np.ndarray
     vertical_link_values: np.ndarray
-    best_fitness: int
+    global_optima: int
 
     amount_of_variables: int
 
@@ -62,7 +62,7 @@ class IsingSpinGlassProblem(BenchmarkProblem):
                  best_fitness: int):
         self.horizontal_link_values = horizontal_link_values
         self.vertical_link_values = vertical_link_values
-        self.best_fitness = best_fitness
+        self.global_optima = best_fitness
 
         assert (self.horizontal_link_values.shape == self.vertical_link_values.shape)
 
@@ -147,7 +147,7 @@ class IsingSpinGlassProblem(BenchmarkProblem):
 
     def to_gian_file(self, filename: str):
         result = dict()
-        result["best_fitness"] = self.best_fitness
+        result["best_fitness"] = self.global_optima
         result["width"] = self.width
         result["height"] = self.height
         result["horizontal_links"] = self.horizontal_link_values.tolist()
@@ -206,3 +206,7 @@ class IsingSpinGlassProblem(BenchmarkProblem):
 
     def __repr__(self):
         return f"IsingSpinGlass({self.amount_of_variables} x {self.amount_of_variables})"
+
+
+    def get_global_optima_fitness(self) -> float:
+        return float(self.global_optima)

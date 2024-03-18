@@ -6,6 +6,9 @@ import numpy as np
 from pandas import DataFrame
 import plotly.express as px
 
+import time
+from contextlib import ContextDecorator
+
 
 def first(pair: (Any, Any)) -> Any:
     return pair[0]
@@ -103,3 +106,33 @@ def print_entry_and_exit(func):
         print(f"Terminating {func.__name__}")
         return result
     return wrapper
+
+
+
+
+
+class ExecutionTime(ContextDecorator):
+    def __enter__(self):
+        self.start_time = time.time()
+        return self
+
+    def __exit__(self, exc_type, exc_value, traceback):
+        self.end_time = time.time()
+        self.execution_time = self.end_time - self.start_time
+
+    def __str__(self):
+        return f"{self.execution_time:.6f}"
+
+
+def execution_time():
+    return ExecutionTime()
+
+
+""" Timing example
+    with execution_time() as time:
+        data = function()
+    
+    print(time)
+    print(data)
+
+"""

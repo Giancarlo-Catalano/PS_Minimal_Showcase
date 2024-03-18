@@ -113,3 +113,32 @@ class UnionOfCriteria(TerminationCriteria):
 
     def met(self, **kwargs):
         return any(sc.met(**kwargs) for sc in self.subcriteria)
+
+
+
+class FullSolutionEvaluationLimit(TerminationCriteria):
+    fs_limit: int
+
+    def __init__(self, fs_limit: int):
+        self.fs_limit = fs_limit
+        super().__init__()
+
+    def __repr__(self):
+        return f"FSEvaluationLimit({self.fs_limit}"
+
+    def met(self, **kwargs):
+        return kwargs["fs_evaluations"] >= self.fs_limit
+
+
+class PSEvaluationLimit(TerminationCriteria):
+    ps_limit: int
+
+    def __init__(self, ps_limit: int):
+        self.ps_limit = ps_limit
+        super().__init__()
+
+    def __repr__(self):
+        return f"PSEvaluationLimit({self.ps_limit}"
+
+    def met(self, **kwargs):
+        return kwargs["ps_evaluations"] >= self.ps_limit

@@ -19,11 +19,12 @@ from PSMetric.Metric import Metric
 from PSMetric.NoveltyFromModel import NoveltyFromModel
 from PSMetric.NoveltyFromPopulation import NoveltyFromPopulation
 from PSMetric.Simplicity import Simplicity
+from PSMiners.MPLLR import MPLLR
 from PSMiners.MPLSS import MPLSS
 from PSMiners.PSMutationOperator import MultimodalMutationOperator
 from PickAndMerge.PickAndMerge import FSSampler
 from SearchSpace import SearchSpace
-from TerminationCriteria import EvaluationBudgetLimit, TerminationCriteria, IterationLimit
+from TerminationCriteria import EvaluationBudgetLimit, TerminationCriteria, IterationLimit, PSEvaluationLimit
 
 Model: TypeAlias = list[Individual]
 Fitness: TypeAlias = float
@@ -48,9 +49,9 @@ class SteadyStateEDA:
     novelty_model: Model
     historical_model: Model
 
-    linkage_metric: Linkage
+    linkage_metric: BiVariateANOVALinkage
     mean_fitness_metric: MeanFitness
-    novelty_metric: NoveltyFromPopulation
+    novelty_metric: NoveltyFromModel
     simplicity_metric: Simplicity
 
     # main parameters for EDA
@@ -86,7 +87,7 @@ class SteadyStateEDA:
         self.linkage_metric = BiVariateANOVALinkage()
         self.mean_fitness_metric = MeanFitness()
 
-        self.novelty_metric = NoveltyFromPopulation()
+        self.novelty_metric = NoveltyFromModel()
         self.simplicity_metric = Simplicity()
 
     def print_current_state(self):
@@ -111,44 +112,63 @@ class SteadyStateEDA:
         print("The novelty model is")
         show_model(self.novelty_model)
 
+
+    def get_current_state_as_dict(self):
+        def get_pRef_dict(pRef):
+            stats = utils.get_descriptive_stats(pRef.fitness_array)
+            return {"min": stats[0],
+                    "median": stats[1],
+                    "max": stats[2],
+                    "avg": stats[3],
+                    "stdev": stats[4]}
+
+        ps_evals = self.mean_fitness_metric.used_evaluations
+        fs_evals = self.fitness_function_evaluator.used_evaluations
+        return {"pRef": get_pRef_dict(self.current_pRef),
+                "ps_evals": ps_evals,
+                "fs_evals": fs_evals}
+
+    def reset_ps_metrics_evaluation_counters(self):
+        self.mean_fitness_metric.used_evaluations = 0
+        self.novelty_metric.used_evaluations = 0
+        # the other 2 don't matter
+
     def update_metrics_and_linkage_model(self):
         self.linkage_metric.set_pRef(self.historical_pRef)
         self.mean_fitness_metric.set_pRef(self.current_pRef)
-        self.novelty_metric.set_pRef(self.historical_pRef)
+        self.novelty_metric.set_pRef(self.current_pRef)
         self.simplicity_metric.set_pRef(self.current_pRef)
 
-    def get_cutting_edge_model(self):
-        print("Generating Exploitative model...",end="")
-        ce_miner = MPLSS(mu_parameter=50,
+    def get_cutting_edge_model(self, termination_criteria: TerminationCriteria):
+        self.reset_ps_metrics_evaluation_counters()
+        # print("Generating Exploitative model...",end="")
+        ce_miner = MPLLR(mu_parameter=50,
                          lambda_parameter=300,
-                         diversity_offspring_amount=100,
+                         food_weight=0.3,
                          mutation_operator=MultimodalMutationOperator(0.5),
                          metric=Averager([self.mean_fitness_metric, self.linkage_metric]),
                          starting_population = self.novelty_model)
         ce_miner.set_pRef(self.current_pRef, set_metrics=False)
-        ce_miner.run(EvaluationBudgetLimit(15000))
+        ce_miner.run(termination_criteria)
 
         ce_model = ce_miner.get_results(quantity_returned=self.model_size)
-        print("Finished!")
+        # print("Finished!")
         return ce_model
 
-    def get_novelty_model(self):
-        print("Generating Novelty model...", end="")
-        novelty_from_models = NoveltyFromModel()
-        novelty_from_models.set_pRef(self.current_pRef)
-        novelty_from_models.set_reference_model(self.historical_model + self.cutting_edge_model)
-        novelty_from_population = NoveltyFromPopulation()
-        novelty_from_population.set_pRef(self.historical_pRef)
-        novelty_miner = MPLSS(mu_parameter=20,
+    def get_novelty_model(self, termination_criteria: TerminationCriteria):
+        self.reset_ps_metrics_evaluation_counters()
+        # print("Generating Novelty model...", end="")
+        self.novelty_metric.set_reference_model(self.historical_model + self.cutting_edge_model)
+        novelty_miner = MPLLR(mu_parameter=20,
                               lambda_parameter=100,
-                              diversity_offspring_amount=100,
+                              food_weight=0.3,
                               mutation_operator=MultimodalMutationOperator(0.5),
-                              metric=Averager([novelty_from_models, self.simplicity_metric]))
+                              metric=Averager([self.novelty_metric, self.simplicity_metric]))
         novelty_miner.set_pRef(self.current_pRef, set_metrics=False)
-        novelty_miner.run(EvaluationBudgetLimit(15000))
+        novelty_miner.run(termination_criteria)
 
         novelty_model = novelty_miner.get_results(quantity_returned=self.model_size)
-        print("Finished!")
+        # print("Finished!")
         return novelty_model
 
     def update_historical_model(self):
@@ -178,11 +198,10 @@ class SteadyStateEDA:
             search_space=self.current_pRef.search_space,
             samples=new_samples)
 
-    def update_models_using_current_population(self):
+    def update_models_using_current_population(self, ps_termination_criteria: TerminationCriteria):
         self.update_metrics_and_linkage_model()
-        self.cutting_edge_model = self.get_cutting_edge_model()
-        self.novelty_model = self.get_novelty_model()
-        self.update_historical_model()
+        self.cutting_edge_model = self.get_cutting_edge_model(ps_termination_criteria)
+        self.novelty_model = self.get_novelty_model(ps_termination_criteria)
 
     def merge_pRefs(self, original_pRef: PRef, new_pRef: PRef) -> PRef:
         # very inefficient at the moment
@@ -204,20 +223,32 @@ class SteadyStateEDA:
         self.historical_pRef = PRef.concat(self.historical_pRef, new_pRef)
 
     def run(self,
-            termination_criteria: TerminationCriteria,
+            fs_termination_criteria: TerminationCriteria,
+            ps_termination_criteria: TerminationCriteria,
             show_every_iteration=False):
+
+        logger_dict = {"iterations": []}
         iteration = 0
 
         def should_terminate():
-            return termination_criteria.met(iterations=iteration,
-                                            used_budget=self.fitness_function_evaluator.used_evaluations)
+            return fs_termination_criteria.met(iterations=iteration,
+                                               fs_evaluations=self.fitness_function_evaluator.used_evaluations)
 
         while not should_terminate():
             if show_every_iteration:
                 self.print_current_state()
 
-            self.update_models_using_current_population()
+            logger_dict["iterations"].append({"iteration": iteration,
+                                              "state": self.get_current_state_as_dict()})
+
+            self.update_models_using_current_population(ps_termination_criteria)
             self.update_population_using_current_models()
+            self.update_historical_model()
+
+            iteration +=1
+        logger_dict["iterations"].append({"iteration": iteration,
+                                          "state": self.get_current_state_as_dict()})
+        return logger_dict
 
     def get_results(self):
         population = [FSIndividual(fs, fitness)
@@ -236,7 +267,8 @@ def test_sseda(benchmark_problem: BenchmarkProblem):
                          model_size=12)
 
     eda.run(show_every_iteration=True,
-            termination_criteria=IterationLimit(12))
+            fs_termination_criteria=IterationLimit(12),
+            ps_termination_criteria=PSEvaluationLimit(10000))
 
     print("The final state is ")
     eda.print_current_state()

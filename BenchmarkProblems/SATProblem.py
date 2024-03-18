@@ -171,3 +171,10 @@ class SATProblem(BenchmarkProblem):
 
     def __repr__(self):
         return f"SATProblem(#vars = {self.amount_of_variables}, #clauses = {self.amount_of_clauses})"
+
+
+    def get_global_optima_fitness(self) -> float:
+        if self.solvable:
+            return self.amount_of_clauses
+        else:
+            return None

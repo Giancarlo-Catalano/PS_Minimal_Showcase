@@ -40,3 +40,8 @@ class RoyalRoad(BenchmarkProblem):
                        for var in range(self.search_space.amount_of_parameters)])
 
         return [with_group_activated(which) for which in range(self.amount_of_cliques)]
+
+
+    def get_global_optima_fitness(self) -> float:
+        return float(self.amount_of_cliques)
+

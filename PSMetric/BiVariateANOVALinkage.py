@@ -26,10 +26,10 @@ class BiVariateANOVALinkage(Metric):
         return "BiVariateANOVALinkage"
 
     def set_pRef(self, pRef: PRef):
-        print("Calculating linkages...", end="")
+        # print("Calculating linkages...", end="")
         self.linkage_table = self.get_linkage_table(pRef)
-        self.normalised_linkage_table = Linkage.get_quantized_linkage_table(self.linkage_table)
-        print("Finished")
+        self.normalised_linkage_table = self.get_quantized_linkage_table(self.linkage_table)
+        # print("Finished")
         # self.normalised_linkage_table = self.get_normalised_linkage_table(self.linkage_table)
 
     def get_ANOVA_interaction_table_old(self, pRef: PRef) -> LinkageTable:
@@ -168,3 +168,7 @@ class BiVariateANOVALinkage(Metric):
             return 0
         else:
             return np.min(self.get_normalised_linkage_scores(ps))
+
+    def get_quantized_linkage_table(self, linkage_table: LinkageTable):
+        in_zero_one_range = Linkage.get_normalised_linkage_table(linkage_table)
+        return np.array(in_zero_one_range > 0.5, dtype=float)

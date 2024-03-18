@@ -17,3 +17,9 @@ class OneMax(BenchmarkProblem):
     def get_targets(self) -> list[PS]:
         empty = PS.empty(self.search_space)
         return [empty.with_fixed_value(variable_position=var, fixed_value=1) for var in range(self.amount_of_bits)]
+
+
+    def __repr__(self):
+        return f"OneMax({self.amount_of_bits})"
+    def get_global_optima_fitness(self) -> float:
+        return float(self.amount_of_bits)

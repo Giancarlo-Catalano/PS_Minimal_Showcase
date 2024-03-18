@@ -12,6 +12,7 @@ from EDA.Ouroboros import test_ouroboros
 from EDA.SteadyStateEDA import test_sseda
 from JMetal.PSProblem import test_MO, test_PSProblem, test_MO_comprehensive
 from JMetal.SingleObjective import test_single_objective_search
+from MarchMeasurements import test_all
 from PSMetric.Linkage import Linkage
 from PSMetric.MeanFitness import MeanFitness, ChanceOfGood
 from PSMetric.Metric import MultipleMetrics
@@ -39,7 +40,7 @@ if __name__ == '__main__':
     # problem = BTProblem.from_files(employee_data_file=r"C:\Users\gac8\PycharmProjects\PS\resources\BT\employeeData.csv",
     #                               rota_file=r"C:\Users\gac8\PycharmProjects\PS\resources\BT\roster_pattern_days.csv",
     #                               calendar_length=56)
-    problem = Trapk(10, 4)
+    # problem = Trapk(3, 4)
     # print("Reading the problem instance")
     # problem = IsingSpinGlassProblem.from_gian_file(
     #    r"C:\Users\gac8\PycharmProjects\PS\resources\IsingSpinGlassInstances\SG_36_1.json")
@@ -55,5 +56,8 @@ if __name__ == '__main__':
     #test_FSGA(problem)
 
     #test_linkage_tables(problem)
-    #test_sseda(problem)
-    test_MLPLR(problem)
+    # test_sseda(problem)
+    #test_MLPLR(problem)
+
+
+    test_all()

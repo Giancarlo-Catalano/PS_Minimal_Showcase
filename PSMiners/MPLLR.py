@@ -167,7 +167,8 @@ class MPLLR:
 
         def should_terminate():
             return termination_criteria.met(iterations=iterations,
-                                            evaluations=self.metric.used_evaluations)
+                                            evaluations=self.metric.used_evaluations,
+                                            ps_evaluations = self.metric.used_evaluations)
 
         while not should_terminate():
             if show_each_generation:
