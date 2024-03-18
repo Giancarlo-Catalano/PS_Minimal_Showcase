@@ -134,7 +134,9 @@ class MPLLR:
         for individual in self.current_population:
             counts += individual.ps.values != STAR
 
-        return 1.0 / counts.astype(dtype=float)
+        counts = counts.astype(dtype=float)
+
+        return np.divide(1.0, counts, out=np.zeros_like(counts), where = counts!=0)
 
     def get_food_score(self, individual: Individual, fixed_counts_supply: np.ndarray):
 
