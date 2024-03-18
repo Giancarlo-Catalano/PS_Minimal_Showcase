@@ -13,6 +13,7 @@ from PRef import PRef
 from PS import PS
 from PSMetric.Averager import Averager
 from PSMetric.BiVariateANOVALinkage import BiVariateANOVALinkage
+from PSMetric.Linkage import Linkage
 from PSMetric.MeanFitness import MeanFitness
 from PSMetric.Metric import Metric
 from PSMetric.NoveltyFromModel import NoveltyFromModel
@@ -47,7 +48,7 @@ class SteadyStateEDA:
     novelty_model: Model
     historical_model: Model
 
-    linkage_metric: BiVariateANOVALinkage
+    linkage_metric: Linkage
     mean_fitness_metric: MeanFitness
     novelty_metric: NoveltyFromPopulation
     simplicity_metric: Simplicity

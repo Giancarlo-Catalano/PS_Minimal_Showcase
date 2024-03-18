@@ -221,7 +221,7 @@ def test_MLPLR(benchmark_problem: BenchmarkProblem):
     print("Generating a pRef")
     pRef = benchmark_problem.get_pRef(sample_size=10000)
 
-    metric = Averager([MeanFitness(), Linkage()])
+    metric = Averager([MeanFitness(), BiVariateANOVALinkage()])
     print("pRef was set")
 
     mutation_operator = MultimodalMutationOperator(0.5)

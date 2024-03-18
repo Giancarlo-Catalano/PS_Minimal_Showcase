@@ -6,6 +6,7 @@ import numpy as np
 import utils
 from PRef import PRef
 from PS import PS, STAR
+from PSMetric.Linkage import Linkage
 from PSMetric.Metric import Metric
 from scipy.stats import f
 
@@ -26,8 +27,8 @@ class BiVariateANOVALinkage(Metric):
 
     def set_pRef(self, pRef: PRef):
         print("Calculating linkages...", end="")
-        self.normalised_linkage_table = self.get_normalised_linkage_table(self.get_linkage_table(pRef))
-        self.linkage_table = self.get_normalised_linkage_table(self.get_linkage_table(pRef))
+        self.linkage_table = self.get_linkage_table(pRef)
+        self.normalised_linkage_table = Linkage.get_quantized_linkage_table(self.linkage_table)
         print("Finished")
         # self.normalised_linkage_table = self.get_normalised_linkage_table(self.linkage_table)
 
@@ -154,31 +155,13 @@ class BiVariateANOVALinkage(Metric):
         np.fill_diagonal(table, 0)
         return table
 
-    @staticmethod
-    def get_normalised_linkage_table(linkage_table: LinkageTable):
-        where_to_consider = np.triu(np.full_like(linkage_table, True, dtype=bool), k=1)
-        triu_min = np.min(linkage_table, where=where_to_consider, initial=np.inf)
-        triu_max = np.max(linkage_table, where=where_to_consider, initial=-np.inf)
-        normalised_linkage_table: LinkageTable = (linkage_table - triu_min) / (triu_max-triu_min)
-
-        # for debugging purposes, just so that it looks prettier in the PyCharm debugging window.
-        np.fill_diagonal(normalised_linkage_table, 0)
-
-        return normalised_linkage_table
-
-    @staticmethod
-    def get_quantized_linkage_table(linkage_table: LinkageTable):
-        where_to_consider = np.triu(np.full_like(linkage_table, True, dtype=bool), k=1)
-        average = np.average(linkage_table[where_to_consider])
-        quantized_linkage_table: LinkageTable = np.array(linkage_table >= average, dtype=float)
-        return quantized_linkage_table
-
 
     def get_normalised_linkage_scores(self, ps: PS) -> np.ndarray:
         fixed = ps.values != STAR
         fixed_combinations: np.array = np.outer(fixed, fixed)
         fixed_combinations = np.triu(fixed_combinations, k=1)
         return self.normalised_linkage_table[fixed_combinations]
+
     def get_single_normalised_score(self, ps: PS) -> float:
         self.used_evaluations += 1
         if ps.fixed_count() < 2:
