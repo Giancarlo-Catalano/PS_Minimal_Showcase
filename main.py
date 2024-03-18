@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 import utils
 from BaselineApproaches.FullSolutionGA import FullSolutionGA, test_FSGA
 from BenchmarkProblems.BT.BTProblem import BTProblem

@@ -10,9 +10,16 @@ from BenchmarkProblems.Trapk import Trapk
 from EDA.SteadyStateEDA import SteadyStateEDA
 from utils import execution_time
 
-resources_root = r"C:\Users\gac8\PycharmProjects\PS\resources" + "\\"
-ising_root = resources_root + "IsingSpinGlassInstances" + "\\"
-satlib_root = resources_root + "SATlibInstances" + "\\"
+is_on_cluster = False
+
+if is_on_cluster:
+    resources_root = r"/home/gac/EDA/PS/resources/"
+    ising_root = resources_root + "IsingSpinGlassInstances/"
+    satlib_root = resources_root + "SATlibInstances/"
+else:
+    resources_root = r"C:\Users\gac8\PycharmProjects\PS\resources" + "\\"
+    ising_root = resources_root + "IsingSpinGlassInstances" + "\\"
+    satlib_root = resources_root + "SATlibInstances" + "\\"
 
 problems = {"Trap5_3": Trapk(3, 5),
             "Trap5_5": Trapk(5, 5),
@@ -44,12 +51,6 @@ def test_EDA_with_parameters(problem: BenchmarkProblem,
                              fs_budget: int,
                              ps_budget: int,
                              model_size: int):
-
-    print(f"{problem =},"
-          f"{population_size = },"
-          f"{fs_budget = },"
-          f"{ps_budget = },"
-          f"{model_size = }")
     algorithm = SteadyStateEDA(search_space=problem.search_space,
                                fitness_function=problem.fitness_function,
                                population_size=population_size,
