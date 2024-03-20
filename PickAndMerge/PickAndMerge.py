@@ -11,14 +11,14 @@ from SearchSpace import SearchSpace
 
 class FSSampler:
     search_space: SearchSpace
-    individuals: list[Individual]
+    individuals: set[Individual]
     merge_limit: int
 
     tournament_size = 3
 
     def __init__(self,
                  search_space: SearchSpace,
-                 individuals: list[Individual],
+                 individuals: set[Individual],
                  merge_limit: int):
         self.search_space = search_space
         self.individuals = individuals
@@ -27,10 +27,10 @@ class FSSampler:
     def sample_ps_unsafe(self) -> PS:
         """ this is unsafe in the sense that the result might not be complete"""
 
-        available = list(self.individuals)
+        available = set(self.individuals)
 
         def pick() -> Individual:
-            return tournament_select(available, self.tournament_size)
+            return max(random.choices(list(available), k=self.tournament_size))
 
         current = PS.empty(self.search_space)
         added_count = 0

@@ -40,7 +40,7 @@ problems = {"Trap5_3": Trapk(3, 5),
             }
 
 population_sizes = [50, 100, 200, 500]
-fs_budgets = [10000] # , 15000, 20000, 30000]
+fs_budgets = [100] #[10000, 15000, 20000, 30000]
 ps_budgets = [200] # [5000, 10000, 15000]
 model_sizes = [6] # [6, 12, 24]
 
@@ -76,7 +76,7 @@ def test_EDA_with_parameters(problem: BenchmarkProblem,
 
     final_best_fitness = algorithm.get_results()[0].fitness
     log_dict["best_fitness"] = float(final_best_fitness)
-    log_dict["reached_global_optima"] = bool(final_best_fitness == problem.get_global_optima_fitness())  # bool_ is not serializable
+    log_dict["reached_global_optima"] = bool(final_best_fitness == problem.get_global_optima_fitness())  # bool_ is not serializable ?
 
 
     return log_dict

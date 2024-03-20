@@ -213,6 +213,8 @@ class SteadyStateEDA:
         all_solutions = original_pRef.full_solutions + new_pRef.full_solutions
 
         kept_solutions = [all_solutions[i] for i in kept_indexes]
+
+
         return PRef.from_full_solutions(kept_solutions,
                                         fitness_values=kept_fitnesses,
                                         search_space=original_pRef.search_space)
