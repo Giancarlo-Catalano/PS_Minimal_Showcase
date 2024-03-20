@@ -91,7 +91,7 @@ def test_EDA_with_parameters(problem: BenchmarkProblem,
     log_dict["runtime"] = runtime.execution_time
     log_dict["run_data"] = run_data
 
-    final_best_fitness = algorithm.get_results()[0].fitness
+    final_best_fitness = float(algorithm.get_results()[0].fitness)  # grrrr int64 is not serializable!!!!
     log_dict["best_fitness"] = float(final_best_fitness)
     log_dict["reached_global_optima"] = bool(
         final_best_fitness == problem.get_global_optima_fitness())  # bool_ is not serializable ?
