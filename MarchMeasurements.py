@@ -11,7 +11,7 @@ from BenchmarkProblems.Trapk import Trapk
 from EDA.SteadyStateEDA import SteadyStateEDA
 from utils import execution_time
 
-is_on_cluster = True
+is_on_cluster = False
 
 if is_on_cluster:
     resources_root = r"/home/gac/EDA/PS/resources/"
@@ -73,7 +73,8 @@ def test_EDA_with_parameters(problem: BenchmarkProblem,
 
     fs_evaluation_limit = TerminationCriteria.FullSolutionEvaluationLimit(fs_budget)
     fs_global_optima_found = TerminationCriteria.UntilGlobalOptimaReached(problem.get_global_optima_fitness())
-    fs_termination_criteria = TerminationCriteria.UnionOfCriteria(fs_evaluation_limit, fs_global_optima_found)
+    iteration_limit = TerminationCriteria.IterationLimit(20)
+    fs_termination_criteria = TerminationCriteria.UnionOfCriteria(fs_evaluation_limit, fs_global_optima_found, iteration_limit)
     ps_evaluation_limit = TerminationCriteria.PSEvaluationLimit(ps_budget)
 
     log_dict = dict()
