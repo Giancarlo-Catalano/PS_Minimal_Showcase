@@ -290,6 +290,8 @@ def long_anova_method(pRef: PRef) -> LinkageTable:
         grand_mean = np.mean(fitnesses)
         dof_total = len(fitnesses) - 1
         n = data.shape[0]
+        if n == 0:
+            raise Exception("0 samples in ANOVA test")
 
         # Calculate sums of squares for factors
         sum_sq_factor1 = np.sum(

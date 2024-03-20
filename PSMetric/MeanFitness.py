@@ -45,7 +45,7 @@ class MeanFitness(Metric):
         return np.average(observed_fitnesses)
 
 
-    def get_single_normalised_score_old(self, ps: PS) -> float:
+    def get_single_normalised_score(self, ps: PS) -> float:
         observed_fitnesses = self.normalised_pRef.fitnesses_of_observations(ps)
         if len(observed_fitnesses) == 0:
             # warnings.warn(f"The passed PS {ps} has no observations, and thus the MeanFitness could not be calculated")
@@ -53,7 +53,7 @@ class MeanFitness(Metric):
 
         return np.average(observed_fitnesses)
 
-    def get_single_normalised_score(self, ps: PS) -> float:
+    def get_single_normalised_score_obsolete(self, ps: PS) -> float:
         self.used_evaluations += 1
         average_fitness = self.get_single_score(ps)
         return (average_fitness - self.min_fitness)/(self.max_fitness - self.min_fitness)

@@ -43,7 +43,7 @@ def merge_populations(first: list[Any], second: list[Any], quantity_returned: in
 
 class SteadyStateEDA:
     current_pRef: PRef
-    historical_pRef: PRef
+    # historical_pRef: PRef
 
     cutting_edge_model: Model
     novelty_model: Model
@@ -78,7 +78,7 @@ class SteadyStateEDA:
         self.fitness_function_evaluator = FSEvaluator(fitness_function)
         self.current_pRef = self.fitness_function_evaluator.generate_pRef_from_search_space(self.search_space,
                                                                                             self.population_size)
-        self.historical_pRef = self.current_pRef
+        # self.historical_pRef = self.current_pRef
 
         self.cutting_edge_model = []
         self.novelty_model = []
@@ -134,7 +134,7 @@ class SteadyStateEDA:
         # the other 2 don't matter
 
     def update_metrics_and_linkage_model(self):
-        self.linkage_metric.set_pRef(self.historical_pRef)
+        self.linkage_metric.set_pRef(self.current_pRef)   # maybe history_pRef would be better here
         self.mean_fitness_metric.set_pRef(self.current_pRef)
         self.novelty_metric.set_pRef(self.current_pRef)
         self.simplicity_metric.set_pRef(self.current_pRef)
@@ -220,7 +220,7 @@ class SteadyStateEDA:
     def update_population_using_current_models(self):
         new_pRef = self.generate_new_solutions()
         self.current_pRef = self.merge_pRefs(self.current_pRef, new_pRef)
-        self.historical_pRef = PRef.concat(self.historical_pRef, new_pRef)
+        # self.historical_pRef = PRef.concat(self.historical_pRef, new_pRef)
 
     def run(self,
             fs_termination_criteria: TerminationCriteria,

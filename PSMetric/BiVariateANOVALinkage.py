@@ -1,4 +1,5 @@
 import itertools
+import warnings
 from typing import TypeAlias, Optional
 
 import numpy as np
@@ -30,62 +31,6 @@ class BiVariateANOVALinkage(Metric):
         self.linkage_table = self.get_linkage_table(pRef)
         self.normalised_linkage_table = self.get_quantized_linkage_table(self.linkage_table)
         # print("Finished")
-        # self.normalised_linkage_table = self.get_normalised_linkage_table(self.linkage_table)
-
-    def get_ANOVA_interaction_table_old(self, pRef: PRef) -> LinkageTable:
-        """every entry in this table will be a p-value, so in theory smaller values have stronger linkage"""
-
-        def interaction_test(data: np.ndarray, fitnesses: np.ndarray):
-            # Perform a 2-factor ANOVA test with interaction term
-            grand_mean = np.mean(fitnesses)
-            dof_total = len(fitnesses) - 1
-            n = data.shape[0]
-
-            # Calculate sums of squares for factors
-            sum_sq_factor1 = np.sum(
-                (np.mean(fitnesses[data[:, 0] == level]) - grand_mean) ** 2 for level in np.unique(data[:, 0]))
-            sum_sq_factor2 = np.sum(
-                (np.mean(fitnesses[data[:, 1] == level]) - grand_mean) ** 2 for level in np.unique(data[:, 1]))
-            sum_sq_interaction = np.sum((np.mean(fitnesses[(data[:, 0] == level[0]) & (data[:, 1] == level[1])]) -
-                                         np.mean(fitnesses[data[:, 0] == level[0]]) -
-                                         np.mean(fitnesses[data[:, 1] == level[1]]) +
-                                         grand_mean) ** 2 for level in
-                                        itertools.product(np.unique(data[:, 0]), np.unique(data[:, 1])))
-
-            # Calculate error sum of squares
-            ss_error = np.sum((fitnesses - np.mean(fitnesses)) ** 2)
-
-            # Calculate degrees of freedom
-            dof_factor1 = len(np.unique(data[:, 0])) - 1
-            dof_factor2 = len(np.unique(data[:, 1])) - 1
-            dof_interaction = dof_factor1 * dof_factor2
-            dof_error = dof_total - (dof_factor1 + dof_factor2 + dof_interaction)
-
-            # Calculate mean squares
-            ms_factor1 = sum_sq_factor1 / dof_factor1
-            ms_factor2 = sum_sq_factor2 / dof_factor2
-            ms_interaction = sum_sq_interaction / dof_interaction
-            ms_error = ss_error / dof_error
-
-            # Calculate F statistic
-            f_statistic = (ms_interaction / ms_error) if ms_error != 0 else np.inf
-
-            # Calculate p-value
-            p_value = 1 - f.cdf(f_statistic, dof_interaction, dof_error)
-            return p_value
-
-        def calculate_interaction(data: np.ndarray, fitnesses: np.ndarray):
-            num_features = data.shape[1]
-            interaction_table = np.zeros((num_features, num_features))
-            for i, j in itertools.combinations(range(num_features), 2):
-                interaction_data = np.column_stack((data[:, i], data[:, j], data[:, i] * data[:, j]))
-                interaction_table[i, j] = interaction_test(interaction_data, fitnesses)
-            return interaction_table + interaction_table.T  # Make the table symmetric
-
-        solutions = pRef.full_solution_matrix
-        fitnesses = pRef.fitness_array
-
-        return calculate_interaction(solutions, fitnesses)
 
     def get_ANOVA_interaction_table(self, pRef: PRef) -> LinkageTable:
         """every entry in this table will be a p-value, so in theory smaller values have stronger linkage"""
@@ -95,29 +40,36 @@ class BiVariateANOVALinkage(Metric):
         grand_mean = np.mean(fitnesses)
         n = pRef.sample_size
         dof_total = n - 1
+        amount_of_variables = pRef.search_space.amount_of_parameters
 
         levels = pRef.search_space.cardinalities
+
+        if n == 0:
+            raise Exception("0 samples in ANOVA when calculating linkage table.")
+
+        where_values = [[(solutions[:, i] == level_i) for level_i in range(levels[i])]
+                        for i in range(amount_of_variables)]
 
         def interaction_test(i: int, j: int):
             """ Perform a 2-factor ANOVA test with interaction term """
 
-            values_i = solutions[:, i]
-            values_j = solutions[:, j]
-
-            levels_i = range(levels[i])
-            levels_j = range(levels[j])
-
-            where_values_i = [(values_i == level_i) for level_i in levels_i]
-            where_values_j = [(values_j == level_j) for level_j in levels_j]
+            where_values_i = where_values[i]
+            where_values_j = where_values[j]
 
             # Calculating the sum of squares for the interaction
             # (Normally we'd also calculate the marginal sum of squares, but we don't need them here.
 
-            sum_sq_interaction = np.sum((np.mean(fitnesses[where_val_i & where_val_j]) -
-                                         np.mean(fitnesses[where_val_i]) -
-                                         np.mean(fitnesses[where_val_j]) +
-                                         grand_mean) ** 2 for where_val_i, where_val_j in
-                                        itertools.product(where_values_i, where_values_j))
+            #debug
+            warnings.filterwarnings("error")
+            try:
+                sum_sq_interaction = np.sum([(np.mean(fitnesses[where_val_i & where_val_j]) -
+                                             np.mean(fitnesses[where_val_i]) -
+                                             np.mean(fitnesses[where_val_j]) +
+                                             grand_mean) ** 2 for where_val_i, where_val_j in
+                                            itertools.product(where_values_i, where_values_j)])
+            except RuntimeWarning as w:  # sometimes we get a mean of empty slice error
+                #print(f"Received the warning {w} when calculating the sum_sq_interaction")
+                sum_sq_interaction = 0
 
             # Calculate error sum of squares
             ss_error = np.sum((fitnesses - np.mean(fitnesses)) ** 2)

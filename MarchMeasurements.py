@@ -10,16 +10,16 @@ from BenchmarkProblems.Trapk import Trapk
 from EDA.SteadyStateEDA import SteadyStateEDA
 from utils import execution_time
 
-is_on_cluster = True
+is_on_cluster = False
 
 if is_on_cluster:
     resources_root = r"/home/gac/EDA/PS/resources/"
     ising_root = resources_root + "IsingSpinGlassInstances/"
-    satlib_root = resources_root + "SATlibInstances/"
+    satlib_root = resources_root + "3sat/"
 else:
     resources_root = r"C:\Users\gac8\PycharmProjects\PS\resources" + "\\"
     ising_root = resources_root + "IsingSpinGlassInstances" + "\\"
-    satlib_root = resources_root + "SATlibInstances" + "\\"
+    satlib_root = resources_root + "3sat" + "\\"
 
 problems = {"Trap5_3": Trapk(3, 5),
             "Trap5_5": Trapk(5, 5),
@@ -39,8 +39,8 @@ problems = {"Trap5_3": Trapk(3, 5),
             "SAT20": SATProblem.from_json_file(satlib_root + "uf20-01.json")
             }
 
-population_sizes = [201] # [20, 50, 100, 200, 500]
-fs_budgets = [2010] # [10000, 15000, 20000, 30000]
+population_sizes = [50, 100, 200, 500]
+fs_budgets = [10000] # , 15000, 20000, 30000]
 ps_budgets = [200] # [5000, 10000, 15000]
 model_sizes = [6] # [6, 12, 24]
 
