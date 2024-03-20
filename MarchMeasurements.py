@@ -11,7 +11,7 @@ from BenchmarkProblems.Trapk import Trapk
 from EDA.SteadyStateEDA import SteadyStateEDA
 from utils import execution_time
 
-is_on_cluster = False
+is_on_cluster = True
 
 if is_on_cluster:
     resources_root = r"/home/gac/EDA/PS/resources/"
@@ -44,7 +44,7 @@ big_problems = {
                 }
 
 population_sizes = [100, 1000]  # [50, 100, 200, 500]
-fs_budgets = [10000, 20000]  # [10000, 15000, 20000, 30000]
+fs_budgets = [10000] #  [10000, 15000, 20000, 30000]
 ps_budgets = [5000, 10000]  # [5000, 10000, 15000]
 model_sizes = [7, 20]  # [6, 12, 24]
 
