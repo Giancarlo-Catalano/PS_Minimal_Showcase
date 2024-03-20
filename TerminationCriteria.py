@@ -96,9 +96,9 @@ class UntilGlobalOptimaReached(TerminationCriteria):
         return f"UntilGlobalOptima({self.global_optima_fitness})"
 
     def met(self, **kwargs):
-        would_be_returned = kwargs["evaluated_population"]
+        would_be_returned = kwargs["best_fs_fitness"]
 
-        return self.global_optima_fitness in utils.unzip(would_be_returned)[1]
+        return would_be_returned >= self.global_optima_fitness
 
 
 class UnionOfCriteria(TerminationCriteria):

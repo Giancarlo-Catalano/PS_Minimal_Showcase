@@ -1,3 +1,5 @@
+import logging
+import warnings
 from math import ceil, sqrt
 from typing import TypeAlias, Callable, Any
 
@@ -49,7 +51,7 @@ class SteadyStateEDA:
     novelty_model: Model
     historical_model: Model
 
-    linkage_metric: BiVariateANOVALinkage
+    linkage_metric: Linkage
     mean_fitness_metric: MeanFitness
     novelty_metric: NoveltyFromModel
     simplicity_metric: Simplicity
@@ -84,7 +86,7 @@ class SteadyStateEDA:
         self.novelty_model = []
         self.historical_model = []
 
-        self.linkage_metric = BiVariateANOVALinkage()
+        self.linkage_metric = Linkage()
         self.mean_fitness_metric = MeanFitness()
 
         self.novelty_metric = NoveltyFromModel()
@@ -159,11 +161,13 @@ class SteadyStateEDA:
         self.reset_ps_metrics_evaluation_counters()
         # print("Generating Novelty model...", end="")
         self.novelty_metric.set_reference_model(self.historical_model + self.cutting_edge_model)
+        novelty_from_population = NoveltyFromPopulation()
+        novelty_from_population.set_pRef(self.current_pRef)
         novelty_miner = MPLLR(mu_parameter=20,
                               lambda_parameter=100,
                               food_weight=0.3,
                               mutation_operator=MultimodalMutationOperator(0.5),
-                              metric=Averager([self.novelty_metric, self.simplicity_metric]))
+                              metric=Averager([self.novelty_metric, novelty_from_population, self.simplicity_metric]))
         novelty_miner.set_pRef(self.current_pRef, set_metrics=False)
         novelty_miner.run(termination_criteria)
 
@@ -221,8 +225,9 @@ class SteadyStateEDA:
 
     def update_population_using_current_models(self):
         new_pRef = self.generate_new_solutions()
-        self.current_pRef = self.merge_pRefs(self.current_pRef, new_pRef)
+        # self.current_pRef = self.merge_pRefs(self.current_pRef, new_pRef)
         # self.historical_pRef = PRef.concat(self.historical_pRef, new_pRef)
+        self.current_pRef = PRef.concat(self.current_pRef, new_pRef)
 
     def run(self,
             fs_termination_criteria: TerminationCriteria,
@@ -230,11 +235,17 @@ class SteadyStateEDA:
             show_every_iteration=False):
 
         logger_dict = {"iterations": []}
+        logging.basicConfig(level=logging.INFO,
+                            format='%(asctime)s - %(levelname)s - %(message)s')
+
+
         iteration = 0
+        best_fitness = np.max(self.current_pRef.fitness_array)
 
         def should_terminate():
             return fs_termination_criteria.met(iterations=iteration,
-                                               fs_evaluations=self.fitness_function_evaluator.used_evaluations)
+                                               fs_evaluations=self.fitness_function_evaluator.used_evaluations,
+                                               best_fs_fitness=best_fitness)
 
         while not should_terminate():
             if show_every_iteration:
@@ -242,6 +253,11 @@ class SteadyStateEDA:
 
             logger_dict["iterations"].append({"iteration": iteration,
                                               "state": self.get_current_state_as_dict()})
+
+            best_fitness = np.max(self.current_pRef.fitness_array)  # NOTE: also necessary for the termination criterion
+            logging.info(f"Iteration {iteration}, best_fitness = {best_fitness}")
+            logging.info(f"The current models are \n\t"+"\n\t".join([f"{individual}" for individual in self.cutting_edge_model + self.historical_model + self.novelty_model]))
+
 
             self.update_models_using_current_population(ps_termination_criteria)
             self.update_population_using_current_models()

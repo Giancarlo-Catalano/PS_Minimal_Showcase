@@ -1,4 +1,5 @@
 import json
+import logging
 
 import TerminationCriteria
 from BenchmarkProblems.BenchmarkProblem import BenchmarkProblem
@@ -21,28 +22,34 @@ else:
     ising_root = resources_root + "IsingSpinGlassInstances" + "\\"
     satlib_root = resources_root + "3sat" + "\\"
 
-problems = {"Trap5_3": Trapk(3, 5),
-            "Trap5_5": Trapk(5, 5),
-            "Trap5_10": Trapk(10, 5),
-            "Trap5_20": Trapk(20, 5),
-            "RoyalRoad5_3": RoyalRoad(3, 5),
-            "RoyalRoad5_5": RoyalRoad(5, 5),
-            "RoyalRoad5_10": RoyalRoad(10, 5),
-            "RoyalRoad5_20": RoyalRoad(20, 5),
-            "Ising4": IsingSpinGlassProblem.from_gian_file(ising_root + "SG_16_1.json"),
-            "Ising8": IsingSpinGlassProblem.from_gian_file(ising_root + "SG_64_1.json"),
-            "Ising16": IsingSpinGlassProblem.from_gian_file(ising_root + "SG_256_1.json"),
-            "Ising20": IsingSpinGlassProblem.from_gian_file(ising_root + "SG_400_1.json"),
-            "OneMax10": OneMax(10),
-            "OneMax50": OneMax(50),
-            "OneMax100": OneMax(100),
-            "SAT20": SATProblem.from_json_file(satlib_root + "uf20-01.json")
-            }
+small_problems = {"Trap5_3": Trapk(3, 5),
+                  "Trap5_5": Trapk(5, 5),
+                  "Trap5_10": Trapk(10, 5),
+                  "RoyalRoad5_3": RoyalRoad(3, 5),
+                  "RoyalRoad5_5": RoyalRoad(5, 5),
+                  "RoyalRoad5_10": RoyalRoad(10, 5),
+                  "Ising4": IsingSpinGlassProblem.from_gian_file(ising_root + "SG_16_1.json"),
+                  "Ising8": IsingSpinGlassProblem.from_gian_file(ising_root + "SG_64_1.json"),
+                  "OneMax10": OneMax(10),
+                  }
 
-population_sizes = [50, 100, 200, 500]
-fs_budgets = [100] #[10000, 15000, 20000, 30000]
-ps_budgets = [200] # [5000, 10000, 15000]
-model_sizes = [6] # [6, 12, 24]
+big_problems = {
+                "Trap5_20": Trapk(20, 5),
+                "RoyalRoad5_20": RoyalRoad(20, 5),
+                "Ising16": IsingSpinGlassProblem.from_gian_file(ising_root + "SG_256_1.json"),
+                "Ising20": IsingSpinGlassProblem.from_gian_file(ising_root + "SG_400_1.json"),
+                "OneMax50": OneMax(50),
+                "OneMax100": OneMax(100),
+                "SAT20": SATProblem.from_json_file(satlib_root + "uf20-01.json")
+                }
+
+population_sizes = [1000, 3000]  # [50, 100, 200, 500]
+fs_budgets = [10000, 20000]  # [10000, 15000, 20000, 30000]
+ps_budgets = [5000, 10000]  # [5000, 10000, 15000]
+model_sizes = [7, 20]  # [6, 12, 24]
+
+logging.basicConfig(level=logging.INFO,
+                            format='%(asctime)s - %(levelname)s - %(message)s')
 
 
 def test_EDA_with_parameters(problem: BenchmarkProblem,
@@ -57,7 +64,16 @@ def test_EDA_with_parameters(problem: BenchmarkProblem,
                                offspring_size=population_size,
                                model_size=model_size)
 
+    logging.info(f"problem = {problem_string}, "
+                 f"pop_size = {population_size}, "
+                 f"fs_budget = {fs_budget}, "
+                 f"ps_budget = {ps_budget}, "
+                 f"model_size = {model_size}, "
+                 f"global_optima = {problem.get_global_optima_fitness()}")
+
     fs_evaluation_limit = TerminationCriteria.FullSolutionEvaluationLimit(fs_budget)
+    fs_global_optima_found = TerminationCriteria.UntilGlobalOptimaReached(problem.get_global_optima_fitness())
+    fs_termination_criteria = TerminationCriteria.UnionOfCriteria(fs_evaluation_limit, fs_global_optima_found)
     ps_evaluation_limit = TerminationCriteria.PSEvaluationLimit(ps_budget)
 
     log_dict = dict()
@@ -68,7 +84,7 @@ def test_EDA_with_parameters(problem: BenchmarkProblem,
     log_dict["model_size"] = model_size
 
     with execution_time() as runtime:
-        run_data = algorithm.run(fs_termination_criteria=fs_evaluation_limit,
+        run_data = algorithm.run(fs_termination_criteria=fs_termination_criteria,
                                  ps_termination_criteria=ps_evaluation_limit)
 
     log_dict["runtime"] = runtime.execution_time
@@ -76,16 +92,15 @@ def test_EDA_with_parameters(problem: BenchmarkProblem,
 
     final_best_fitness = algorithm.get_results()[0].fitness
     log_dict["best_fitness"] = float(final_best_fitness)
-    log_dict["reached_global_optima"] = bool(final_best_fitness == problem.get_global_optima_fitness())  # bool_ is not serializable ?
-
+    log_dict["reached_global_optima"] = bool(
+        final_best_fitness == problem.get_global_optima_fitness())  # bool_ is not serializable ?
 
     return log_dict
 
 
-
 def test_all():
     results = [test_EDA_with_parameters(problem, problem_string, population_size, fs_budget, ps_budget, model_size)
-               for problem_string, problem in list(problems.items())[:1]
+               for problem_string, problem in list(small_problems.items())[:1]
                for population_size in population_sizes
                for fs_budget in fs_budgets
                for ps_budget in ps_budgets

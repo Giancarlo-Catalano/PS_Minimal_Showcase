@@ -71,6 +71,8 @@ class BiVariateANOVALinkage(Metric):
                 #print(f"Received the warning {w} when calculating the sum_sq_interaction")
                 sum_sq_interaction = 0
 
+            warnings.resetwarnings()
+
             # Calculate error sum of squares
             ss_error = np.sum((fitnesses - np.mean(fitnesses)) ** 2)
 

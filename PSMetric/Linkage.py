@@ -23,10 +23,10 @@ class Linkage(Metric):
         return "Linkage"
 
     def set_pRef(self, pRef: PRef):
-        print("Calculating linkages...", end="")
+        #print("Calculating linkages...", end="")
         self.linkage_table = self.get_linkage_table_fast(pRef)
         self.normalised_linkage_table = self.get_quantized_linkage_table(self.linkage_table)
-        print("Finished")
+        #print("Finished")
         # self.normalised_linkage_table = self.get_normalised_linkage_table(self.linkage_table)
 
     @staticmethod

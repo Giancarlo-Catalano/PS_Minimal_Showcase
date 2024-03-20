@@ -1,5 +1,6 @@
 import random
 from math import ceil, sqrt
+from typing import Iterable
 
 import numpy as np
 
@@ -18,10 +19,10 @@ class FSSampler:
 
     def __init__(self,
                  search_space: SearchSpace,
-                 individuals: set[Individual],
+                 individuals: Iterable[Individual],
                  merge_limit: int):
         self.search_space = search_space
-        self.individuals = individuals
+        self.individuals = set(individuals)
         self.merge_limit = merge_limit
 
     def sample_ps_unsafe(self) -> PS:
