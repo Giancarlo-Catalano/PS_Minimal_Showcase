@@ -11,7 +11,7 @@ from BenchmarkProblems.Trapk import Trapk
 from EDA.SteadyStateEDA import SteadyStateEDA
 from utils import execution_time
 
-is_on_cluster = True
+is_on_cluster = False
 
 if is_on_cluster:
     resources_root = r"/home/gac/EDA/PS/resources/"
@@ -22,15 +22,16 @@ else:
     ising_root = resources_root + "IsingSpinGlassInstances" + "\\"
     satlib_root = resources_root + "3sat" + "\\"
 
-small_problems = {"Trap5_3": Trapk(3, 5),
-                  "Trap5_5": Trapk(5, 5),
-                  "Trap5_10": Trapk(10, 5),
-                  "RoyalRoad5_3": RoyalRoad(3, 5),
-                  "RoyalRoad5_5": RoyalRoad(5, 5),
-                  "RoyalRoad5_10": RoyalRoad(10, 5),
+small_problems = {
+                  # "Trap5_3": Trapk(3, 5),
+                  #"Trap5_5": Trapk(5, 5),
+                  #"Trap5_10": Trapk(10, 5),
+                  #"RoyalRoad5_3": RoyalRoad(3, 5),
+                  #"RoyalRoad5_5": RoyalRoad(5, 5),
+                  #"RoyalRoad5_10": RoyalRoad(10, 5),
                   "Ising4": IsingSpinGlassProblem.from_gian_file(ising_root + "SG_16_1.json"),
-                  "Ising8": IsingSpinGlassProblem.from_gian_file(ising_root + "SG_64_1.json"),
-                  "OneMax10": OneMax(10),
+                  #"Ising8": IsingSpinGlassProblem.from_gian_file(ising_root + "SG_64_1.json"),
+                  #"OneMax10": OneMax(10),
                   }
 
 big_problems = {
@@ -45,7 +46,7 @@ big_problems = {
 
 population_sizes = [100, 1000]  # [50, 100, 200, 500]
 fs_budgets = [10000] #  [10000, 15000, 20000, 30000]
-ps_budgets = [5000, 10000]  # [5000, 10000, 15000]
+ps_budgets = [5000]#, 10000]  # [5000, 10000, 15000]
 model_sizes = [7, 20]  # [6, 12, 24]
 
 logging.basicConfig(level=logging.INFO,

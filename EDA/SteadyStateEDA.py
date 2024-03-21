@@ -118,11 +118,11 @@ class SteadyStateEDA:
     def get_current_state_as_dict(self):
         def get_pRef_dict(pRef):
             stats = utils.get_descriptive_stats(pRef.fitness_array)
-            return {"min": stats[0],
-                    "median": stats[1],
-                    "max": stats[2],
-                    "avg": stats[3],
-                    "stdev": stats[4]}
+            return {"min": float(stats[0]),
+                    "median": float(stats[1]),
+                    "max": float(stats[2]),
+                    "avg": float(stats[3]),
+                    "stdev": float(stats[4])}
 
         ps_evals = self.mean_fitness_metric.used_evaluations
         fs_evals = self.fitness_function_evaluator.used_evaluations
@@ -254,7 +254,7 @@ class SteadyStateEDA:
             logger_dict["iterations"].append({"iteration": iteration,
                                               "state": self.get_current_state_as_dict()})
 
-            best_fitness = np.max(self.current_pRef.fitness_array)  # NOTE: also necessary for the termination criterion
+            best_fitness = float(np.max(self.current_pRef.fitness_array))  # NOTE: also necessary for the termination criterion
             logging.info(f"Iteration {iteration}, best_fitness = {best_fitness}")
             logging.info(f"The current models are \n\t"+"\n\t".join([f"{individual}" for individual in self.cutting_edge_model + self.historical_model + self.novelty_model]))
 
