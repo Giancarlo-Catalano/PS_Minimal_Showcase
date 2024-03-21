@@ -11,7 +11,7 @@ from BenchmarkProblems.Trapk import Trapk
 from EDA.SteadyStateEDA import SteadyStateEDA
 from utils import execution_time
 
-is_on_cluster = True
+is_on_cluster = False
 
 if is_on_cluster:
     resources_root = r"/home/gac/EDA/PS/resources/"

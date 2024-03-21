@@ -1,6 +1,6 @@
 import itertools
 import random
-from typing import Any, Iterable
+from typing import Any, Iterable, Callable
 
 import numpy as np
 from pandas import DataFrame
@@ -136,3 +136,8 @@ def execution_time():
     print(data)
 
 """
+
+
+def repeat(n: int, action: Callable):
+    for _ in range(n):
+        action()

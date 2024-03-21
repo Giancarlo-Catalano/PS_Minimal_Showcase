@@ -9,17 +9,17 @@ FitnessFunction: TypeAlias = Callable[[FullSolution], Fitness]
 
 
 class FSEvaluator:
-    fitness_function: FitnessFunction
+    _fitness_function: FitnessFunction
     used_evaluations: int
 
     def __init__(self,
                  fitness_function: FitnessFunction):
-        self.fitness_function = fitness_function
+        self._fitness_function = fitness_function
         self.used_evaluations = 0
 
     def evaluate(self, fs: FullSolution) -> Fitness:
         self.used_evaluations += 1
-        return self.fitness_function(fs)
+        return self._fitness_function(fs)
 
     def generate_pRef_from_full_solutions(self,
                                           search_space: SearchSpace,

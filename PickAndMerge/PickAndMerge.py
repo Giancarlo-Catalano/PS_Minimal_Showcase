@@ -1,6 +1,6 @@
 import random
 from math import ceil, sqrt
-from typing import Iterable
+from typing import Iterable, Optional
 
 import numpy as np
 
@@ -20,9 +20,12 @@ class FSSampler:
     def __init__(self,
                  search_space: SearchSpace,
                  individuals: Iterable[Individual],
-                 merge_limit: int):
+                 merge_limit: Optional[int] = None):
         self.search_space = search_space
         self.individuals = set(individuals)
+
+        if merge_limit is None:
+            merge_limit = ceil(sqrt(search_space.amount_of_parameters))
         self.merge_limit = merge_limit
 
     def sample_ps_unsafe(self) -> PS:
