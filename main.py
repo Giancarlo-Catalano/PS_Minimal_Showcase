@@ -5,6 +5,7 @@ from BaselineApproaches.FullSolutionGA import FullSolutionGA, test_FSGA
 from BenchmarkProblems.BT.BTProblem import BTProblem
 from BenchmarkProblems.IsingSpinGlassProblem import IsingSpinGlassProblem
 from BenchmarkProblems.GraphColouring import GraphColouring
+from BenchmarkProblems.MultiDimensionalKnapsack import MultiDimensionalKnapsack
 from BenchmarkProblems.RoyalRoad import RoyalRoad
 from BenchmarkProblems.RoyalRoadWithOverlaps import RoyalRoadWithOverlaps
 from BenchmarkProblems.SATProblem import SATProblem
@@ -44,23 +45,13 @@ if __name__ == '__main__':
     #                               calendar_length=56)
     problem = RoyalRoad(5, 5)
     # print("Reading the problem instance")
-    # problem = IsingSpinGlassProblem.from_gian_file(
-    #    r"C:\Users\gac8\PycharmProjects\PS\resources\IsingSpinGlassInstances\SG_36_1.json")
-
+    # problem = IsingSpinGlassProblem.from_json_file(
+    #     r"C:\Users\gac8\PycharmProjects\PS\resources\IsingSpinGlassInstances\SG_36_1.json")
+    #problem = MultiDimensionalKnapsack.random(amount_of_dimensions=3, amount_of_items=20, max_value=30)
 
     # problem = SATProblem.from_json_file(r"C:\Users\gac8\PycharmProjects\PS\resources\SATlibInstances\uf20-01.json")
     # problem = GraphColouring.random(8, 3, 0.3)
-    # test_fourth_archive_miner(problem, show_each_generation=True)
-    # test_ouroboros(problem)
-    # test_MLPSS_with_MMM(problem)
-
 
     #test_FSGA(problem)
-
-    #test_linkage_tables(problem)
-    # test_sseda(problem)
-    #test_MLPLR(problem)
-
-
-    #test_all()
-    test_train_tracks_EDA(problem)
+    test_MLPLR(problem)
+    # test_train_tracks_EDA(problem)

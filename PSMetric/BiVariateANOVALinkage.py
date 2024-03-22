@@ -29,7 +29,7 @@ class BiVariateANOVALinkage(Metric):
     def set_pRef(self, pRef: PRef):
         # print("Calculating linkages...", end="")
         self.linkage_table = self.get_linkage_table(pRef)
-        self.normalised_linkage_table = self.get_quantized_linkage_table(self.linkage_table)
+        self.normalised_linkage_table = Linkage.get_normalised_linkage_table(self.linkage_table)
         # print("Finished")
 
     def get_ANOVA_interaction_table(self, pRef: PRef) -> LinkageTable:
@@ -113,7 +113,7 @@ class BiVariateANOVALinkage(Metric):
     def get_normalised_linkage_scores(self, ps: PS) -> np.ndarray:
         fixed = ps.values != STAR
         fixed_combinations: np.array = np.outer(fixed, fixed)
-        fixed_combinations = np.triu(fixed_combinations, k=1)
+        fixed_combinations = np.triu(fixed_combinations, k=0)
         return self.normalised_linkage_table[fixed_combinations]
 
     def get_single_normalised_score(self, ps: PS) -> float:

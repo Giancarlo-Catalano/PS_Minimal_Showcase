@@ -162,7 +162,7 @@ class IsingSpinGlassProblem(BenchmarkProblem):
             print(f"Error writing to file {filename}.")
 
     @classmethod
-    def from_gian_file(cls, filename: str):
+    def from_json_file(cls, filename: str):
         try:
             with open(filename) as file:
                 data = json.load(file)

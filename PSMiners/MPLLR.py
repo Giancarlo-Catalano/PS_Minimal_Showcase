@@ -17,6 +17,7 @@ from PSMetric.BiVariateANOVALinkage import BiVariateANOVALinkage
 from PSMetric.Linkage import Linkage
 from PSMetric.MeanFitness import MeanFitness
 from PSMetric.Metric import Metric
+from PSMetric.WonkyLinkage import WonkyLinkage
 from PSMiners.Individual import Individual
 from PSMiners.PSMutationOperator import PSMutationOperator, SinglePointMutation, MultimodalMutationOperator
 from SearchSpace import SearchSpace
@@ -212,17 +213,17 @@ class MPLLR:
         best_of_population = self.top(quantity_returned=12)
         print("\nThe current state is ")
         for best in best_of_population:
-            print(f"{custom_ps_repr(best.ps)}, score = {best.aggregated_score:.3f}")
+            print(f"{custom_ps_repr(best.ps)}, \t\tmetrics={best.metric_scores[0]:.2f}, \tfood={best.metric_scores[1]:.2f}, \tscore = {best.aggregated_score:.3f}")
 
 
 def test_MLPLR(benchmark_problem: BenchmarkProblem):
-    print("Testing the MPLSS with the multi modal mutation method")
+    print("Testing the MPLR with the multi modal mutation method")
     print(f"The problem is {benchmark_problem.long_repr()}")
 
     print("Generating a pRef")
     pRef = benchmark_problem.get_pRef(sample_size=10000)
 
-    metric = Averager([MeanFitness(), BiVariateANOVALinkage()])
+    metric = Averager([MeanFitness(), WonkyLinkage()])
     print("pRef was set")
 
     mutation_operator = MultimodalMutationOperator(0.5)
@@ -235,12 +236,13 @@ def test_MLPLR(benchmark_problem: BenchmarkProblem):
     algorithm.set_pRef(pRef)
 
     # print("Running the algorithm")
-    termination_criteria = TerminationCriteria.IterationLimit(benchmark_problem.search_space.hot_encoded_length)
-    algorithm.run(termination_criteria, show_each_generation=False, custom_ps_repr=benchmark_problem.repr_ps)
+    termination_criteria = TerminationCriteria.IterationLimit(24)
+    algorithm.run(termination_criteria, show_each_generation=True, custom_ps_repr=benchmark_problem.repr_ps)
 
+    print("The final winners are")
     winners = algorithm.get_results(12)
     for winner in winners:
-        print(f"{benchmark_problem.repr_ps(winner.ps)}, score = {winner.aggregated_score:.3f}")
+        print(f"{benchmark_problem.repr_ps(winner.ps)}, \tscore = {winner.aggregated_score:.3f}")
 
     print(f"The used budget is {algorithm.metric.used_evaluations}")
 

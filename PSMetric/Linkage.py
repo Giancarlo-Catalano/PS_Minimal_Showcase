@@ -25,9 +25,9 @@ class Linkage(Metric):
     def set_pRef(self, pRef: PRef):
         #print("Calculating linkages...", end="")
         self.linkage_table = self.get_linkage_table_fast(pRef)
-        self.normalised_linkage_table = self.get_quantized_linkage_table(self.linkage_table)
+        #self.normalised_linkage_table = self.get_quantized_linkage_table(self.linkage_table)
         #print("Finished")
-        # self.normalised_linkage_table = self.get_normalised_linkage_table(self.linkage_table)
+        self.normalised_linkage_table = self.get_normalised_linkage_table(self.linkage_table)
 
     @staticmethod
     def get_linkage_table_fast(pRef: PRef) -> LinkageTable:
@@ -48,9 +48,8 @@ class Linkage(Metric):
                                   for var, cardinality in enumerate(pRef.search_space.cardinalities)]
 
         def interaction_effect_between_vars(var_x: int, var_y: int) -> float:
-            """Returns the chi squared value between x and y"""
 
-            def chi_square_addend(val_a, val_b):
+            def addend(val_a, val_b):
                 expected_conditional = marginal_benefits[var_x][val_a] + marginal_benefits[var_y][val_b]
                 observed_conditional = get_mean_benefit_of_ps(two_fixed_vars(var_x, val_a, var_y, val_b))
 
@@ -58,7 +57,7 @@ class Linkage(Metric):
 
             cardinality_x = pRef.search_space.cardinalities[var_x]
             cardinality_y = pRef.search_space.cardinalities[var_y]
-            return sum(chi_square_addend(val_a, val_b)
+            return sum(addend(val_a, val_b)
                        for val_a in range(cardinality_x)
                        for val_b in range(cardinality_y))
 
@@ -187,11 +186,11 @@ class Linkage(Metric):
     def get_normalised_linkage_scores(self, ps: PS) -> np.ndarray:
         fixed = ps.values != STAR
         fixed_combinations: np.array = np.outer(fixed, fixed)
-        fixed_combinations = np.triu(fixed_combinations, k=1)
+        fixed_combinations = np.triu(fixed_combinations, k=0)
         return self.normalised_linkage_table[fixed_combinations]
 
     def get_single_score_using_avg(self, ps: PS) -> float:
-        if ps.fixed_count() < 1:
+        if ps.fixed_count() < 2:
             return 0
         else:
             return utils.harmonic_mean(self.get_linkage_scores(ps))

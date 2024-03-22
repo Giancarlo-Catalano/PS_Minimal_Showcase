@@ -29,7 +29,7 @@ small_problems = {
                   #"RoyalRoad5_3": RoyalRoad(3, 5),
                   #"RoyalRoad5_5": RoyalRoad(5, 5),
                   #"RoyalRoad5_10": RoyalRoad(10, 5),
-                  "Ising4": IsingSpinGlassProblem.from_gian_file(ising_root + "SG_16_1.json"),
+                  "Ising4": IsingSpinGlassProblem.from_json_file(ising_root + "SG_16_1.json"),
                   #"Ising8": IsingSpinGlassProblem.from_gian_file(ising_root + "SG_64_1.json"),
                   #"OneMax10": OneMax(10),
                   }
@@ -37,8 +37,8 @@ small_problems = {
 big_problems = {
                 "Trap5_20": Trapk(20, 5),
                 "RoyalRoad5_20": RoyalRoad(20, 5),
-                "Ising16": IsingSpinGlassProblem.from_gian_file(ising_root + "SG_256_1.json"),
-                "Ising20": IsingSpinGlassProblem.from_gian_file(ising_root + "SG_400_1.json"),
+                "Ising16": IsingSpinGlassProblem.from_json_file(ising_root + "SG_256_1.json"),
+                "Ising20": IsingSpinGlassProblem.from_json_file(ising_root + "SG_400_1.json"),
                 "OneMax50": OneMax(50),
                 "OneMax100": OneMax(100),
                 "SAT20": SATProblem.from_json_file(satlib_root + "uf20-01.json")
