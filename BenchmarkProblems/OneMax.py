@@ -1,25 +1,13 @@
-from BenchmarkProblems.BenchmarkProblem import BenchmarkProblem
-from FullSolution import FullSolution
-from PS import PS
-from SearchSpace import SearchSpace
+from BenchmarkProblems.UnitaryProblem import UnitaryProblem
 
 
-class OneMax(BenchmarkProblem):
-    amount_of_bits: int
+class OneMax(UnitaryProblem):
 
-    def __init__(self, amount_of_bits: int):
-        self.amount_of_bits = amount_of_bits
-        super().__init__(SearchSpace([2 for _ in range(self.amount_of_bits)]))
+    def __init__(self, amount_of_cliques: int, clique_size: int):
+        super().__init__(amount_of_cliques, clique_size)
 
-    def fitness_function(self, fs: FullSolution) -> float:
-        return fs.values.sum(dtype=float)
+    def get_problem_name(self) -> str:
+        return "OneMax"
 
-    def get_targets(self) -> list[PS]:
-        empty = PS.empty(self.search_space)
-        return [empty.with_fixed_value(variable_position=var, fixed_value=1) for var in range(self.amount_of_bits)]
-
-
-    def __repr__(self):
-        return f"OneMax({self.amount_of_bits})"
-    def get_global_optima_fitness(self) -> float:
-        return float(self.amount_of_bits)
+    def unitary_function(self, bitcount: int) -> float:
+        return float(bitcount)
