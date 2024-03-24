@@ -9,5 +9,6 @@ class OneMax(UnitaryProblem):
     def get_problem_name(self) -> str:
         return "OneMax"
 
+    @staticmethod
     def unitary_function(self, bitcount: int) -> float:
         return float(bitcount)

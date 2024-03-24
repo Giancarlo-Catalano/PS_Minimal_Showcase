@@ -9,9 +9,10 @@ class RoyalRoad(UnitaryProblem):
     def get_problem_name(self) -> str:
         return "RoyalRoad"
 
-    def unitary_function(self, bitcount: int) -> float:
-        if bitcount == self.clique_size:
-            return float(self.clique_size)
+    @staticmethod
+    def unitary_function(bitcount: int, clique_size: int) -> float:
+        if bitcount == clique_size:
+            return float(clique_size)
         else:
             return 0.0
 

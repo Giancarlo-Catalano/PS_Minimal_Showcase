@@ -8,8 +8,9 @@ class ParityProblem(UnitaryProblem):
     def get_problem_name(self) -> str:
         return "ParityProblem"
 
-    def unitary_function(self, bitcount: int) -> float:
+    @staticmethod
+    def unitary_function(bitcount: int, clique_size: int) -> float:
         if bitcount % 2 == 1:
-            return float(self.clique_size)
+            return float(clique_size)
         else:
             return 0.0

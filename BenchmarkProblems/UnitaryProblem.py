@@ -29,23 +29,25 @@ class UnitaryProblem(BenchmarkProblem):
 
     def get_optimal_clique(self) -> FullSolution:
         raise Exception("An implementation of UnitaryProblem does not implement get_optimal_clique")
-    def unitary_function(self, bitcount: int) -> float:
+
+    @staticmethod
+    def unitary_function(bitcount: int, clique_size: int) -> float:
         raise Exception("An implementation of UnitaryProblem does not implement .unitary_function")
 
     def get_optimal_fitness_per_clique(self) -> float:
         optimal_clique = self.get_optimal_clique()
         bitcount = optimal_clique.values.sum()
-        return self.unitary_function(bitcount)
+        return self.unitary_function(bitcount, self.clique_size)
 
     def get_global_optima_fitness(self) -> float:
         return self.get_optimal_fitness_per_clique() * self.amount_of_cliques
 
-
-    def fitness(self, full_solution: FullSolution) -> float:
-        return sum(self.unitary_function(bc) for bc in self.get_bit_counts(full_solution))
+    def fitness_function(self, full_solution: FullSolution) -> float:
+        return sum(self.unitary_function(bc, self.clique_size) for bc in self.get_bit_counts(full_solution))
 
     def get_problem_name(self) -> str:
-        raise Exception("An implementation of UnitaryProblem does not implement get_problem_name, which is used in __repr__")
+        raise Exception(
+            "An implementation of UnitaryProblem does not implement get_problem_name, which is used in __repr__")
 
     def __repr__(self):
         return f"{self.get_problem_name()}(#cliques = {self.amount_of_cliques}, size = {self.clique_size})"
@@ -79,5 +81,3 @@ class UnitaryProblem(BenchmarkProblem):
             return PS(result_values)
 
         return [set_at_clique(which) for which in range(self.amount_of_cliques)]
-
-
