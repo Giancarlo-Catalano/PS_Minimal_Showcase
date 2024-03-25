@@ -9,6 +9,7 @@ from BenchmarkProblems.ParityProblem import ParityProblem
 from BenchmarkProblems.RoyalRoad import RoyalRoad
 from BenchmarkProblems.Trapk import Trapk
 from FullSolution import FullSolution
+from PS import PS
 from SearchSpace import SearchSpace
 from custom_types import ArrayOfInts
 
@@ -54,18 +55,25 @@ class ToyAmalgam(BenchmarkProblem):
     def amount_of_bits(self) -> int:
         return len(self.problems) * self.clique_size
 
-    def fitness_for_clique_bitcount(self, bitcount: int, problem: ToyProblem) -> float:
+    @staticmethod
+    def get_class_per_problem_enum(problem: ToyProblem):
         match problem:
             case ToyProblem.CONSTANT:
-                return float(self.clique_size)
+                raise Exception("You're not using get_class_per_problem_enum properly, the CONSTANT needs to be handles separately...")
             case ToyProblem.ONEMAX:
-                return OneMax.unitary_function(bitcount, self.clique_size)
+                return OneMax
             case ToyProblem.ROYALROAD:
-                return RoyalRoad.unitary_function(bitcount, self.clique_size)
+                return RoyalRoad
             case ToyProblem.TRAPK:
-                return Trapk.unitary_function(bitcount, self.clique_size)
+                return Trapk
             case ToyProblem.PARITY:
-                return ParityProblem.unitary_function(bitcount, self.clique_size)
+                return ParityProblem
+
+    def fitness_for_clique_bitcount(self, bitcount: int, problem: ToyProblem) -> float:
+        if problem == ToyProblem.CONSTANT:
+            return float(self.clique_size)
+        else:
+            return self.get_class_per_problem_enum(problem).unitary_function(bitcount, self.clique_size)
 
     def get_bit_counts(self, full_solution: FullSolution) -> ArrayOfInts:
         bits = full_solution.values.reshape((-1, self.clique_size))
@@ -76,3 +84,16 @@ class ToyAmalgam(BenchmarkProblem):
 
     def __repr__(self):
         return f"ToyAmalgam({''.join(f'{p}' for p in self.problems)}, clique size = {self.clique_size}"
+
+
+    def get_targets(self) -> list[PS]:
+        def make_target(problem_class, position):
+            start = position * self.clique_size
+            end = start + self.clique_size
+            result_values = np.full(shape=self.search_space.amount_of_parameters, fill_value=-1, dtype=int)
+            result_values[start:end] = problem_class.get_optimal_clique(self.clique_size).values
+            return PS(result_values)
+
+        return [make_target(self.get_class_per_problem_enum(problem), clique_index)
+                for clique_index, problem in enumerate(self.problems)
+                if problem != ToyProblem.CONSTANT]

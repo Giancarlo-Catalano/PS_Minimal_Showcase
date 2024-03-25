@@ -33,7 +33,7 @@ class LocalPerturbationCalculator:
 
         assert (ps.values[locus] != STAR)
 
-        where_ps_matches_ignoring_locus = np.full(shape=self.pRef.sample_size, fill_value=True, dtype=True)
+        where_ps_matches_ignoring_locus = np.full(shape=self.pRef.sample_size, fill_value=True, dtype=bool)
         for var, val in enumerate(ps.values):
             if val != STAR and var != locus:
                 where_ps_matches_ignoring_locus = np.logical_and(where_ps_matches_ignoring_locus,
@@ -53,7 +53,7 @@ class LocalPerturbationCalculator:
         assert (ps.values[locus_a] != STAR)
         assert (ps.values[locus_b] != STAR)
 
-        where_ps_matches_ignoring_loci = np.full(shape=self.pRef.sample_size, fill_value=True, dtype=True)
+        where_ps_matches_ignoring_loci = np.full(shape=self.pRef.sample_size, fill_value=True, dtype=bool)
         for var, val in enumerate(ps.values):
             if val != STAR and var != locus_a and var != locus_b:
                 where_ps_matches_ignoring_loci = np.logical_and(where_ps_matches_ignoring_loci,
@@ -89,13 +89,18 @@ class LocalPerturbationCalculator:
 
     def get_delta_f_of_ps_at_loci_bivariate(self, ps: PS, locus_a: int, locus_b: int) -> float:
         fs = self.get_bivariate_perturbation_fitnesses(ps, locus_a, locus_b)
-        f_yy, f_ny, f_yn, f_nn = fs
+        fs_yy, fs_ny, fs_yn, fs_nn = fs
         if any(len(fs) == 0 for fs in fs):
             warnings.warn(
-                f"Encountered a PS with insufficient observations when calculating bivariate Local perturbation")
+                f"Encountered a PS with insufficient observations ({ps}) when calculating bivariate Local perturbation")
             return 0  # panic
 
-        return f_yy + f_nn - f_yn - f_ny
+        f_yy = np.average(fs_yy)
+        f_yn = np.average(fs_yn)
+        f_ny = np.average(fs_ny)
+        f_nn = np.average(fs_nn)
+
+        return abs(f_yy + f_nn - f_yn - f_ny)
 
 
 class UnivariateLocalPerturbation(Metric):
@@ -131,7 +136,7 @@ class BivariateLocalPerturbation(Metric):
 
     def get_single_score(self, ps: PS) -> float:
         fixed_loci = ps.get_fixed_variable_positions()
-        pairs = itertools.combinations(fixed_loci, r=2)
+        pairs = list(itertools.combinations(fixed_loci, r=2))
         dfs = [self.linkage_calculator.get_delta_f_of_ps_at_loci_bivariate(ps, a, b) for a, b in pairs]
         return min(dfs)
 

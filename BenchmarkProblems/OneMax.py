@@ -1,4 +1,5 @@
 from BenchmarkProblems.UnitaryProblem import UnitaryProblem
+from FullSolution import FullSolution
 
 
 class OneMax(UnitaryProblem):
@@ -12,3 +13,7 @@ class OneMax(UnitaryProblem):
     @staticmethod
     def unitary_function(self, bitcount: int) -> float:
         return float(bitcount)
+
+    @staticmethod
+    def get_optimal_clique(clique_size: int) -> FullSolution:
+        return FullSolution([1 for _ in range(clique_size)])

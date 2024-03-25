@@ -1,4 +1,5 @@
 from BenchmarkProblems.UnitaryProblem import UnitaryProblem
+from FullSolution import FullSolution
 
 
 class Trapk(UnitaryProblem):
@@ -16,3 +17,7 @@ class Trapk(UnitaryProblem):
             return float(clique_size)
         else:
             return float(clique_size - bitcount - 1)
+
+    @staticmethod
+    def get_optimal_clique(clique_size: int) -> FullSolution:
+        return FullSolution([1 for _ in range(clique_size)])

@@ -11,7 +11,7 @@ from BenchmarkProblems.RoyalRoadWithOverlaps import RoyalRoadWithOverlaps
 from BenchmarkProblems.SATProblem import SATProblem
 from BenchmarkProblems.ToyAmalgam import ToyAmalgam
 from BenchmarkProblems.Trapk import Trapk
-from EDA.LinkageModel import test_linkage_tables
+from EDA.LinkageModel import test_linkage_tables, test_different_atomicities
 from EDA.Ouroboros import test_ouroboros
 from EDA.SteadyStateEDA import test_sseda
 from EDA.TrainTracksEDA import test_train_tracks_EDA
@@ -45,6 +45,7 @@ if __name__ == '__main__':
     #                               rota_file=r"C:\Users\gac8\PycharmProjects\PS\resources\BT\roster_pattern_days.csv",
     #                               calendar_length=56)
     problem = ToyAmalgam("KORTP", 5)
+    # problem = RoyalRoad(7, 5)
     # print("Reading the problem instance")
     # problem = IsingSpinGlassProblem.from_json_file(
     #     r"C:\Users\gac8\PycharmProjects\PS\resources\IsingSpinGlassInstances\SG_36_1.json")
@@ -54,5 +55,7 @@ if __name__ == '__main__':
     # problem = GraphColouring.random(8, 3, 0.3)
 
     #test_FSGA(problem)
-    test_MLPLR(problem)
+    #test_MLPLR(problem)
     # test_train_tracks_EDA(problem)
+
+    test_different_atomicities(problem, pRef_size=10000)

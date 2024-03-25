@@ -110,10 +110,10 @@ class BiVariateANOVALinkage(Metric):
         return table
 
 
-    def get_normalised_linkage_scores(self, ps: PS) -> np.ndarray:
+    def get_normalised_linkage_scores(self, ps: PS, include_reflexive = False) -> np.ndarray:
         fixed = ps.values != STAR
         fixed_combinations: np.array = np.outer(fixed, fixed)
-        fixed_combinations = np.triu(fixed_combinations, k=0)
+        fixed_combinations = np.triu(fixed_combinations, k = 0 if include_reflexive else 1)
         return self.normalised_linkage_table[fixed_combinations]
 
     def get_single_normalised_score(self, ps: PS) -> float:

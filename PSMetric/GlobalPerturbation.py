@@ -4,6 +4,7 @@ from typing import TypeAlias, Optional
 import numpy as np
 
 import utils
+from BenchmarkProblems.BenchmarkProblem import BenchmarkProblem
 from PRef import PRef
 from PS import PS, STAR
 from PSMetric.Linkage import Linkage
@@ -28,10 +29,11 @@ class UnivariateGlobalPerturbation(Metric):
 
     @staticmethod
     def get_importance_array(pRef: PRef) -> ImportanceArray:
-        def levels_for_var(var: int):
-            return range(pRef.search_space.cardinalities[var])
+        levels = [list(range(cardinality)) for cardinality in pRef.search_space.cardinalities]
         def get_mean_fitness_for_each_val(locus: int) -> ArrayOfFloats:
-            return np.array([pRef.get_fitnesses_matching_var_val(locus, val) for val in levels_for_var(locus)])
+            def mean_fit(val):
+                return np.mean(pRef.get_fitnesses_matching_var_val(locus, val))
+            return np.array([mean_fit(val) for val in levels[locus]])
 
         def get_variance_in_var(locus: int) -> float:
             return float(np.var(get_mean_fitness_for_each_val(locus)))
@@ -48,7 +50,7 @@ class UnivariateGlobalPerturbation(Metric):
 
 
     def get_single_normalised_score(self, ps: PS) -> float:
-        return np.min(self.normalised_importance_array, where=ps.values != STAR)
+        return np.min(self.normalised_importance_array, where=ps.values != STAR, initial=1)
 
 
 
@@ -69,7 +71,9 @@ class BivariateGlobalPerturbation(Metric):
 
         levels = [list(range(cardinality)) for cardinality in pRef.search_space.cardinalities]
         def get_mean_fitness_for_each_combination(locus_a: int, locus_b: int) -> ArrayOfFloats:
-            return np.array([pRef.get_fitnesses_matching_var_val_pair(locus_a, val_a, locus_b, val_b)
+            def mean_fit(val_a, val_b):
+                return np.mean(pRef.get_fitnesses_matching_var_val_pair(locus_a, val_a, locus_b, val_b))
+            return np.array([mean_fit(val_a, val_b)
                              for val_a in levels[locus_a]
                              for val_b in levels[locus_b]])
         def get_variance_in_loci(locus_a: int, locus_b: int) -> float:
@@ -99,5 +103,8 @@ class BivariateGlobalPerturbation(Metric):
 
         return [self.normalised_linkage_table[pair] for pair in pairs]
     def get_single_normalised_score(self, ps: PS) -> float:
-        return np.min(self.normalised_linkage_table, where=ps.values != STAR)
+        return np.min(self.get_all_normalised_linkages(ps, include_reflexive=True))
+
+
+
 

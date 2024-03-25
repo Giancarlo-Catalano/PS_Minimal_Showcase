@@ -5,6 +5,7 @@ with the following requirements:
 * does not need for the PRef to be from a uniform distribution
 """
 import itertools
+import random
 from typing import TypeAlias, Callable
 
 import numpy as np
@@ -17,6 +18,12 @@ from BenchmarkProblems.BenchmarkProblem import BenchmarkProblem
 from FullSolution import FullSolution
 from PRef import PRef
 from PS import PS
+from PSMetric.Atomicity import Atomicity
+from PSMetric.BiVariateANOVALinkage import BiVariateANOVALinkage
+from PSMetric.GlobalPerturbation import UnivariateGlobalPerturbation, BivariateGlobalPerturbation
+from PSMetric.Linkage import Linkage
+from PSMetric.LocalPerturbation import UnivariateLocalPerturbation, BivariateLocalPerturbation
+from PSMetric.Metric import Metric
 from PSMetric.WUC import get_uc_linkage_table
 from SearchSpace import SearchSpace
 
@@ -364,11 +371,9 @@ def test_linkage_tables(benchmark_problem: BenchmarkProblem):
     sample_size = 200
     methods = {"original": get_linkage_table_alpha,
                "long_anova": long_anova_method,
-               # "truncated_marginal_median": use_truncated_pRef(get_linkage_table_beta),
-               # "truncated_marginal_mean": use_truncated_pRef(get_linkage_table_gamma),
                "cramer": calculate_pairwise_interactions_cramers_v,
                "mutual_info": calculate_pairwise_interactions_mutual_info,
-               "uncertainty_coefficient": get_uc_linkage_table,
+               "uncertainty_coefficient": get_uc_linkage_table
                 }
 
 
@@ -379,5 +384,62 @@ def test_linkage_tables(benchmark_problem: BenchmarkProblem):
             linkage_table: np.ndarray = method(pRef)
             linkage_table = np.nan_to_num(linkage_table, nan=0)
             print("You should be debugging")
+
+
+
+def test_different_atomicities(benchmark_problem: BenchmarkProblem,
+                               pRef_size: int):
+    oversampling_factors = [0, 1, 4, 20]
+    linkage = Linkage()
+    atomicity = Atomicity()
+    bal = BiVariateANOVALinkage()
+    ugp = UnivariateGlobalPerturbation()
+    bgp = BivariateGlobalPerturbation()
+    ulp = UnivariateLocalPerturbation()
+    blp = BivariateLocalPerturbation()
+
+
+    metrics = [linkage, atomicity, bal, bgp, blp]
+
+    targets = benchmark_problem.get_targets()
+    suboptimals = []
+
+    while len(suboptimals) < len(targets):
+        mother = random.choice(targets)
+        father = random.choice(targets)
+        if mother != father:
+            suboptimals.append(PS.merge(mother, father))
+
+
+    test_pss = targets + suboptimals
+
+    normalised_metrics = {linkage, bal, ugp, bgp}
+
+    def get_scores_for_pss(metric: Metric) -> list[(PS, float)]:
+        if metric in normalised_metrics:
+            return [(ps, metric.get_single_normalised_score(ps)) for ps in test_pss]
+        else:
+            return [(ps, metric.get_single_score(ps)) for ps in test_pss]
+
+
+
+
+    for oversampling_factor in oversampling_factors:
+        pRef = get_oversampled_pRef(benchmark_problem, factor = oversampling_factor, sample_size=pRef_size)
+        for metric in metrics:
+            metric.set_pRef(pRef)
+            print("you should be debugging now")
+        results_by_metric = {f"{metric}" : get_scores_for_pss(metric)
+                             for metric in metrics}
+
+
+        for metric in metrics:
+            print(f"The sample scores for the metric {metric} are")
+            for ps, score in results_by_metric[f"{metric}"]:
+                print(f"{ps}, score = {score:.2f}")
+
+
+
+
 
 

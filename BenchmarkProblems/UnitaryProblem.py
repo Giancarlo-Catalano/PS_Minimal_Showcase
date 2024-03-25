@@ -27,15 +27,16 @@ class UnitaryProblem(BenchmarkProblem):
     def amount_of_bits(self) -> int:
         return self.amount_of_cliques * self.clique_size
 
-    def get_optimal_clique(self) -> FullSolution:
-        raise Exception("An implementation of UnitaryProblem does not implement get_optimal_clique")
+    @staticmethod
+    def get_optimal_clique(clique_size: int) -> FullSolution:
+        raise Exception(f"An implementation of UnitaryProblem not implement get_optimal_clique")
 
     @staticmethod
     def unitary_function(bitcount: int, clique_size: int) -> float:
         raise Exception("An implementation of UnitaryProblem does not implement .unitary_function")
 
     def get_optimal_fitness_per_clique(self) -> float:
-        optimal_clique = self.get_optimal_clique()
+        optimal_clique = self.get_optimal_clique(self.clique_size)
         bitcount = optimal_clique.values.sum()
         return self.unitary_function(bitcount, self.clique_size)
 
@@ -69,7 +70,7 @@ class UnitaryProblem(BenchmarkProblem):
         return " ".join(repr_clique(clique) for clique in cliques)
 
     def get_targets(self) -> list[PS]:
-        optimal_clique_values = self.get_optimal_clique()
+        optimal_clique_values = self.get_optimal_clique(self.clique_size).values
 
         all_star_values = np.full(shape=self.amount_of_bits, fill_value=STAR)
 
