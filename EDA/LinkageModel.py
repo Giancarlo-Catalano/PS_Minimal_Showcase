@@ -20,7 +20,8 @@ from PRef import PRef
 from PS import PS
 from PSMetric.Atomicity import Atomicity
 from PSMetric.BiVariateANOVALinkage import BiVariateANOVALinkage
-from PSMetric.GlobalPerturbation import UnivariateGlobalPerturbation, BivariateGlobalPerturbation
+from PSMetric.GlobalPerturbation import UnivariateGlobalPerturbation, BivariateGlobalPerturbation, \
+    AlternativeBivariateGlobalLinkage
 from PSMetric.Linkage import Linkage
 from PSMetric.LocalPerturbation import UnivariateLocalPerturbation, BivariateLocalPerturbation
 from PSMetric.Metric import Metric
@@ -397,9 +398,10 @@ def test_different_atomicities(benchmark_problem: BenchmarkProblem,
     bgp = BivariateGlobalPerturbation()
     ulp = UnivariateLocalPerturbation()
     blp = BivariateLocalPerturbation()
+    abgp = AlternativeBivariateGlobalLinkage()
 
 
-    metrics = [linkage, atomicity, bal, bgp, blp]
+    metrics = [linkage, atomicity, bal, bgp, blp, abgp]
 
     targets = benchmark_problem.get_targets()
     suboptimals = []
@@ -413,7 +415,7 @@ def test_different_atomicities(benchmark_problem: BenchmarkProblem,
 
     test_pss = targets + suboptimals
 
-    normalised_metrics = {linkage, bal, ugp, bgp}
+    normalised_metrics = {linkage, bal, ugp, bgp, abgp}
 
     def get_scores_for_pss(metric: Metric) -> list[(PS, float)]:
         if metric in normalised_metrics:

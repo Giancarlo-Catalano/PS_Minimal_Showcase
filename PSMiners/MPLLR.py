@@ -15,6 +15,7 @@ from PS import PS, STAR
 from PSMetric.Averager import Averager
 from PSMetric.BiVariateANOVALinkage import BiVariateANOVALinkage
 from PSMetric.Linkage import Linkage
+from PSMetric.LocalPerturbation import BivariateLocalPerturbation
 from PSMetric.MeanFitness import MeanFitness
 from PSMetric.Metric import Metric
 from PSMetric.WonkyLinkage import WonkyLinkage
@@ -223,14 +224,14 @@ def test_MLPLR(benchmark_problem: BenchmarkProblem):
     print("Generating a pRef")
     pRef = benchmark_problem.get_pRef(sample_size=10000)
 
-    metric = Averager([MeanFitness(), WonkyLinkage()])
+    metric = BivariateLocalPerturbation()
     print("pRef was set")
 
     mutation_operator = MultimodalMutationOperator(0.5)
     algorithm = MPLLR(mu_parameter=50,
                       lambda_parameter=300,
                       mutation_operator=mutation_operator,
-                      food_weight=0.3,
+                      food_weight=0.0,
                       metric=metric)
 
     algorithm.set_pRef(pRef)

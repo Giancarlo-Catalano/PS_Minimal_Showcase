@@ -43,7 +43,7 @@ class LocalPerturbationCalculator:
 
         where_locus = self.cached_value_locations[locus][locus_val]
         where_value_matches = np.logical_and(where_ps_matches_ignoring_locus, where_locus)
-        where_complement_matches = np.logical_and(where_value_matches, np.logical_not(where_locus))
+        where_complement_matches = np.logical_and(where_ps_matches_ignoring_locus, np.logical_not(where_locus))
 
         return (self.pRef.fitness_array[where_value_matches], self.pRef.fitness_array[where_complement_matches])
 
@@ -135,10 +135,20 @@ class BivariateLocalPerturbation(Metric):
         self.linkage_calculator = LocalPerturbationCalculator(pRef)
 
     def get_single_score(self, ps: PS) -> float:
+        if ps.fixed_count() < 2:
+            if ps.fixed_count() == 1:
+                fixed_locus = ps.get_fixed_variable_positions()[0]
+                return self.linkage_calculator.get_delta_f_of_ps_at_locus_univariate(ps, fixed_locus)
+            else:
+                return 0
         fixed_loci = ps.get_fixed_variable_positions()
         pairs = list(itertools.combinations(fixed_loci, r=2))
         dfs = [self.linkage_calculator.get_delta_f_of_ps_at_loci_bivariate(ps, a, b) for a, b in pairs]
         return min(dfs)
+
+
+    def get_single_normalised_score(self, ps: PS) -> float:
+        return self.get_single_score(ps)   # just for debug
 
 
 

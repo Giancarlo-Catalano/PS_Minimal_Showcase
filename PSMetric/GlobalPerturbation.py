@@ -8,6 +8,7 @@ from BenchmarkProblems.BenchmarkProblem import BenchmarkProblem
 from PRef import PRef
 from PS import PS, STAR
 from PSMetric.Linkage import Linkage
+from PSMetric.LocalPerturbation import BivariateLocalPerturbation, UnivariateLocalPerturbation
 from PSMetric.Metric import Metric
 from custom_types import ArrayOfFloats
 
@@ -106,5 +107,65 @@ class BivariateGlobalPerturbation(Metric):
         return np.min(self.get_all_normalised_linkages(ps, include_reflexive=True))
 
 
+class AlternativeBivariateGlobalLinkage(Metric):
+    linkage_table: Optional[ImportanceArray]
+    normalised_linkage_table: Optional[ImportanceArray]
 
+    def __init__(self):
+        self.linkage_table = None
+        self.normalised_linkage_table = None
+        super().__init__()
+
+    def __repr__(self):
+        return "AlternativeBivariateGlobalLinkage"
+
+    @staticmethod
+    def get_linkage_table(pRef: PRef) -> ImportanceArray:
+
+        levels = [list(range(cardinality)) for cardinality in pRef.search_space.cardinalities]
+        blp = BivariateLocalPerturbation()
+        ulp = UnivariateLocalPerturbation()
+        blp.set_pRef(pRef)
+        ulp.set_pRef(pRef)
+        def get_mean_fitness_for_each_combination(locus_a: int, locus_b: int) -> ArrayOfFloats:
+            def mean_effect(val_a, val_b):
+                ps = PS.empty(pRef.search_space).with_fixed_value(locus_a, val_a).with_fixed_value(locus_b, val_b)
+                return blp.get_single_score(ps)
+            return np.array([mean_effect(val_a, val_b)
+                             for val_a in levels[locus_a]
+                             for val_b in levels[locus_b]])
+        def get_interaction_in_loci(locus_a: int, locus_b: int) -> float:
+            return float(np.average(get_mean_fitness_for_each_combination(locus_a, locus_b)))
+
+        def get_interaction_in_locus(locus) -> float:
+            return float(np.average([ulp.get_single_score(PS.empty(pRef.search_space).with_fixed_value(locus, val))
+                                    for val in levels[locus]]))
+
+        linkage_table = np.zeros((pRef.search_space.amount_of_parameters, pRef.search_space.amount_of_parameters))
+        for var_a in range(pRef.search_space.amount_of_parameters):
+            for var_b in range(var_a, pRef.search_space.amount_of_parameters):
+                if var_a == var_b:
+                    linkage_table[var_a][var_b] = get_interaction_in_locus(var_a)
+                else:
+                    linkage_table[var_a][var_b] = get_interaction_in_loci(var_a, var_b)
+
+
+        # then we mirror it for convenience...
+        upper_triangle = np.triu(linkage_table, k=1)
+        linkage_table = linkage_table + upper_triangle.T
+        return linkage_table
+
+    def set_pRef(self, pRef: PRef):
+        self.linkage_table = self.get_linkage_table(pRef)
+        self.normalised_linkage_table = Linkage.get_normalised_linkage_table(self.linkage_table, include_diagonal=True)
+
+    def get_all_normalised_linkages(self, ps: PS, include_reflexive = False) -> list[float]:
+        if include_reflexive:
+            pairs = itertools.combinations_with_replacement(ps.get_fixed_variable_positions(), r=2)
+        else:
+            pairs = itertools.combinations(ps.get_fixed_variable_positions(), r=2)
+
+        return [self.normalised_linkage_table[pair] for pair in pairs]
+    def get_single_normalised_score(self, ps: PS) -> float:
+        return np.min(self.get_all_normalised_linkages(ps, include_reflexive=False))
 

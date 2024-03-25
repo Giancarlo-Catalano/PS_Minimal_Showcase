@@ -4,6 +4,7 @@ import numpy as np
 
 from BenchmarkProblems.BenchmarkProblem import BenchmarkProblem
 from BenchmarkProblems.Checkerboard import CheckerBoard
+from BenchmarkProblems.Constant import Constant
 from BenchmarkProblems.OneMax import OneMax
 from BenchmarkProblems.ParityProblem import ParityProblem
 from BenchmarkProblems.RoyalRoad import RoyalRoad
@@ -59,7 +60,7 @@ class ToyAmalgam(BenchmarkProblem):
     def get_class_per_problem_enum(problem: ToyProblem):
         match problem:
             case ToyProblem.CONSTANT:
-                raise Exception("You're not using get_class_per_problem_enum properly, the CONSTANT needs to be handles separately...")
+                return Constant
             case ToyProblem.ONEMAX:
                 return OneMax
             case ToyProblem.ROYALROAD:
@@ -95,5 +96,4 @@ class ToyAmalgam(BenchmarkProblem):
             return PS(result_values)
 
         return [make_target(self.get_class_per_problem_enum(problem), clique_index)
-                for clique_index, problem in enumerate(self.problems)
-                if problem != ToyProblem.CONSTANT]
+                for clique_index, problem in enumerate(self.problems)]
