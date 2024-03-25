@@ -100,3 +100,13 @@ class PRef:
                     full_solution_matrix=self.full_solution_matrix,
                     search_space=self.search_space)
 
+
+    def get_fitnesses_matching_var_val(self, var: int, val: int) -> ArrayOfFloats:
+        where = self.full_solution_matrix[:, var] == val
+        return self.fitness_array[where]
+
+
+    def get_fitnesses_matching_var_val_pair(self, var_a: int, val_a: int, var_b: int, val_b: int) -> ArrayOfFloats:
+        where = np.logical_and(self.full_solution_matrix[:, var_a] == val_a, self.full_solution_matrix[:, var_b] == val_b)
+        return self.fitness_array[where]
+

@@ -162,8 +162,8 @@ class Linkage(Metric):
         return linkage_table
 
     @staticmethod
-    def get_normalised_linkage_table(linkage_table: LinkageTable):
-        where_to_consider = np.triu(np.full_like(linkage_table, True, dtype=bool), k=1)
+    def get_normalised_linkage_table(linkage_table: LinkageTable, include_diagonal=False):
+        where_to_consider = np.triu(np.full_like(linkage_table, True, dtype=bool), k=0 if include_diagonal else 1)
         triu_min = np.min(linkage_table, where=where_to_consider, initial=np.inf)
         triu_max = np.max(linkage_table, where=where_to_consider, initial=-np.inf)
         normalised_linkage_table: LinkageTable = (linkage_table - triu_min) / triu_max

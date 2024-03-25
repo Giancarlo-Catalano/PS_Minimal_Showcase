@@ -20,6 +20,12 @@ class ToyProblem(Enum):
     TRAPK = auto()
     PARITY = auto()
 
+    def __repr__(self):
+        return "CORTP"[self.value-1]
+
+    def __str__(self):
+        return "CORTP"[self.value-1]
+
 
 def toy_enum_from_string(string: str) -> ToyProblem:
     match string:
@@ -31,8 +37,6 @@ def toy_enum_from_string(string: str) -> ToyProblem:
             return ToyProblem.TRAPK
         case "P":
             return ToyProblem.PARITY
-        case "C":
-            return ToyProblem.CHECKERBOARD
         case _:
             return ToyProblem.CONSTANT
 
@@ -69,3 +73,6 @@ class ToyAmalgam(BenchmarkProblem):
     def fitness_function(self, fs: FullSolution) -> float:
         bit_counts = self.get_bit_counts(fs)
         return sum(self.fitness_for_clique_bitcount(bc, problem) for bc, problem in zip(bit_counts, self.problems))
+
+    def __repr__(self):
+        return f"ToyAmalgam({''.join(f'{p}' for p in self.problems)}, clique size = {self.clique_size}"

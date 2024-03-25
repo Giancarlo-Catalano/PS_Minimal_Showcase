@@ -9,6 +9,7 @@ from BenchmarkProblems.MultiDimensionalKnapsack import MultiDimensionalKnapsack
 from BenchmarkProblems.RoyalRoad import RoyalRoad
 from BenchmarkProblems.RoyalRoadWithOverlaps import RoyalRoadWithOverlaps
 from BenchmarkProblems.SATProblem import SATProblem
+from BenchmarkProblems.ToyAmalgam import ToyAmalgam
 from BenchmarkProblems.Trapk import Trapk
 from EDA.LinkageModel import test_linkage_tables
 from EDA.Ouroboros import test_ouroboros
@@ -43,7 +44,7 @@ if __name__ == '__main__':
     # problem = BTProblem.from_files(employee_data_file=r"C:\Users\gac8\PycharmProjects\PS\resources\BT\employeeData.csv",
     #                               rota_file=r"C:\Users\gac8\PycharmProjects\PS\resources\BT\roster_pattern_days.csv",
     #                               calendar_length=56)
-    problem = RoyalRoad(5, 5)
+    problem = ToyAmalgam("KORTP", 5)
     # print("Reading the problem instance")
     # problem = IsingSpinGlassProblem.from_json_file(
     #     r"C:\Users\gac8\PycharmProjects\PS\resources\IsingSpinGlassInstances\SG_36_1.json")
