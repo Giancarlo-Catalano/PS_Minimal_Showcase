@@ -58,6 +58,7 @@ if __name__ == '__main__':
     #test_MLPLR(problem)
     # test_train_tracks_EDA(problem)
 
-    test_different_atomicities(problem, pRef_size=1000)
+    # test_different_atomicities(problem, pRef_size=10000)
+    test_MO_comprehensive(problem)
 
 

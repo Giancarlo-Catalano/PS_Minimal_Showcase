@@ -11,10 +11,8 @@ from jmetal.core.solution import (
 )
 from jmetal.util.ckecking import Check
 
-from PS import STAR
-
-
-
+from PS import STAR, PS
+from PSMiners.PSMutationOperator import MultimodalMutationOperator
 
 
 class SpecialisationMutation(Mutation[IntegerSolution]):
@@ -53,3 +51,23 @@ class BidirectionalMutation(Mutation[IntegerSolution]):
 
     def get_name(self):
         return "Bidirectional Mutation"
+
+
+class HalfNHalfMutation(Mutation[IntegerSolution]):
+    ps_mutation_operator: MultimodalMutationOperator
+
+    def __init__(self, probability: float):
+        super(HalfNHalfMutation, self).__init__(probability=probability)
+        super().__init__(probability)
+        self.ps_mutation_operator = MultimodalMutationOperator(probability)
+
+    def execute(self, solution: IntegerSolution) -> IntegerSolution:
+        Check.that(issubclass(type(solution), IntegerSolution), "Solution type invalid")
+
+        as_ps = PS(solution.variables)
+        mutated = self.ps_mutation_operator.mutated(as_ps)
+        solution.variables = list(mutated.values)
+        return solution
+
+    def get_name(self):
+        return "HalfNHalf Mutation"

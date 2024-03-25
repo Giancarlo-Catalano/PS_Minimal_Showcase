@@ -18,10 +18,11 @@ from pandas import DataFrame
 import utils
 from BenchmarkProblems.BenchmarkProblem import BenchmarkProblem
 from JMetal.JMetalUtils import into_PS
-from JMetal.PSOperator import SpecialisationMutation, BidirectionalMutation
+from JMetal.PSOperator import SpecialisationMutation, BidirectionalMutation, HalfNHalfMutation
 from PS import STAR
 from PSMetric.Atomicity import Atomicity
 from PSMetric.Linkage import Linkage
+from PSMetric.LocalPerturbation import BivariateLocalPerturbation
 from PSMetric.MeanFitness import MeanFitness
 from PSMetric.Metric import MultipleMetrics
 from PSMetric.Simplicity import Simplicity
@@ -205,7 +206,8 @@ def test_PSProblem(benchmark_problem: BenchmarkProblem,
         problem = PSProblem(benchmark_problem, metrics)
 
     # mutation_operator = SpecialisationMutation(probability=1/problem.amount_of_parameters)
-    mutation_operator = SpecialisationMutation(probability=1 / problem.amount_of_parameters)
+    mutation_operator = HalfNHalfMutation(0.5)
+    mutation_operator.ps_mutation_operator.set_search_space(benchmark_problem.search_space)
     termination_criterion = StoppingByEvaluations(evaluation_budget)
     algorithm = construct_MO_algorithm(problem=problem,
                                        which=which_mo_method,
@@ -257,22 +259,25 @@ def test_MO(problem: BenchmarkProblem):
 
 
 def test_MO_comprehensive(problem: BenchmarkProblem):
-    objective_combinations = [[Simplicity(), MeanFitness(), Linkage()],
-                              [Simplicity(), MeanFitness()],
-                              [MeanFitness(), Linkage()],
-                              [Simplicity(), Linkage()]]
+    objective_combinations = [
+                              # [BivariateLocalPerturbation()],
+                              # [Linkage()],
+                              [BivariateLocalPerturbation(), MeanFitness()],
+                              # [Linkage(), MeanFitness()],
+                            ]
 
     print("Testing with multiple objectives")
-    for algorithm in ["NSGAII", "MOEAD", "MOCell", "GDE3"]:
+    for algorithm in ["NSGAII", "GDE3"]:
         print(f"\n\nTesting with {algorithm}")
         for metrics in objective_combinations:
             test_PSProblem(problem,
                            which_mo_method=algorithm,
                            metrics=MultipleMetrics(metrics),
-                           normalised_objectives=True,
+                           normalised_objectives=False,
                            save_to_files=True,
                            evaluation_budget=15000)
 
+    return
     print("Testing with a single objective")
     for algorithm in ["NSGAII", "GDE3"]:
         print(f"\n\nTesting with {algorithm}")
