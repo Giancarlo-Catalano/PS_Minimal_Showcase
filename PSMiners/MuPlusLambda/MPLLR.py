@@ -8,19 +8,13 @@ from typing import Optional, Callable
 import numpy as np
 
 import TerminationCriteria
-import utils
 from BenchmarkProblems.BenchmarkProblem import BenchmarkProblem
 from PRef import PRef
 from PS import PS, STAR
-from PSMetric.Averager import Averager
-from PSMetric.BiVariateANOVALinkage import BiVariateANOVALinkage
-from PSMetric.Linkage import Linkage
 from PSMetric.LocalPerturbation import BivariateLocalPerturbation
-from PSMetric.MeanFitness import MeanFitness
 from PSMetric.Metric import Metric
-from PSMetric.WonkyLinkage import WonkyLinkage
 from PSMiners.Individual import Individual
-from PSMiners.PSMutationOperator import PSMutationOperator, SinglePointMutation, MultimodalMutationOperator
+from PSMiners.Operators.PSMutationOperator import PSMutationOperator, MultimodalMutationOperator
 from SearchSpace import SearchSpace
 
 

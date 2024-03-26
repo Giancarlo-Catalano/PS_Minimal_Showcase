@@ -1,38 +1,10 @@
 #!/usr/bin/env python3
 
-import utils
-from BaselineApproaches.FullSolutionGA import FullSolutionGA, test_FSGA
-from BenchmarkProblems.BT.BTProblem import BTProblem
-from BenchmarkProblems.IsingSpinGlassProblem import IsingSpinGlassProblem
-from BenchmarkProblems.GraphColouring import GraphColouring
-from BenchmarkProblems.MultiDimensionalKnapsack import MultiDimensionalKnapsack
-from BenchmarkProblems.RoyalRoad import RoyalRoad
-from BenchmarkProblems.RoyalRoadWithOverlaps import RoyalRoadWithOverlaps
-from BenchmarkProblems.SATProblem import SATProblem
+from BaselineApproaches.FullSolutionGA import test_FSGA
 from BenchmarkProblems.ToyAmalgam import ToyAmalgam
-from BenchmarkProblems.Trapk import Trapk
-from EDA.LinkageModel import test_linkage_tables, test_different_atomicities
-from EDA.Ouroboros import test_ouroboros
-from EDA.SteadyStateEDA import test_sseda
-from EDA.TrainTracksEDA import test_train_tracks_EDA
-from JMetal.PSProblem import test_MO, test_PSProblem, test_MO_comprehensive
-from JMetal.SingleObjective import test_single_objective_search
+
+
 # from MarchMeasurements import test_all
-from PSMetric.Linkage import Linkage
-from PSMetric.MeanFitness import MeanFitness, ChanceOfGood
-from PSMetric.Metric import MultipleMetrics
-from PSMetric.Simplicity import Simplicity
-from PSMiners.ArchiveMiner import test_archive_miner
-from PSMiners.EfficientArchiveMiner import test_efficient_archive_miner
-from PSMiners.FourthMiner import test_fourth_archive_miner
-from PSMiners.MPLLR import test_MLPLR
-from PSMiners.MPLSS import test_MLPSS_with_MMM
-from PSMiners.MuPlusLambda import test_mu_plus_lambda, test_mu_plus_lambda_with_repeated_trials, \
-    test_mu_plus_lambda_with_MMM
-from PSMiners.SelfAssembly import test_simple_hill_climber
-from PSMiners.ThirdArchiveMiner import test_third_archive_miner
-from PickAndMerge.PickAndMerge import test_pick_and_merge
-from TerminationCriteria import IterationLimit
 
 
 def print_separator():
@@ -54,11 +26,11 @@ if __name__ == '__main__':
     # problem = SATProblem.from_json_file(r"C:\Users\gac8\PycharmProjects\PS\resources\SATlibInstances\uf20-01.json")
     # problem = GraphColouring.random(8, 3, 0.3)
 
-    #test_FSGA(problem)
-    #test_MLPLR(problem)
+    test_FSGA(problem)
+    # test_MLPLR(problem)
     # test_train_tracks_EDA(problem)
 
     # test_different_atomicities(problem, pRef_size=10000)
-    test_MO_comprehensive(problem)
+    # test_MO_comprehensive(problem)
 
 

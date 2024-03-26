@@ -1,5 +1,4 @@
 import heapq
-from math import ceil, sqrt
 from typing import Callable, TypeAlias
 
 import numpy as np
@@ -17,8 +16,8 @@ from PSMetric.BiVariateANOVALinkage import BiVariateANOVALinkage
 from PSMetric.MeanFitness import MeanFitness
 from PSMetric.Metric import Metric
 from PSMiners.Individual import Individual
-from PSMiners.MPLLR import MPLLR
-from PSMiners.PSMutationOperator import PSMutationOperator, MultimodalMutationOperator
+from PSMiners.MuPlusLambda.MuPlusLambda import MPLLR
+from PSMiners.Operators.PSMutationOperator import PSMutationOperator, MultimodalMutationOperator
 from PickAndMerge.PickAndMerge import FSSampler
 from SearchSpace import SearchSpace
 

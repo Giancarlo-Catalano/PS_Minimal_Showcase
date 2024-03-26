@@ -2,17 +2,12 @@ import random
 
 from jmetal.core.operator import Mutation
 from jmetal.core.solution import (
-    BinarySolution,
-    CompositeSolution,
-    FloatSolution,
     IntegerSolution,
-    PermutationSolution,
-    Solution,
 )
 from jmetal.util.ckecking import Check
 
 from PS import STAR, PS
-from PSMiners.PSMutationOperator import MultimodalMutationOperator
+from PSMiners.Operators.PSMutationOperator import MultimodalMutationOperator
 
 
 class SpecialisationMutation(Mutation[IntegerSolution]):

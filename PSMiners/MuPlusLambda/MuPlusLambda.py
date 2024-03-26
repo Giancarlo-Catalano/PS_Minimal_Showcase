@@ -1,14 +1,8 @@
-""" The acronym stands for Mu plus Lambda Scatter search"""
-
 import heapq
 import random
 from math import ceil
-from typing import Optional, Callable
+from typing import Optional
 
-import numpy as np
-
-import TerminationCriteria
-import utils
 from BenchmarkProblems.BenchmarkProblem import BenchmarkProblem
 from PRef import PRef
 from PS import PS, STAR
@@ -17,15 +11,15 @@ from PSMetric.Linkage import Linkage
 from PSMetric.MeanFitness import MeanFitness
 from PSMetric.Metric import Metric
 from PSMiners.Individual import Individual
-from PSMiners.PSMutationOperator import PSMutationOperator, SinglePointMutation, MultimodalMutationOperator
+from PSMiners.Operators.PSMutationOperator import PSMutationOperator, SinglePointMutation, MultimodalMutationOperator
 from SearchSpace import SearchSpace
+import TerminationCriteria
 
 
-class MPLSS:
-    current_population: Optional[list[Individual]]
+class MuPlusLambda:
+    current_population: list[Individual]
     mu_parameter: int
     lambda_parameter: int
-    diversity_offspring_amount: int
     metric: Metric
     search_space: Optional[SearchSpace]
     mutation_operator: PSMutationOperator
@@ -35,21 +29,16 @@ class MPLSS:
     def __init__(self,
                  mu_parameter: int,
                  lambda_parameter: int,
-                 diversity_offspring_amount: int,
                  metric: Metric,
-                 mutation_operator: PSMutationOperator,
-                 starting_population: Optional[list[Individual]] = None):
+                 mutation_operator: PSMutationOperator):
         self.mu_parameter = mu_parameter
         self.lambda_parameter = lambda_parameter
         self.metric = metric
-        self.diversity_offspring_amount = diversity_offspring_amount
         self.search_space = None
         self.offspring_amount = self.lambda_parameter // self.mu_parameter
         assert (self.lambda_parameter % self.mu_parameter == 0)
 
-        if starting_population is not None and len(starting_population) == 0:
-            starting_population = None
-        self.current_population = starting_population
+        self.current_population = []
         self.mutation_operator = mutation_operator
 
     def set_pRef(self, pRef: PRef, set_metrics=True):
@@ -57,11 +46,9 @@ class MPLSS:
             self.metric.set_pRef(pRef)
         self.search_space = pRef.search_space
         self.mutation_operator.set_search_space(self.search_space)
-
-        if self.current_population is None:  # in case the population was set already
-            self.current_population = [Individual(PS.empty(pRef.search_space))]
-
-        # self.get_initial_population(from_uniform=0.33,from_half_fixed=0.33,from_geometric=0.34)
+        self.current_population = self.get_initial_population(from_uniform=0.33,
+                                                              from_half_fixed=0.33,
+                                                              from_geometric=0.34)
         self.current_population = self.evaluate_individuals(self.current_population)
 
     def get_initial_population(self,
@@ -120,95 +107,102 @@ class MPLSS:
         return individuals
 
     def truncation_selection(self) -> list[Individual]:
-        return self.top(self.mu_parameter)
+        return heapq.nlargest(n=self.mu_parameter, iterable=self.current_population, key=lambda x: x.aggregated_score)
 
     def get_offspring(self, individual: Individual) -> list[Individual]:
         return [Individual(self.mutation_operator.mutated(individual.ps))
                 for _ in range(self.offspring_amount)]
 
-    def get_fixed_var_proportions(self) -> np.ndarray:
-        """The result is an array, where for each variable in the search space we give the proportion
-        of the individuals in the population which have that variable fixed"""
-
-        counts = np.zeros(self.search_space.amount_of_parameters, dtype=int)
-        for individual in self.current_population:
-            counts += individual.ps.values != STAR
-
-        return counts.astype(dtype=float) / len(self.current_population)
-
-    def get_diverse_individuals(self):
-        fixed_var_proportions = self.get_fixed_var_proportions()
-        sampling_chances = 1 - utils.remap_array_in_zero_one(fixed_var_proportions)
-
-        no_set_values = np.full(shape=self.search_space.amount_of_parameters, fill_value=-1, dtype=int)
-        all_var_indexes = list(range(self.search_space.amount_of_parameters))
-
-        def generate_single_individual():
-            length = utils.sample_from_geometric_distribution(0.6)
-            fixed_positions = random.choices(population=all_var_indexes, weights=sampling_chances, k=length)
-            resulting_values = np.copy(no_set_values)
-            for position in fixed_positions:
-                resulting_values[position] = self.search_space.random_digit(position)
-            return Individual(PS(resulting_values))
-
-        return [generate_single_individual() for _ in range(self.diversity_offspring_amount)]
-
-    def run(self,
-            termination_criteria: TerminationCriteria,
-            custom_ps_repr: Optional[Callable] = None,
-            show_each_generation=False):
+    def run(self, termination_criteria: TerminationCriteria):
         iterations = 0
 
         def should_terminate():
             return termination_criteria.met(iterations=iterations,
-                                            evaluations=self.metric.used_evaluations)
+                                            used_evaluations=self.metric.used_evaluations)
 
         while not should_terminate():
-            if show_each_generation:
-                self.show_current_state(custom_ps_repr)
-
-            # select parents
             selected_parents = self.truncation_selection()
 
-            # make a new population, which contains A: the selected parents (elitism)
             new_population = list(selected_parents)
-
             for parent in selected_parents:
-                # B: contains lambda/mu offsprings for each selected parents
                 new_population.extend(self.evaluate_individuals(self.get_offspring(parent)))
 
-            # C: the diversity children
-            diverse_children = self.get_diverse_individuals()
-            new_population.extend(diverse_children)
-
             self.current_population = new_population
-            # remove duplicates
             self.current_population = list(set(self.current_population))
 
             iterations += 1
 
-
-    def top(self, quantity_returned: int) -> list[Individual]:
-        return heapq.nlargest(n=quantity_returned, iterable=self.current_population)
-    def get_results(self, quantity_returned=None) -> list[Individual]:
-        if quantity_returned == None:
-            quantity_returned = self.mu_parameter
-        return self.top(quantity_returned)
-
-    def show_current_state(self, custom_ps_repr = None):
-        def default_ps_repr(ps):
-            return f"{ps}"
-        if custom_ps_repr is None:
-            custom_ps_repr = default_ps_repr
-
-        best_of_population = self.top(quantity_returned=12)
-        print("\nThe current state is ")
-        for best in best_of_population:
-            print(f"{custom_ps_repr(best.ps)}, score = {best.aggregated_score:.3f}")
+    def get_results(self, amount_to_return=None) -> list[Individual]:
+        if amount_to_return == None:
+            amount_to_return = self.mu_parameter
+        return heapq.nlargest(n=amount_to_return, iterable=self.current_population, key=lambda x: x.aggregated_score)
 
 
-def test_MLPSS_with_MMM(benchmark_problem: BenchmarkProblem):
-    print("Testing the MPLSS with the multi modal mutation method")
+def test_mu_plus_lambda(benchmark_problem: BenchmarkProblem):
+    print("Testing the mu plus lambda algorithm")
+    print(f"The problem is {benchmark_problem.long_repr()}")
+
+    print("Generating a pRef")
+    pRef = benchmark_problem.get_pRef(sample_size=10000)
+    mutation_operator = SinglePointMutation(probability=1 / pRef.search_space.amount_of_parameters,
+                                            chance_of_unfixing=0.5)
+
+    print("Constructing the algorithm")
+    algorithm = MuPlusLambda(mu_parameter=30,
+                             lambda_parameter=150,
+                             mutation_operator=mutation_operator,
+                             metric=Averager([MeanFitness(), Linkage()]))
+
+    algorithm.set_pRef(pRef)
+
+    print("Running the algorithm")
+    termination_criteria = TerminationCriteria.IterationLimit(12)
+    algorithm.run(termination_criteria)
+
+    print("Run has terminated, the results are")
+    for individual in algorithm.get_results():
+        print(f"{individual.ps}, score = {individual.aggregated_score:.3f}")
+
+
+def test_mu_plus_lambda_with_repeated_trials(benchmark_problem: BenchmarkProblem,
+                                             trials: int):
+    print("Testing the mu plus lambda algorithm with repeated trials")
+    print(f"The problem is {benchmark_problem.long_repr()}")
+
+    print("Generating a pRef")
+    pRef = benchmark_problem.get_pRef(sample_size=10000)
+    mutation_operator = SinglePointMutation(probability=1 / pRef.search_space.amount_of_parameters,
+                                            chance_of_unfixing=0.5)
+
+    metric = Averager([MeanFitness(), Linkage()])
+    metric.set_pRef(pRef)
+
+    def single_trial() -> Individual:
+        # print("Constructing the algorithm")
+        algorithm = MuPlusLambda(mu_parameter=12,
+                                 lambda_parameter=60,
+                                 mutation_operator=mutation_operator,
+                                 metric=metric)
+
+        algorithm.set_pRef(pRef, set_metrics=False)
+
+        # print("Running the algorithm")
+        termination_criteria = TerminationCriteria.IterationLimit(benchmark_problem.search_space.hot_encoded_length)
+        algorithm.run(termination_criteria)
+
+        return max(algorithm.get_results(), key=lambda x: x.aggregated_score)
+
+    winners = []
+    for trial in range(trials):
+        print(f"Starting trial #{trial}")
+        winners.append(single_trial())
+
+    for winner in winners:
+        print(f"{benchmark_problem.repr_ps(winner.ps)}, score = {winner.aggregated_score:.3f}\n")
+
+
+def test_mu_plus_lambda_with_MMM(benchmark_problem: BenchmarkProblem):
+    print("Testing the mu plus lambda algorithm with the multi modal mutation method")
     print(f"The problem is {benchmark_problem.long_repr()}")
 
     print("Generating a pRef")
@@ -220,17 +214,16 @@ def test_MLPSS_with_MMM(benchmark_problem: BenchmarkProblem):
 
     def mutation_operator_trial(mutation_operator: PSMutationOperator):
         print(f"Constructing the algorithm with MMMM = {mutation_operator}")
-        algorithm = MPLSS(mu_parameter=50,
-                          lambda_parameter=300,
-                          mutation_operator=mutation_operator,
-                          diversity_offspring_amount=100,
-                          metric=metric)
+        algorithm = MuPlusLambda(mu_parameter=50,
+                                 lambda_parameter=300,
+                                 mutation_operator=mutation_operator,
+                                 metric=metric)
 
         algorithm.set_pRef(pRef, set_metrics=False)
 
         # print("Running the algorithm")
         termination_criteria = TerminationCriteria.IterationLimit(benchmark_problem.search_space.hot_encoded_length)
-        algorithm.run(termination_criteria, show_each_generation=False, custom_ps_repr=benchmark_problem.repr_ps)
+        algorithm.run(termination_criteria)
 
         winners = algorithm.get_results(12)
         for winner in winners:
@@ -238,6 +231,6 @@ def test_MLPSS_with_MMM(benchmark_problem: BenchmarkProblem):
 
         print(f"The used budget is {algorithm.metric.used_evaluations}")
 
-    for rate in range(10, 11):
+    for rate in range(20):
         mutation_operator = MultimodalMutationOperator(rate / 20)
         mutation_operator_trial(mutation_operator)

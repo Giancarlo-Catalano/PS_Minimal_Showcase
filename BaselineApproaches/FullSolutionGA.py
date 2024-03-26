@@ -22,7 +22,6 @@ class FullSolutionGA(GA):
                  fitness_function: Callable,
                  starting_population=None):
 
-
         self.search_space = search_space
         super().__init__(mutation_rate=mutation_rate,
                          crossover_rate=crossover_rate,
@@ -31,8 +30,6 @@ class FullSolutionGA(GA):
                          population_size=population_size,
                          evaluator=FullSolutionEvaluator(fitness_function),
                          starting_population=starting_population)
-
-
 
     def random_individual(self) -> FullSolution:
         return FullSolution.random(self.search_space)
@@ -59,16 +56,14 @@ class FullSolutionGA(GA):
 
         return FullSolution(child_value_list)
 
-
     def get_results(self):
         return sorted(self.last_evaluated_population, key=utils.second, reverse=True)
-
 
 
 def test_FSGA(benchmark_problem: BenchmarkProblem):
     print("Testing the full solution GA")
     algorithm = FullSolutionGA(search_space=benchmark_problem.search_space,
-                               mutation_rate=1/benchmark_problem.search_space.amount_of_parameters,
+                               mutation_rate=1 / benchmark_problem.search_space.amount_of_parameters,
                                crossover_rate=0.5,
                                elite_size=2,
                                tournament_size=3,
@@ -81,7 +76,6 @@ def test_FSGA(benchmark_problem: BenchmarkProblem):
 
     print("The algorithm has terminated, and the results are")
     results = algorithm.get_results()[:12]
-
 
     for individual, score in results:
         print(f"{individual}, score = {score}")

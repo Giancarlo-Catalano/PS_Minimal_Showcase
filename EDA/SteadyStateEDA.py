@@ -1,5 +1,4 @@
 import logging
-import warnings
 from math import ceil, sqrt
 from typing import TypeAlias, Callable, Any
 
@@ -14,19 +13,16 @@ from FullSolution import FullSolution
 from PRef import PRef
 from PS import PS
 from PSMetric.Averager import Averager
-from PSMetric.BiVariateANOVALinkage import BiVariateANOVALinkage
 from PSMetric.Linkage import Linkage
 from PSMetric.MeanFitness import MeanFitness
-from PSMetric.Metric import Metric
 from PSMetric.NoveltyFromModel import NoveltyFromModel
 from PSMetric.NoveltyFromPopulation import NoveltyFromPopulation
 from PSMetric.Simplicity import Simplicity
-from PSMiners.MPLLR import MPLLR
-from PSMiners.MPLSS import MPLSS
-from PSMiners.PSMutationOperator import MultimodalMutationOperator
+from PSMiners.MuPlusLambda.MuPlusLambda import MPLLR
+from PSMiners.Operators.PSMutationOperator import MultimodalMutationOperator
 from PickAndMerge.PickAndMerge import FSSampler
 from SearchSpace import SearchSpace
-from TerminationCriteria import EvaluationBudgetLimit, TerminationCriteria, IterationLimit, PSEvaluationLimit
+from TerminationCriteria import TerminationCriteria, IterationLimit, PSEvaluationLimit
 
 Model: TypeAlias = list[Individual]
 Fitness: TypeAlias = float

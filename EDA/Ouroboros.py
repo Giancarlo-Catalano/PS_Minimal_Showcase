@@ -1,8 +1,6 @@
 from math import ceil, sqrt
 from typing import Callable, TypeAlias
 
-import numpy as np
-
 import utils
 from BaselineApproaches.Evaluator import Individual
 from BenchmarkProblems.BenchmarkProblem import BenchmarkProblem
@@ -13,17 +11,14 @@ from PS import PS
 from PSMetric.Averager import Averager
 from PSMetric.Linkage import Linkage
 from PSMetric.MeanFitness import MeanFitness
-from PSMetric.Metric import Metric, MultipleMetrics
+from PSMetric.Metric import Metric
 from PSMetric.NoveltyFromPopulation import NoveltyFromPopulation
-from PSMetric.SignificantlyHighAverage import SignificantlyHighAverage
 from PSMetric.Simplicity import Simplicity
-from PSMiners.ArchiveMiner import ArchiveMiner
-from PSMiners.FourthMiner import FourthMiner
-from PSMiners.MPLSS import MPLSS
-from PSMiners.PSMutationOperator import MultimodalMutationOperator
+from PSMiners.MuPlusLambda.MuPlusLambda import MPLSS
+from PSMiners.Operators.PSMutationOperator import MultimodalMutationOperator
 from PickAndMerge.PickAndMerge import FSSampler
 from SearchSpace import SearchSpace
-from TerminationCriteria import EvaluationBudgetLimit, IterationLimit
+from TerminationCriteria import EvaluationBudgetLimit
 
 Model: TypeAlias = list[Individual]
 
