@@ -12,6 +12,7 @@ from PSMetric.MeanFitness import MeanFitness
 from PSMetric.Metric import Metric
 from PSMiners.Individual import Individual
 from PSMiners.Operators.PSMutationOperator import PSMutationOperator, SinglePointMutation, MultimodalMutationOperator
+from PSMiners.Operators.PSSelectionOperator import PSSelectionOperator
 from SearchSpace import SearchSpace
 import TerminationCriteria
 
@@ -23,6 +24,7 @@ class MuPlusLambda:
     metric: Metric
     search_space: Optional[SearchSpace]
     mutation_operator: PSMutationOperator
+    selection_operator: PSSelectionOperator
 
     offspring_amount: int
 
@@ -30,26 +32,27 @@ class MuPlusLambda:
                  mu_parameter: int,
                  lambda_parameter: int,
                  metric: Metric,
-                 mutation_operator: PSMutationOperator):
+                 mutation_operator: PSMutationOperator,
+                 selection_operator: PSSelectionOperator,
+                 search_space: SearchSpace,
+                 pRef: PRef):
         self.mu_parameter = mu_parameter
         self.lambda_parameter = lambda_parameter
         self.metric = metric
-        self.search_space = None
+        self.search_space = search_space
         self.offspring_amount = self.lambda_parameter // self.mu_parameter
-        assert (self.lambda_parameter % self.mu_parameter == 0)
+        assert(self.lambda_parameter % self.mu_parameter == 0)
 
         self.current_population = []
         self.mutation_operator = mutation_operator
+        self.selection_operator = selection_operator
 
-    def set_pRef(self, pRef: PRef, set_metrics=True):
-        if set_metrics:
-            self.metric.set_pRef(pRef)
-        self.search_space = pRef.search_space
-        self.mutation_operator.set_search_space(self.search_space)
+        self.metric.set_pRef(pRef)
         self.current_population = self.get_initial_population(from_uniform=0.33,
                                                               from_half_fixed=0.33,
                                                               from_geometric=0.34)
         self.current_population = self.evaluate_individuals(self.current_population)
+
 
     def get_initial_population(self,
                                from_uniform: float,
@@ -106,9 +109,6 @@ class MuPlusLambda:
             individual.aggregated_score = self.metric.get_single_normalised_score(individual.ps)
         return individuals
 
-    def truncation_selection(self) -> list[Individual]:
-        return heapq.nlargest(n=self.mu_parameter, iterable=self.current_population, key=lambda x: x.aggregated_score)
-
     def get_offspring(self, individual: Individual) -> list[Individual]:
         return [Individual(self.mutation_operator.mutated(individual.ps))
                 for _ in range(self.offspring_amount)]
@@ -121,7 +121,7 @@ class MuPlusLambda:
                                             used_evaluations=self.metric.used_evaluations)
 
         while not should_terminate():
-            selected_parents = self.truncation_selection()
+            selected_parents = self.selection_operator.select_n(self.mu_parameter, self.current_population)
 
             new_population = list(selected_parents)
             for parent in selected_parents:
@@ -153,7 +153,6 @@ def test_mu_plus_lambda(benchmark_problem: BenchmarkProblem):
                              mutation_operator=mutation_operator,
                              metric=Averager([MeanFitness(), Linkage()]))
 
-    algorithm.set_pRef(pRef)
 
     print("Running the algorithm")
     termination_criteria = TerminationCriteria.IterationLimit(12)
@@ -184,7 +183,6 @@ def test_mu_plus_lambda_with_repeated_trials(benchmark_problem: BenchmarkProblem
                                  mutation_operator=mutation_operator,
                                  metric=metric)
 
-        algorithm.set_pRef(pRef, set_metrics=False)
 
         # print("Running the algorithm")
         termination_criteria = TerminationCriteria.IterationLimit(benchmark_problem.search_space.hot_encoded_length)

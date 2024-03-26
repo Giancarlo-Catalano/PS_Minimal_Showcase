@@ -10,10 +10,7 @@ from SearchSpace import SearchSpace
 class PSMutationOperator:
     search_space: Optional[SearchSpace]
 
-    def __init__(self):
-        self.search_space = None
-
-    def set_search_space(self, search_space: SearchSpace):
+    def __init__(self, search_space: SearchSpace):
         self.search_space = search_space
 
     def random_value(self, var_index: int) -> int:
