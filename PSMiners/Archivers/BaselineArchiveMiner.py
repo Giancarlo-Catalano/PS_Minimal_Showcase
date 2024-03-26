@@ -28,6 +28,10 @@ class BaselineArchiveMiner(PSMiner):
                          pRef=pRef)
         self.archive = set()
 
+
+    def __repr__(self):
+        return f"ArchiveMiner(population_size = {self.population_size}, offspring_size = {self.offspring_population_size})"
+
     def get_initial_population(self) -> Population:
         """ basically takes the elite of the PRef, and converts them into PSs """
         """this is called get_init in the paper"""

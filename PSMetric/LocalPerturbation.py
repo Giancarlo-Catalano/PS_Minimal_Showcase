@@ -91,8 +91,8 @@ class LocalPerturbationCalculator:
         fs = self.get_bivariate_perturbation_fitnesses(ps, locus_a, locus_b)
         fs_yy, fs_ny, fs_yn, fs_nn = fs
         if any(len(fs) == 0 for fs in fs):
-            warnings.warn(
-                f"Encountered a PS with insufficient observations ({ps}) when calculating bivariate Local perturbation")
+            # warnings.warn(
+            #    f"Encountered a PS with insufficient observations ({ps}) when calculating bivariate Local perturbation")
             return 0  # panic
 
         f_yy = np.average(fs_yy)

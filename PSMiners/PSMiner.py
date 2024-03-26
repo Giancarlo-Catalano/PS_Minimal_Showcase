@@ -38,7 +38,7 @@ class PSMiner:
 
         self.metric = metric
         self.pRef = pRef
-        self.metric.set_pRef(self.pRef)
+        # self.metric.set_pRef(self.pRef)
         self.mutation_operator = mutation_operator
         self.selection_operator = selection_operator
         self.crossover_operator = crossover_operator
@@ -136,6 +136,7 @@ class PSMiner:
 
         while not should_terminate():
             self.step()
+            iterations +=1
 
         return {"iterations": iterations,
                 "ps_evaluations": self.get_used_evaluations()}

@@ -43,6 +43,14 @@ class MPLLR(MuPlusLambda):
                          lambda_parameter=lambda_parameter,
                          mu_parameter=mu_parameter)
 
+
+    def __repr__(self):
+        return (f"MPLLR(mu={self.mu_parameter}, "
+                f"lambda={self.lambda_parameter}, "
+                f"mutation = {self.mutation_operator}, "
+                f"selection = {self.selection_operator}, "
+                f"food_weight = {self.food_weight})")
+
     def evaluate_individuals(self, newborns: Population) -> Population:
         """In order for the food scores to be calculated, the average of the metrics needs to be stored NOT in aggregated_score"""
         for individual in newborns:

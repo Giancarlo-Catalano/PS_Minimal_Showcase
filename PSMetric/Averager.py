@@ -24,7 +24,7 @@ class Averager(Metric):
             m.set_pRef(pRef)
 
     def __repr__(self):
-        return f"{self.get_labels()}"
+        return f"Averager({', '.join(self.get_labels())})"
 
     def get_scores(self, ps: PS) -> list[float]:
         self.used_evaluations += 1

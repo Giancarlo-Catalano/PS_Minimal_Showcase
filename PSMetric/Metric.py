@@ -30,7 +30,7 @@ class Metric:
         return np.array([self.get_single_score(ps) for ps in pss])
 
 
-class MultipleMetrics:
+class MultipleMetrics(Metric):
     metrics: list[Metric]
     used_evaluations: int
     weights: list[int]
@@ -43,6 +43,8 @@ class MultipleMetrics:
         else:
             self.weights = weights
 
+        super().__init__()
+
     def get_labels(self) -> list[str]:
         return [m.__repr__() for m in self.metrics]
 
@@ -51,7 +53,7 @@ class MultipleMetrics:
             m.set_pRef(pRef)
 
     def __repr__(self):
-        return f"{self.get_labels()}"
+        return f"MultipleMetrics({' '.join(self.get_labels())})"
 
     def get_scores(self, ps: PS) -> list[float]:
         self.used_evaluations += 1

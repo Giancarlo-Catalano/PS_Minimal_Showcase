@@ -36,6 +36,10 @@ class MuPlusLambda(PSMiner):
                          selection_operator=selection_operator,
                          seed_population = seed_population)
 
+
+    def __repr__(self):
+        return f"MuPlusLambda(mu={self.mu_parameter}, lambda = {self.lambda_parameter}, mutation = {self.mutation_operator}, selection = {self.selection_operator})"
+
     def get_initial_population(self):
         return PSMiner.get_mixed_initial_population(search_space=self.search_space,
                                                     from_uniform=0.33,
@@ -68,5 +72,5 @@ class MuPlusLambda(PSMiner):
                 "mu": self.mu_parameter,
                 "lambda": self.lambda_parameter,
                 "metric": repr(self.metric.__repr__()),
-                "selection": repr({self.selection_operator}),
+                "selection": repr(self.selection_operator),
                 "mutation": repr(self.mutation_operator)}
