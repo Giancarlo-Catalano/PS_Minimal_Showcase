@@ -39,8 +39,10 @@ class PSMiner:
     def __repr__(self):
         raise Exception("An implementation of PSMiner does not implement __repr__")
 
-    def get_initial_population(self, amount: int) -> Population:
-        raise Exception(f"An implementation of PSMiner ({self.__repr__()}) does not implement get_initial_population")
+
+    @property
+    def search_space(self):
+        return self.pRef.search_space
 
     @staticmethod
     def get_mixed_initial_population(search_space: SearchSpace,
@@ -93,11 +95,8 @@ class PSMiner:
 
         return [Individual(ps) for ps in pss]
 
-
     def step(self):
         raise Exception(f"An implementation of PSMiner ({self.__repr__()}) does not implement get_initial_population")
-
-
 
     def evaluate_individuals(self, newborns: Population) -> Population:
         if isinstance(self.metric, MultipleMetrics):
@@ -108,7 +107,6 @@ class PSMiner:
             for individual in newborns:
                 individual.aggregated_score = self.metric.get_single_normalised_score(individual.ps)
             return newborns
-
 
     def get_used_evaluations(self) -> int:
         return self.metric.used_evaluations
@@ -123,10 +121,14 @@ class PSMiner:
         while not should_terminate():
             self.step()
 
-
     def get_results(self, quantity_returned: int) -> list[Individual]:
         raise Exception(f"An implementation of PSMiner({self.__repr__()}) does not implement get_results")
 
     @staticmethod
     def get_best_n(n: int, population: Population) -> Population:
         return heapq.nlargest(n=n, iterable=population)
+
+
+    @staticmethod
+    def without_duplicates(population: Population) -> Population:
+        return list(set(population))
