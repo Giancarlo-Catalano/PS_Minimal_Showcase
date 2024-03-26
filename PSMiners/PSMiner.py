@@ -3,6 +3,7 @@ import random
 from math import ceil
 from typing import Optional, TypeAlias
 
+from BenchmarkProblems.BenchmarkProblem import BenchmarkProblem
 from PRef import PRef
 from PS import PS, STAR
 from PSMetric.Metric import Metric, MultipleMetrics
@@ -11,9 +12,11 @@ from PSMiners.Operators.PSCrossoverOperator import PSCrossoverOperator
 from PSMiners.Operators.PSMutationOperator import PSMutationOperator
 from PSMiners.Operators.PSSelectionOperator import PSSelectionOperator
 from SearchSpace import SearchSpace
-from TerminationCriteria import TerminationCriteria
+from TerminationCriteria import TerminationCriteria, PSEvaluationLimit
+from utils import execution_time
 
 Population: TypeAlias = list[Individual]
+ResultsAsJSON: TypeAlias = dict
 
 
 class PSMiner:
@@ -31,7 +34,7 @@ class PSMiner:
                  mutation_operator: PSMutationOperator,
                  selection_operator: PSSelectionOperator,
                  crossover_operator=None,
-                 seed_population = None):
+                 seed_population=None):
 
         self.metric = metric
         self.pRef = pRef
@@ -52,7 +55,6 @@ class PSMiner:
 
     def get_initial_population(self):
         raise Exception(f"An implementation of PSMiner({self.__repr__()}) does not implement get_initial_population")
-
 
     @property
     def search_space(self):
@@ -125,15 +127,18 @@ class PSMiner:
     def get_used_evaluations(self) -> int:
         return self.metric.used_evaluations
 
-    def run(self, termination_criteria: TerminationCriteria):
+    def run(self, termination_criteria: TerminationCriteria) -> dict:
         iterations = 0
 
         def should_terminate():
             return termination_criteria.met(iterations=iterations,
-                                            used_evaluations=self.get_used_evaluations())
+                                            ps_evaluations=self.get_used_evaluations())
 
         while not should_terminate():
             self.step()
+
+        return {"iterations": iterations,
+                "ps_evaluations": self.get_used_evaluations()}
 
     def get_results(self, quantity_returned: int) -> list[Individual]:
         raise Exception(f"An implementation of PSMiner({self.__repr__()}) does not implement get_results")
@@ -142,9 +147,9 @@ class PSMiner:
     def get_best_n(n: int, population: Population) -> Population:
         return heapq.nlargest(n=n, iterable=population)
 
-
     @staticmethod
     def without_duplicates(population: Population) -> Population:
         return list(set(population))
 
-
+    def get_parameters_as_dict(self) -> dict:
+        raise Exception(f"An implementation of PSMiner ({self.__repr__}) does not implement get_parameters_as_dict")

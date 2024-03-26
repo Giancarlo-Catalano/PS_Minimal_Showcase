@@ -29,10 +29,11 @@ class SinglePointMutation(PSMutationOperator):
 
     def __init__(self,
                  probability: float,
-                 chance_of_unfixing: float):
+                 chance_of_unfixing: float,
+                 search_space: SearchSpace):
         self.mutation_probability = probability
         self.chance_of_unfixing = chance_of_unfixing
-        super().__init__()
+        super().__init__(search_space)
 
     def __repr__(self):
         return "SinglePointMutation"
@@ -59,9 +60,10 @@ class MultimodalMutationOperator(PSMutationOperator):
     value_mutation_chance: float
 
     def __init__(self,
-                 value_mutation_chance: float):
+                 value_mutation_chance: float,
+                 search_space: SearchSpace):
         self.value_mutation_chance = value_mutation_chance
-        super().__init__()
+        super().__init__(search_space)
 
     def __repr__(self):
         return f"MultimodalMutationOperator(value_mutation_chance = {self.value_mutation_chance})"

@@ -60,95 +60,10 @@ class MuPlusLambda(PSMiner):
         self.current_population = PSMiner.without_duplicates(selected_parents + children)
 
 
-def test_mu_plus_lambda(benchmark_problem: BenchmarkProblem):
-    print("Testing the mu plus lambda algorithm")
-    print(f"The problem is {benchmark_problem.long_repr()}")
-
-    print("Generating a pRef")
-    pRef = benchmark_problem.get_pRef(sample_size=10000)
-    mutation_operator = SinglePointMutation(probability=1 / pRef.search_space.amount_of_parameters,
-                                            chance_of_unfixing=0.5)
-
-    print("Constructing the algorithm")
-    algorithm = MuPlusLambda(mu_parameter=30,
-                             lambda_parameter=150,
-                             mutation_operator=mutation_operator,
-                             metric=Averager([MeanFitness(), Linkage()]))
-
-    print("Running the algorithm")
-    termination_criteria = TerminationCriteria.IterationLimit(12)
-    algorithm.run(termination_criteria)
-
-    print("Run has terminated, the results are")
-    for individual in algorithm.get_results():
-        print(f"{individual.ps}, score = {individual.aggregated_score:.3f}")
-
-
-def test_mu_plus_lambda_with_repeated_trials(benchmark_problem: BenchmarkProblem,
-                                             trials: int):
-    print("Testing the mu plus lambda algorithm with repeated trials")
-    print(f"The problem is {benchmark_problem.long_repr()}")
-
-    print("Generating a pRef")
-    pRef = benchmark_problem.get_pRef(sample_size=10000)
-    mutation_operator = SinglePointMutation(probability=1 / pRef.search_space.amount_of_parameters,
-                                            chance_of_unfixing=0.5)
-
-    metric = Averager([MeanFitness(), Linkage()])
-    metric.set_pRef(pRef)
-
-    def single_trial() -> Individual:
-        # print("Constructing the algorithm")
-        algorithm = MuPlusLambda(mu_parameter=12,
-                                 lambda_parameter=60,
-                                 mutation_operator=mutation_operator,
-                                 metric=metric)
-
-        # print("Running the algorithm")
-        termination_criteria = TerminationCriteria.IterationLimit(benchmark_problem.search_space.hot_encoded_length)
-        algorithm.run(termination_criteria)
-
-        return max(algorithm.get_results(), key=lambda x: x.aggregated_score)
-
-    winners = []
-    for trial in range(trials):
-        print(f"Starting trial #{trial}")
-        winners.append(single_trial())
-
-    for winner in winners:
-        print(f"{benchmark_problem.repr_ps(winner.ps)}, score = {winner.aggregated_score:.3f}\n")
-
-
-def test_mu_plus_lambda_with_MMM(benchmark_problem: BenchmarkProblem):
-    print("Testing the mu plus lambda algorithm with the multi modal mutation method")
-    print(f"The problem is {benchmark_problem.long_repr()}")
-
-    print("Generating a pRef")
-    pRef = benchmark_problem.get_pRef(sample_size=10000)
-
-    metric = Averager([MeanFitness(), Linkage()])
-    metric.set_pRef(pRef)
-    print("pRef was set")
-
-    def mutation_operator_trial(mutation_operator: PSMutationOperator):
-        print(f"Constructing the algorithm with MMMM = {mutation_operator}")
-        algorithm = MuPlusLambda(mu_parameter=50,
-                                 lambda_parameter=300,
-                                 mutation_operator=mutation_operator,
-                                 metric=metric)
-
-        algorithm.set_pRef(pRef, set_metrics=False)
-
-        # print("Running the algorithm")
-        termination_criteria = TerminationCriteria.IterationLimit(benchmark_problem.search_space.hot_encoded_length)
-        algorithm.run(termination_criteria)
-
-        winners = algorithm.get_results(12)
-        for winner in winners:
-            print(f"{benchmark_problem.repr_ps(winner.ps)}, score = {winner.aggregated_score:.3f}")
-
-        print(f"The used budget is {algorithm.metric.used_evaluations}")
-
-    for rate in range(20):
-        mutation_operator = MultimodalMutationOperator(rate / 20)
-        mutation_operator_trial(mutation_operator)
+    def get_parameters_as_dict(self) -> dict:
+        return {"kind": "MPL",
+                "mu": self.mu_parameter,
+                "lambda": self.lambda_parameter,
+                "metric": self.metric.__repr__(),
+                "selection": f"{self.selection_operator}",
+                "mutation": f"{self.mutation_operator}"}

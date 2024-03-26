@@ -112,6 +112,10 @@ def print_entry_and_exit(func):
 
 
 class ExecutionTime(ContextDecorator):
+    start_time: float
+    end_time: float
+    execution_time: float
+
     def __enter__(self):
         self.start_time = time.time()
         return self
@@ -132,6 +136,7 @@ def execution_time():
     with execution_time() as time:
         data = function()
     
+    time.execution_time
     print(time)
     print(data)
 
