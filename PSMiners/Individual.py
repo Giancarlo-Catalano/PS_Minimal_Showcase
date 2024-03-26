@@ -16,6 +16,8 @@ Metrics: TypeAlias = tuple
 class Individual:
     ps: PS
     metric_scores: Optional[ArrayOfFloats]
+    average_of_metrics: float
+    food_score: float  # just makes my life a lot easier in LR
 
     aggregated_score: float
 

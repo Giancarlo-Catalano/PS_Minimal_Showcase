@@ -23,21 +23,35 @@ class PSMiner:
     selection_operator: PSSelectionOperator
     crossover_operator: Optional[PSCrossoverOperator]
 
+    current_population: Optional[Population]
+
     def __init__(self,
                  metric: Metric,
                  pRef: PRef,
                  mutation_operator: PSMutationOperator,
                  selection_operator: PSSelectionOperator,
-                 crossover_operator=None):
+                 crossover_operator=None,
+                 seed_population = None):
 
         self.metric = metric
         self.pRef = pRef
+        self.metric.set_pRef(self.pRef)
         self.mutation_operator = mutation_operator
         self.selection_operator = selection_operator
         self.crossover_operator = crossover_operator
 
+        if seed_population is not None and len(seed_population) > 0:
+            self.current_population = seed_population
+        else:
+            self.current_population = self.get_initial_population()
+
+        self.current_population = self.evaluate_individuals(self.current_population)
+
     def __repr__(self):
         raise Exception("An implementation of PSMiner does not implement __repr__")
+
+    def get_initial_population(self):
+        raise Exception(f"An implementation of PSMiner({self.__repr__()}) does not implement get_initial_population")
 
 
     @property
@@ -132,3 +146,5 @@ class PSMiner:
     @staticmethod
     def without_duplicates(population: Population) -> Population:
         return list(set(population))
+
+

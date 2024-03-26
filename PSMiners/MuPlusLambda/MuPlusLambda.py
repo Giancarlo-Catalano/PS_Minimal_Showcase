@@ -1,11 +1,6 @@
-import heapq
-import random
-from math import ceil
-from typing import Optional
-
+import TerminationCriteria
 from BenchmarkProblems.BenchmarkProblem import BenchmarkProblem
 from PRef import PRef
-from PS import PS, STAR
 from PSMetric.Averager import Averager
 from PSMetric.Linkage import Linkage
 from PSMetric.MeanFitness import MeanFitness
@@ -14,12 +9,9 @@ from PSMiners.Individual import Individual
 from PSMiners.Operators.PSMutationOperator import PSMutationOperator, SinglePointMutation, MultimodalMutationOperator
 from PSMiners.Operators.PSSelectionOperator import PSSelectionOperator
 from PSMiners.PSMiner import PSMiner
-from SearchSpace import SearchSpace
-import TerminationCriteria
 
 
 class MuPlusLambda(PSMiner):
-    current_population: list[Individual]
     mu_parameter: int
     lambda_parameter: int
 
@@ -31,41 +23,30 @@ class MuPlusLambda(PSMiner):
                  metric: Metric,
                  mutation_operator: PSMutationOperator,
                  selection_operator: PSSelectionOperator,
-                 pRef: PRef):
+                 pRef: PRef,
+                 seed_population = None):
+        self.mu_parameter = mu_parameter
+        self.lambda_parameter = lambda_parameter
+        self.offspring_amount = self.lambda_parameter // self.mu_parameter
+        assert (self.lambda_parameter % self.mu_parameter == 0)
+
         super().__init__(metric=metric,
                          pRef=pRef,
                          mutation_operator=mutation_operator,
                          crossover_operator=None,
-                         selection_operator=selection_operator)
-
-        self.mu_parameter = mu_parameter
-        self.lambda_parameter = lambda_parameter
-        self.offspring_amount = self.lambda_parameter // self.mu_parameter
-        assert(self.lambda_parameter % self.mu_parameter == 0)
-
-        self.current_population = []
-        self.mutation_operator = mutation_operator
-        self.selection_operator = selection_operator
-
-        self.metric.set_pRef(pRef)
-        self.current_population = self.get_initial_population()
-        self.current_population = self.evaluate_individuals(self.current_population)
-
-
-
+                         selection_operator=selection_operator,
+                         seed_population = seed_population)
 
     def get_initial_population(self):
-        return PSMiner.get_mixed_initial_population(search_space= self.search_space,
+        return PSMiner.get_mixed_initial_population(search_space=self.search_space,
                                                     from_uniform=0.33,
                                                     from_geometric=0.33,
                                                     from_half_fixed=0.34,
                                                     population_size=self.lambda_parameter)
 
-
     def get_offspring(self, individual: Individual) -> list[Individual]:
         return [Individual(self.mutation_operator.mutated(individual.ps))
                 for _ in range(self.offspring_amount)]
-
 
     def step(self):
         selected_parents = self.selection_operator.select_n(self.mu_parameter, self.current_population)
@@ -77,7 +58,6 @@ class MuPlusLambda(PSMiner):
         children = self.evaluate_individuals(children)
 
         self.current_population = PSMiner.without_duplicates(selected_parents + children)
-
 
 
 def test_mu_plus_lambda(benchmark_problem: BenchmarkProblem):
@@ -94,7 +74,6 @@ def test_mu_plus_lambda(benchmark_problem: BenchmarkProblem):
                              lambda_parameter=150,
                              mutation_operator=mutation_operator,
                              metric=Averager([MeanFitness(), Linkage()]))
-
 
     print("Running the algorithm")
     termination_criteria = TerminationCriteria.IterationLimit(12)
@@ -124,7 +103,6 @@ def test_mu_plus_lambda_with_repeated_trials(benchmark_problem: BenchmarkProblem
                                  lambda_parameter=60,
                                  mutation_operator=mutation_operator,
                                  metric=metric)
-
 
         # print("Running the algorithm")
         termination_criteria = TerminationCriteria.IterationLimit(benchmark_problem.search_space.hot_encoded_length)
