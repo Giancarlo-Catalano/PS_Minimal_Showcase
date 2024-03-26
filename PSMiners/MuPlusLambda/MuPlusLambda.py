@@ -33,7 +33,6 @@ class MuPlusLambda(PSMiner):
         super().__init__(metric=metric,
                          pRef=pRef,
                          mutation_operator=mutation_operator,
-                         crossover_operator=None,
                          selection_operator=selection_operator,
                          seed_population = seed_population)
 
@@ -60,10 +59,14 @@ class MuPlusLambda(PSMiner):
         self.current_population = PSMiner.without_duplicates(selected_parents + children)
 
 
+    def get_results(self, quantity_returned: int) -> list[Individual]:
+        return self.get_best_n(n=quantity_returned, population = self.current_population)
+
+
     def get_parameters_as_dict(self) -> dict:
         return {"kind": "MPL",
                 "mu": self.mu_parameter,
                 "lambda": self.lambda_parameter,
-                "metric": self.metric.__repr__(),
-                "selection": f"{self.selection_operator}",
-                "mutation": f"{self.mutation_operator}"}
+                "metric": repr(self.metric.__repr__()),
+                "selection": repr({self.selection_operator}),
+                "mutation": repr(self.mutation_operator)}

@@ -22,8 +22,8 @@ ResultsAsJSON: TypeAlias = dict
 class PSMiner:
     metric: Metric
     pRef: PRef
-    mutation_operator: PSMutationOperator
-    selection_operator: PSSelectionOperator
+    mutation_operator: Optional[PSMutationOperator]
+    selection_operator: Optional[PSSelectionOperator]
     crossover_operator: Optional[PSCrossoverOperator]
 
     current_population: Optional[Population]
@@ -31,8 +31,8 @@ class PSMiner:
     def __init__(self,
                  metric: Metric,
                  pRef: PRef,
-                 mutation_operator: PSMutationOperator,
-                 selection_operator: PSSelectionOperator,
+                 mutation_operator=None,
+                 selection_operator=None,
                  crossover_operator=None,
                  seed_population=None):
 
@@ -132,7 +132,7 @@ class PSMiner:
 
         def should_terminate():
             return termination_criteria.met(iterations=iterations,
-                                            ps_evaluations=self.get_used_evaluations())
+                                            ps_evaluations=self.get_used_evaluations()) or len(self.current_population) == 0
 
         while not should_terminate():
             self.step()
