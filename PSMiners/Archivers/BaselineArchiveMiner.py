@@ -67,7 +67,7 @@ class BaselineArchiveMiner(PSMiner):
         return self.get_best_n(n=quantity_returned, population=list(self.archive))
 
     def get_parameters_as_dict(self) -> dict:
-        return {"kind": "MPL",
+        return {"kind": "Archive",
                 "population_size": self.population_size,
                 "offspring_size": self.offspring_population_size,
                 "metric": repr(self.metric)}

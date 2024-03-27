@@ -36,7 +36,7 @@ class SinglePointMutation(PSMutationOperator):
         super().__init__(search_space)
 
     def __repr__(self):
-        return f"SinglePointMutation(mutation_rate = {self.mutation_probability:.2f}, unfixing_rate = {self.chance_of_unfixing:.2f})"
+        return f"SinglePointMutation(unfixing_rate = {self.chance_of_unfixing:.2f})"
 
     def mutated(self, ps: PS) -> PS:
         def get_mutated_value_for(index: int):

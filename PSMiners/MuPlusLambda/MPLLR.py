@@ -93,6 +93,7 @@ class MPLLR(MuPlusLambda):
 
     def get_parameters_as_dict(self) -> dict:
         result = super().get_parameters_as_dict()
+        result["kind"] = "MPLLR"
         result["food_weight"] = self.food_weight
         return result
 

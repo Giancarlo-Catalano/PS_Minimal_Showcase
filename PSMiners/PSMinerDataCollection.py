@@ -165,7 +165,7 @@ def get_all_variants_for_miners(pRef: PRef):
 
 
 
-    unnormalised_metrics = [MultipleMetrics([mean_fitness, legacy_atomicity]),
+    unnormalised_metrics = [MultipleMetrics([simplicity, mean_fitness, legacy_atomicity]),
                             MultipleMetrics([mean_fitness, novel_atomicity])]
 
     mutation_operators = [MultimodalMutationOperator(0.5, search_space=pRef.search_space),
@@ -189,7 +189,7 @@ def get_all_variants_for_miners(pRef: PRef):
     food_weights = [0.5] # [0.1, 0.5, 0.7]
 
     mpl = get_variants_for_MPL(pRef=pRef,
-                               metrics=[two_obj_average_metric],
+                               metrics=normalised_metrics,
                                mutation_operators=mutation_operators,
                                selection_operators=selection_operators_normalised,
                                mus=mus)
@@ -202,7 +202,7 @@ def get_all_variants_for_miners(pRef: PRef):
 
 
     mpllr = get_variants_for_MPLLR(pRef = pRef,
-                                   metrics=[two_obj_average_metric],
+                                   metrics=normalised_metrics,
                                    mutation_operators=mutation_operators,
                                    selection_operators=selection_operators_normalised,
                                    mus=mus,
@@ -244,6 +244,8 @@ def test_variants_on_benchmark_problem(benchmark_problem: BenchmarkProblem,
                         result_of_run = test_algorithm(variant, evaluation_budget, targets)
                         accumulated_time += result_of_run["runtime"]
                         result_of_run["runtime"] = accumulated_time
+                        result_of_run["problem"] = f"{benchmark_problem}"
+                        result_of_run["oversampling"] = oversampling_factor
                         results.append(result_of_run)
                     except Exception as e:
                         log(f"Encountered Exception {e}, returning directly")
@@ -256,8 +258,8 @@ def run_tests_on_problem(benchmark_problem: BenchmarkProblem,
                          sample_size: int):
     results = test_variants_on_benchmark_problem(benchmark_problem,
                                                  sample_sizes=[sample_size],
-                                                 oversampling_factors=[0, 1],
-                                                 evaluation_budgets=[500, 1000, 1500])
+                                                 oversampling_factors=[0, 3, 9],
+                                                 evaluation_budgets=[15000])
     log("The data has been gathered, results are being dumped")
     print(json.dumps(results, indent=4))
 
