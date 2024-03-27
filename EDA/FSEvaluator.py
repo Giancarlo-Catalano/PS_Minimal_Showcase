@@ -1,5 +1,6 @@
 from typing import TypeAlias, Callable
 
+from EDA.FSIndividual import FSIndividual
 from FullSolution import FullSolution
 from PRef import PRef
 from SearchSpace import SearchSpace
@@ -21,6 +22,11 @@ class FSEvaluator:
         self.used_evaluations += 1
         return self._fitness_function(fs)
 
+    def evaluate_population(self, population: list[FSIndividual]) -> list[FSIndividual]:
+        for individual in population:
+            individual.fitness = self.evaluate(individual.full_solution)
+        return population
+
     def generate_pRef_from_full_solutions(self,
                                           search_space: SearchSpace,
                                           samples: list[FullSolution]) -> PRef:
@@ -34,7 +40,6 @@ class FSEvaluator:
                                         amount_of_samples: int) -> PRef:
         samples = [FullSolution.random(search_space) for _ in range(amount_of_samples)]
         return self.generate_pRef_from_full_solutions(search_space, samples)
-
 
     def __repr__(self):
         return f"FS Evaluator, used_budget = {self.used_evaluations}"

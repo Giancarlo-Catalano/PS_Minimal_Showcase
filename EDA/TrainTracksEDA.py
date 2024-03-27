@@ -12,7 +12,7 @@ from FullSolution import FullSolution
 from PRef import PRef
 from PS import PS
 from PSMetric.Averager import Averager
-from PSMetric.BiVariateANOVALinkage import BiVariateANOVALinkage
+from PSMetric.BivariateANOVALinkage import BivariateANOVALinkage
 from PSMetric.MeanFitness import MeanFitness
 from PSMetric.Metric import Metric
 from PSMiners.Individual import Individual
@@ -77,7 +77,7 @@ class TrainTracksEDA:
         return algorithm.get_results(quantity_returned=self.ps_model_size)
 
     def improve_exploitative_model(self):
-        metrics = Averager([MeanFitness(), BiVariateANOVALinkage()])
+        metrics = Averager([MeanFitness(), BivariateANOVALinkage()])
         pRef = self.get_pRef_from_current_population()
 
         self.current_model = self.get_improved_model(previous_model=self.current_model+self.get_initial_model(),

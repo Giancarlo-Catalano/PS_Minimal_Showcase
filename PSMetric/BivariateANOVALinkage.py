@@ -14,7 +14,7 @@ from scipy.stats import f
 LinkageTable: TypeAlias = np.ndarray
 
 
-class BiVariateANOVALinkage(Metric):
+class BivariateANOVALinkage(Metric):
     linkage_table: Optional[LinkageTable]
     normalised_linkage_table: Optional[LinkageTable]
 

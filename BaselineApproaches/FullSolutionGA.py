@@ -1,9 +1,11 @@
+import heapq
 import random
 from typing import Callable
 
 import utils
 from BaselineApproaches.Evaluator import Individual, FullSolutionEvaluator
 from BenchmarkProblems.BenchmarkProblem import BenchmarkProblem
+from EDA.FSIndividual import FSIndividual
 from FullSolution import FullSolution
 from BaselineApproaches.GA import GA
 from SearchSpace import SearchSpace
@@ -28,13 +30,13 @@ class FullSolutionGA(GA):
                          elite_size=elite_size,
                          tournament_size=tournament_size,
                          population_size=population_size,
-                         evaluator=FullSolutionEvaluator(fitness_function),
+                         fitness_function=fitness_function,
                          starting_population=starting_population)
 
-    def random_individual(self) -> FullSolution:
+    def random_solution(self) -> FullSolution:
         return FullSolution.random(self.search_space)
 
-    def mutated(self, individual: FullSolution) -> Individual:
+    def mutated(self, individual: FullSolution) -> FullSolution:
         result_values = individual.values.copy()
         for variable_index, cardinality in enumerate(self.search_space.cardinalities):
             if self.should_mutate():
@@ -56,8 +58,8 @@ class FullSolutionGA(GA):
 
         return FullSolution(child_value_list)
 
-    def get_results(self):
-        return sorted(self.last_evaluated_population, key=utils.second, reverse=True)
+    def get_results(self, quantity_returned: int):
+        return heapq.nlargest(quantity_returned, self.current_population)
 
 
 def test_FSGA(benchmark_problem: BenchmarkProblem):
@@ -75,7 +77,7 @@ def test_FSGA(benchmark_problem: BenchmarkProblem):
     algorithm.run(termination_criterion, show_every_generation=True)
 
     print("The algorithm has terminated, and the results are")
-    results = algorithm.get_results()[:12]
+    results = algorithm.get_results(12)
 
-    for individual, score in results:
-        print(f"{individual}, score = {score}")
+    for individual in results:
+        print(f"{individual}")

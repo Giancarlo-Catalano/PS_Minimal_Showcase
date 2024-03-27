@@ -19,7 +19,7 @@ from FullSolution import FullSolution
 from PRef import PRef
 from PS import PS
 from PSMetric.Atomicity import Atomicity
-from PSMetric.BiVariateANOVALinkage import BiVariateANOVALinkage
+from PSMetric.BivariateANOVALinkage import BivariateANOVALinkage
 from PSMetric.GlobalPerturbation import UnivariateGlobalPerturbation, BivariateGlobalPerturbation, \
     AlternativeBivariateGlobalLinkage
 from PSMetric.Linkage import Linkage
@@ -393,7 +393,7 @@ def test_different_atomicities(benchmark_problem: BenchmarkProblem,
     oversampling_factors = [0, 1, 4, 20]
     linkage = Linkage()
     atomicity = Atomicity()
-    bal = BiVariateANOVALinkage()
+    bal = BivariateANOVALinkage()
     ugp = UnivariateGlobalPerturbation()
     bgp = BivariateGlobalPerturbation()
     ulp = UnivariateLocalPerturbation()

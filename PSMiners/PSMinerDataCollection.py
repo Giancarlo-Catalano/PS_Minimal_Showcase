@@ -14,7 +14,7 @@ from PRef import PRef
 from PS import PS
 from PSMetric.Atomicity import Atomicity
 from PSMetric.Averager import Averager
-from PSMetric.BiVariateANOVALinkage import BiVariateANOVALinkage
+from PSMetric.BivariateANOVALinkage import BivariateANOVALinkage
 from PSMetric.Linkage import Linkage
 from PSMetric.LocalPerturbation import BivariateLocalPerturbation
 from PSMetric.MeanFitness import MeanFitness
@@ -149,7 +149,7 @@ def get_variants_for_archive_miner(pRef: PRef,
 def get_all_variants_for_miners(pRef: PRef):
     mean_fitness = MeanFitness()
     linkage = Linkage()
-    bal = BiVariateANOVALinkage()
+    bal = BivariateANOVALinkage()
     simplicity = Simplicity()
     legacy_atomicity = Atomicity()
     novel_atomicity = BivariateLocalPerturbation()
