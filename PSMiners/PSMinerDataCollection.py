@@ -267,12 +267,12 @@ def run_tests_on_problem(benchmark_problem: BenchmarkProblem,
 
 def interpret_problem_str(problem_str):
     match problem_str:
-        case "Trap5_5": return Trapk(5, 5)
-        case "Trap5_10": return Trapk(10, 5)
+        case "Trap_5": return Trapk(5, 5)
+        case "Trap_10": return Trapk(10, 5)
         case "RR_5": return RoyalRoad(5, 5)
         case "RR_10": return RoyalRoad(10, 5)
-        case "RR0_5": return RoyalRoadWithOverlaps(5, 5, 20)
-        case "RR0_10": return RoyalRoadWithOverlaps(10, 5, 40)
+        case "RRO_5": return RoyalRoadWithOverlaps(5, 5, 20)
+        case "RRO_10": return RoyalRoadWithOverlaps(10, 5, 40)
         case _: raise Exception(f"Invalid problem string requested: {problem_str}")
 
 
