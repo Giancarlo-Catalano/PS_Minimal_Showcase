@@ -52,8 +52,10 @@ class BaselineArchiveMiner(PSMiner):
         offspring = set()
 
         remaining_population = set(self.current_population)
-        while len(offspring) < self.offspring_population_size and len(remaining_population) > 0:
+        selected_count = 0
+        while len(remaining_population) > 0 and selected_count < (self.population_size // 3):
             selected = self.select_one()
+            selected_count += 1
             remaining_population.discard(selected)
             if selected not in self.archive:
                 self.archive.add(selected)
@@ -71,3 +73,6 @@ class BaselineArchiveMiner(PSMiner):
                 "population_size": self.population_size,
                 "offspring_size": self.offspring_population_size,
                 "metric": repr(self.metric)}
+
+
+
