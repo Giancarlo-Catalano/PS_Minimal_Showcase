@@ -77,7 +77,7 @@ class GA:
 
             child_ps = self.mutated(self.crossed(mother, father))
         else:
-            child_ps = self.mutated(self.select())
+            child_ps = self.mutated(self.select().full_solution)
         return FSIndividual(child_ps, 0)
 
     def make_new_evaluated_population(self) -> list[FSIndividual]:

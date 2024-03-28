@@ -4,6 +4,7 @@ from math import ceil
 from typing import Optional, TypeAlias
 
 from BenchmarkProblems.BenchmarkProblem import BenchmarkProblem
+from EDA.FSEvaluator import FSEvaluator
 from PRef import PRef
 from PS import PS, STAR
 from PSMetric.Metric import Metric, MultipleMetrics
@@ -13,7 +14,7 @@ from PSMiners.Operators.PSMutationOperator import PSMutationOperator
 from PSMiners.Operators.PSSelectionOperator import PSSelectionOperator
 from SearchSpace import SearchSpace
 from TerminationCriteria import TerminationCriteria, PSEvaluationLimit
-from utils import execution_time
+from utils import execution_time, announce
 
 Population: TypeAlias = list[Individual]
 ResultsAsJSON: TypeAlias = dict
@@ -34,11 +35,14 @@ class PSMiner:
                  mutation_operator=None,
                  selection_operator=None,
                  crossover_operator=None,
-                 seed_population=None):
+                 seed_population=None,
+                 set_pRef_in_metric= True):
 
         self.metric = metric
         self.pRef = pRef
-        # self.metric.set_pRef(self.pRef)
+        if set_pRef_in_metric:
+            self.metric.set_pRef(pRef)
+        self.metric.set_pRef(self.pRef)
         self.mutation_operator = mutation_operator
         self.selection_operator = selection_operator
         self.crossover_operator = crossover_operator
@@ -154,3 +158,26 @@ class PSMiner:
 
     def get_parameters_as_dict(self) -> dict:
         raise Exception(f"An implementation of PSMiner ({self.__repr__}) does not implement get_parameters_as_dict")
+
+
+
+    @classmethod
+    def with_default_settings(cls, pRef: PRef):
+        raise Exception("An implementation of PSMiner does not implement .with_default_settings")
+
+
+    @classmethod
+    def test_with_problem(cls, benchmark_problem: BenchmarkProblem):
+        evaluator = FSEvaluator(benchmark_problem.fitness_function)
+
+        with announce("Gathering pRef"):
+            pRef = evaluator.generate_pRef_from_search_space(search_space=benchmark_problem.search_space,
+                                                             amount_of_samples=10000)
+        with announce("Running the algorithm"):
+            algorithm: PSMiner = cls.with_default_settings(pRef)
+            algorithm.run(PSEvaluationLimit(15000))
+
+        print("The best results are")
+        best = algorithm.get_results(12)
+        for item in best:
+            print(item)

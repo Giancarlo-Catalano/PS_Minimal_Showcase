@@ -11,12 +11,15 @@ import TerminationCriteria
 from BenchmarkProblems.BenchmarkProblem import BenchmarkProblem
 from PRef import PRef
 from PS import PS, STAR
+from PSMetric.Averager import Averager
+from PSMetric.Linkage import Linkage
 from PSMetric.LocalPerturbation import BivariateLocalPerturbation
-from PSMetric.Metric import Metric, MultipleMetrics
+from PSMetric.MeanFitness import MeanFitness
+from PSMetric.Metric import Metric, MultipleMetrics, AlwaysNormalised
 from PSMiners.Individual import Individual
 from PSMiners.MuPlusLambda.MuPlusLambda import MuPlusLambda
 from PSMiners.Operators.PSMutationOperator import PSMutationOperator, MultimodalMutationOperator
-from PSMiners.Operators.PSSelectionOperator import PSSelectionOperator
+from PSMiners.Operators.PSSelectionOperator import PSSelectionOperator, TruncationSelection
 from PSMiners.PSMiner import Population, PSMiner
 from SearchSpace import SearchSpace
 
@@ -32,7 +35,8 @@ class MPLLR(MuPlusLambda):
                  metric: Metric,
                  mutation_operator: PSMutationOperator,
                  selection_operator: PSSelectionOperator,
-                 seed_population=None):
+                 seed_population=None,
+                 set_pRef_in_metric = True):
         self.food_weight = food_weight
         assert (not isinstance(metric, MultipleMetrics))  # because we average with the food score, it needs to be in [0,1]!
         super().__init__(metric=metric,
@@ -41,7 +45,8 @@ class MPLLR(MuPlusLambda):
                          selection_operator=selection_operator,
                          seed_population=seed_population,
                          lambda_parameter=lambda_parameter,
-                         mu_parameter=mu_parameter)
+                         mu_parameter=mu_parameter,
+                         set_pRef_in_metric=set_pRef_in_metric)
 
 
     def __repr__(self):
@@ -96,4 +101,14 @@ class MPLLR(MuPlusLambda):
         result["kind"] = "MPLLR"
         result["food_weight"] = self.food_weight
         return result
+
+    @classmethod
+    def with_default_settings(cls, pRef: PRef):
+        return cls(mu_parameter=50,
+                   lambda_parameter=300,
+                   metric=Averager([MeanFitness(), BivariateLocalPerturbation()]),
+                   mutation_operator=MultimodalMutationOperator(0.5, pRef.search_space),
+                   selection_operator=TruncationSelection(),
+                   pRef=pRef,
+                   food_weight=0.3)
 

@@ -3,6 +3,10 @@
 from BaselineApproaches.FullSolutionGA import test_FSGA
 from BenchmarkProblems.RoyalRoad import RoyalRoad
 from BenchmarkProblems.ToyAmalgam import ToyAmalgam
+from GAExplainer.Generational import test_generational
+from PSMiners.Archivers.BaselineArchiveMiner import BaselineArchiveMiner
+from PSMiners.MuPlusLambda.MPLLR import MPLLR
+from PSMiners.MuPlusLambda.MuPlusLambda import MuPlusLambda
 from PSMiners.PSMinerDataCollection import run_tests_on_problem, test_all, test_problem
 
 
@@ -19,7 +23,7 @@ if __name__ == '__main__':
     #                               rota_file=r"C:\Users\gac8\PycharmProjects\PS\resources\BT\roster_pattern_days.csv",
     #                               calendar_length=56)
     #problem = ToyAmalgam("KORTP", 5)
-    problem = RoyalRoad(3, 5)
+    problem = RoyalRoad(5, 5)
     # print("Reading the problem instance")
     # problem = IsingSpinGlassProblem.from_json_file(
     #     r"C:\Users\gac8\PycharmProjects\PS\resources\IsingSpinGlassInstances\SG_36_1.json")
@@ -37,5 +41,11 @@ if __name__ == '__main__':
 
     #run_tests_on_problem(problem)
 
-    test_problem()
+    # test_problem()
+    # test_generational(problem)
+
+    BaselineArchiveMiner.test_with_problem(problem)
+    # MuPlusLambda.test_with_problem(problem)
+    MPLLR.test_with_problem(problem)
+
 

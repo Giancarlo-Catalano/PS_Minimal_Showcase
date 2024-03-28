@@ -25,7 +25,8 @@ class PRef:
         self.search_space = search_space
 
     def __repr__(self):
-        return f"PRef with {len(self.full_solutions)} samples"
+        mean_fitness = np.average(self.fitness_array)
+        return f"PRef with {len(self.full_solutions)} samples, mean = {mean_fitness:.2f}"
 
     def long_repr(self):
         header_str = f"PRef with {len(self.full_solutions)} samples"
@@ -80,10 +81,6 @@ class PRef:
     def sample_size(self) -> int:
         return len(self.fitness_array)
 
-
-    def save_to_file(self, filename: str):
-        # TODO
-        pass
 
     @classmethod
     def concat(cls, a, b):

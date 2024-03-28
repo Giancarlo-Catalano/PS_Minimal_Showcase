@@ -2,7 +2,6 @@ import heapq
 import json
 import logging
 import sys
-import warnings
 
 from BenchmarkProblems.BenchmarkProblem import BenchmarkProblem
 from BenchmarkProblems.RoyalRoad import RoyalRoad
@@ -21,12 +20,10 @@ from PSMetric.MeanFitness import MeanFitness
 from PSMetric.Metric import Metric, MultipleMetrics
 from PSMetric.Simplicity import Simplicity
 from PSMiners.Archivers.BaselineArchiveMiner import BaselineArchiveMiner
-from PSMiners.Individual import Metrics
 from PSMiners.MuPlusLambda.MPLLR import MPLLR
 from PSMiners.MuPlusLambda.MuPlusLambda import MuPlusLambda
 from PSMiners.Operators.PSMutationOperator import PSMutationOperator, MultimodalMutationOperator, SinglePointMutation
-from PSMiners.Operators.PSSelectionOperator import PSSelectionOperator, TruncationSelection, TournamentSelection, \
-    AlternatingSelection
+from PSMiners.Operators.PSSelectionOperator import PSSelectionOperator, TruncationSelection, AlternatingSelection
 from PSMiners.PSMiner import PSMiner, ResultsAsJSON
 from TerminationCriteria import PSEvaluationLimit
 from utils import execution_time
@@ -40,8 +37,8 @@ def test_algorithm(algorithm_instance: PSMiner,
 
     results_of_run["runtime"] = timer.execution_time
 
-    final_population = algorithm_instance.get_results(len(algorithm_instance.current_population))
-    final_population: list[PS] = [individual.ps for individual in final_population]
+    final_population_of_individuals = algorithm_instance.get_results(len(algorithm_instance.current_population))
+    final_population: list[PS] = [individual.ps for individual in final_population_of_individuals]
 
     def index_in_final_population(target: PS) -> int:
         try:
@@ -91,7 +88,8 @@ def get_variants_for_MPL(pRef: PRef,
                          metric=metric,
                          mutation_operator=mutation_operator,
                          selection_operator=selection_operator,
-                         pRef=pRef)
+                         pRef=pRef,
+                         set_pRef_in_metric=False)
             for mu in mus
             for metric in metrics
             for mutation_operator in mutation_operators
@@ -108,7 +106,8 @@ def get_variants_for_MPL_lexicase(pRef: PRef,
                          metric=metric,
                          mutation_operator=mutation_operator,
                          selection_operator=selection_operator,
-                         pRef=pRef)
+                         pRef=pRef,
+                         set_pRef_in_metric=False)
             for mu in mus
             for metric in metrics
             for mutation_operator in mutation_operators
@@ -127,7 +126,8 @@ def get_variants_for_MPLLR(pRef: PRef,
                   mutation_operator=mutation_operator,
                   selection_operator=selection_operator,
                   food_weight=food_weight,
-                  pRef=pRef)
+                  pRef=pRef,
+                  set_pRef_in_metric=False)
             for mu in mus
             for food_weight in food_weights
             for mutation_operator in mutation_operators
@@ -140,8 +140,7 @@ def get_variants_for_archive_miner(pRef: PRef,
                                    population_sizes: list[int]) -> list[PSMiner]:
     return [BaselineArchiveMiner(metric=metric,
                                  pRef=pRef,
-                                 population_size=population_size,
-                                 offspring_population_size=population_size)
+                                 population_size=population_size)
             for metric in metrics
             for population_size in population_sizes]
 

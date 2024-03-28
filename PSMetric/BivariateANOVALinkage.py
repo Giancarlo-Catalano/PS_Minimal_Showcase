@@ -121,7 +121,7 @@ class BivariateANOVALinkage(Metric):
         if ps.fixed_count() < 2:
             return 0
         else:
-            return np.min(self.get_normalised_linkage_scores(ps))
+            return np.average(self.get_normalised_linkage_scores(ps))
 
     def get_quantized_linkage_table(self, linkage_table: LinkageTable):
         in_zero_one_range = Linkage.get_normalised_linkage_table(linkage_table)

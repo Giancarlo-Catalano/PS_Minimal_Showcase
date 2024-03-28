@@ -7,7 +7,7 @@ from PSMetric.MeanFitness import MeanFitness
 from PSMetric.Metric import Metric
 from PSMiners.Individual import Individual
 from PSMiners.Operators.PSMutationOperator import PSMutationOperator, SinglePointMutation, MultimodalMutationOperator
-from PSMiners.Operators.PSSelectionOperator import PSSelectionOperator
+from PSMiners.Operators.PSSelectionOperator import PSSelectionOperator, TruncationSelection
 from PSMiners.PSMiner import PSMiner
 
 
@@ -24,7 +24,8 @@ class MuPlusLambda(PSMiner):
                  mutation_operator: PSMutationOperator,
                  selection_operator: PSSelectionOperator,
                  pRef: PRef,
-                 seed_population = None):
+                 seed_population=None,
+                 set_pRef_in_metric = True):
         self.mu_parameter = mu_parameter
         self.lambda_parameter = lambda_parameter
         self.offspring_amount = self.lambda_parameter // self.mu_parameter
@@ -34,8 +35,8 @@ class MuPlusLambda(PSMiner):
                          pRef=pRef,
                          mutation_operator=mutation_operator,
                          selection_operator=selection_operator,
-                         seed_population = seed_population)
-
+                         seed_population=seed_population,
+                         set_pRef_in_metric = set_pRef_in_metric)
 
     def __repr__(self):
         return f"MuPlusLambda(mu={self.mu_parameter}, lambda = {self.lambda_parameter}, mutation = {self.mutation_operator}, selection = {self.selection_operator})"
@@ -62,10 +63,8 @@ class MuPlusLambda(PSMiner):
 
         self.current_population = PSMiner.without_duplicates(selected_parents + children)
 
-
     def get_results(self, quantity_returned: int) -> list[Individual]:
-        return self.get_best_n(n=quantity_returned, population = self.current_population)
-
+        return self.get_best_n(n=quantity_returned, population=self.current_population)
 
     def get_parameters_as_dict(self) -> dict:
         return {"kind": "MPL",
@@ -74,3 +73,12 @@ class MuPlusLambda(PSMiner):
                 "metric": repr(self.metric.__repr__()),
                 "selection": repr(self.selection_operator),
                 "mutation": repr(self.mutation_operator)}
+
+    @classmethod
+    def with_default_settings(cls, pRef: PRef):
+        return cls(mu_parameter=50,
+                   lambda_parameter=300,
+                   metric=Averager([MeanFitness(), Linkage()]),
+                   mutation_operator=MultimodalMutationOperator(0.5, pRef.search_space),
+                   selection_operator=TruncationSelection(),
+                   pRef=pRef)

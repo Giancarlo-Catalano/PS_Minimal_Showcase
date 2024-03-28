@@ -36,8 +36,8 @@ class FullSolutionGA(GA):
     def random_solution(self) -> FullSolution:
         return FullSolution.random(self.search_space)
 
-    def mutated(self, individual: FullSolution) -> FullSolution:
-        result_values = individual.values.copy()
+    def mutated(self, solution: FullSolution) -> FullSolution:
+        result_values = solution.values.copy()
         for variable_index, cardinality in enumerate(self.search_space.cardinalities):
             if self.should_mutate():
                 result_values[variable_index] = random.randrange(cardinality)

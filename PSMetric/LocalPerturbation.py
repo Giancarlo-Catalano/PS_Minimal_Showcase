@@ -85,7 +85,9 @@ class LocalPerturbationCalculator:
                 f"Encountered a PS with insufficient observations when calculating Univariate Local perturbation")
             return 0  # panic
 
-        return np.average(value_matches) - np.average(complement_matches)
+        fs_y = np.average(value_matches)
+        fs_n = np.average(complement_matches)
+        return abs(fs_y - fs_n)
 
     def get_delta_f_of_ps_at_loci_bivariate(self, ps: PS, locus_a: int, locus_b: int) -> float:
         fs = self.get_bivariate_perturbation_fitnesses(ps, locus_a, locus_b)
@@ -118,11 +120,16 @@ class UnivariateLocalPerturbation(Metric):
     def get_single_score(self, ps: PS) -> float:
         fixed_loci = ps.get_fixed_variable_positions()
         dfs = [self.linkage_calculator.get_delta_f_of_ps_at_locus_univariate(ps, i) for i in fixed_loci]
-        return min(dfs)
+        return np.average(dfs)
+
+    def get_single_normalised_score(self, ps: PS) -> float:
+        return self.get_single_score(ps)
 
 
 class BivariateLocalPerturbation(Metric):
     linkage_calculator: Optional[LocalPerturbationCalculator]
+    min_fitness: float
+    max_fitness: float
 
     def __init__(self):
         self.pRef = None
@@ -133,6 +140,8 @@ class BivariateLocalPerturbation(Metric):
 
     def set_pRef(self, pRef: PRef):
         self.linkage_calculator = LocalPerturbationCalculator(pRef)
+        self.min_fitness = np.min(pRef.fitness_array)
+        self.max_fitness = np.max(pRef.fitness_array)
 
     def get_single_score(self, ps: PS) -> float:
         if ps.fixed_count() < 2:
@@ -144,11 +153,35 @@ class BivariateLocalPerturbation(Metric):
         fixed_loci = ps.get_fixed_variable_positions()
         pairs = list(itertools.combinations(fixed_loci, r=2))
         dfs = [self.linkage_calculator.get_delta_f_of_ps_at_loci_bivariate(ps, a, b) for a, b in pairs]
-        return min(dfs)
+        return np.average(dfs)
 
 
     def get_single_normalised_score(self, ps: PS) -> float:
-        return self.get_single_score(ps)   # just for debug
+        perturbation = self.get_single_score(ps)
+        perturbation_n_adjusted = perturbation / 2
+        perturbation_normalised = (perturbation_n_adjusted - self.min_fitness) / (self.max_fitness - self.min_fitness)
+        return perturbation_normalised
+
+
+    def get_local_linkage_table(self, ps: PS) -> np.ndarray:
+        fixed_loci = ps.get_fixed_variable_positions()
+        locus_index_within_loci = {locus: position for position, locus in enumerate(fixed_loci)}
+        pairs = list(itertools.combinations(fixed_loci, r=2))
+
+        linkage_table = np.zeros((ps.fixed_count(), ps.fixed_count()), dtype=float)
+        for a, b in pairs:
+            x = locus_index_within_loci[a]
+            y = locus_index_within_loci[b]
+            linkage_table[x, y] = self.linkage_calculator.get_delta_f_of_ps_at_loci_bivariate(ps, a, b)
+
+        linkage_table += linkage_table.T
+        return linkage_table
+
+
+
+
+
+
 
 
 

@@ -25,7 +25,7 @@ class TruncationSelection(PSSelectionOperator):
     on_aggregated_score: bool
     on_metric: bool
     which_metric = Optional[int]
-    def __init__(self, on_aggregated_score = False, which_metric = None):
+    def __init__(self, on_aggregated_score = True, which_metric = None):
         if on_aggregated_score:
             self.on_aggregated_score = True
             self.on_metric = False

@@ -78,25 +78,23 @@ def join_lists(many_lists: Iterable[list]) -> list:
     return result
 
 
-
 def harmonic_mean(values: Iterable[float]) -> float:
     if len(values) == 0:
         raise Exception("Trying to get the harmonic mean of no values!")
 
-    sum_of_inverses = sum(value**(-1) for value in values)
-    return (sum_of_inverses/len(sum_of_inverses))**(-1)
+    sum_of_inverses = sum(value ** (-1) for value in values)
+    return (sum_of_inverses / len(sum_of_inverses)) ** (-1)
 
 
 def sample_from_geometric_distribution(chance_of_success: float) -> int:
     counter = 0
     while random.random() < chance_of_success:
-        counter +=1
+        counter += 1
     return counter
 
 
 def get_descriptive_stats(data: np.ndarray) -> (float, float, float, float, float):
     return np.min(data), np.median(data), np.max(data), np.average(data), np.std(data)
-
 
 
 def print_entry_and_exit(func):
@@ -105,10 +103,8 @@ def print_entry_and_exit(func):
         result = func(*args, **kwargs)
         print(f"Terminating {func.__name__}")
         return result
+
     return wrapper
-
-
-
 
 
 class ExecutionTime(ContextDecorator):
@@ -130,6 +126,28 @@ class ExecutionTime(ContextDecorator):
 
 def execution_time():
     return ExecutionTime()
+
+
+class Announce(ContextDecorator):
+    action_str: str
+    timer: ExecutionTime
+
+    def __init__(self, action_str: str):
+        self.action_str = action_str
+        self.timer = ExecutionTime()
+
+    def __enter__(self):
+        print(self.action_str, end="...")
+        self.timer.__enter__()
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        self.timer.__exit__(exc_type, exc_val, exc_tb)
+        runtime = self.timer.execution_time
+        print(f"...Finished (took {runtime:2f} seconds)")
+
+
+def announce(action: str):
+    return Announce(action)
 
 
 """ Timing example
