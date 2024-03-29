@@ -158,8 +158,7 @@ class BivariateLocalPerturbation(Metric):
 
     def get_single_normalised_score(self, ps: PS) -> float:
         perturbation = self.get_single_score(ps)
-        perturbation_n_adjusted = perturbation / 2
-        perturbation_normalised = (perturbation_n_adjusted - self.min_fitness) / (self.max_fitness - self.min_fitness)
+        perturbation_normalised = perturbation / (2 * (self.max_fitness - self.min_fitness))
         return perturbation_normalised
 
 
