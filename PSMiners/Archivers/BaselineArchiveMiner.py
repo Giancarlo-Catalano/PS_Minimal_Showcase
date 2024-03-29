@@ -98,7 +98,7 @@ class BaselineArchiveMiner(PSMiner):
     def with_default_settings(cls, pRef: PRef):
         return cls(population_size=150,
                    pRef = pRef,
-                   metric = MultipleMetrics([Simplicity(), MeanFitness(), BivariateLocalPerturbation()]))
+                   metric = MultipleMetrics([MeanFitness(), BivariateLocalPerturbation()]))
 
 
 

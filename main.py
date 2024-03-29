@@ -22,8 +22,8 @@ if __name__ == '__main__':
     # problem = BTProblem.from_files(employee_data_file=r"C:\Users\gac8\PycharmProjects\PS\resources\BT\employeeData.csv",
     #                               rota_file=r"C:\Users\gac8\PycharmProjects\PS\resources\BT\roster_pattern_days.csv",
     #                               calendar_length=56)
-    #problem = ToyAmalgam("KORTP", 5)
-    problem = RoyalRoad(5, 5)
+    problem = ToyAmalgam("KORTP", 5)
+    # problem = RoyalRoad(5, 5)
     # print("Reading the problem instance")
     # problem = IsingSpinGlassProblem.from_json_file(
     #     r"C:\Users\gac8\PycharmProjects\PS\resources\IsingSpinGlassInstances\SG_36_1.json")

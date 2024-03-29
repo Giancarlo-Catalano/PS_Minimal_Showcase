@@ -153,7 +153,7 @@ class BivariateLocalPerturbation(Metric):
         fixed_loci = ps.get_fixed_variable_positions()
         pairs = list(itertools.combinations(fixed_loci, r=2))
         dfs = [self.linkage_calculator.get_delta_f_of_ps_at_loci_bivariate(ps, a, b) for a, b in pairs]
-        return np.average(dfs)
+        return np.min(dfs)
 
 
     def get_single_normalised_score(self, ps: PS) -> float:
@@ -175,7 +175,7 @@ class BivariateLocalPerturbation(Metric):
             linkage_table[x, y] = self.linkage_calculator.get_delta_f_of_ps_at_loci_bivariate(ps, a, b)
 
         linkage_table += linkage_table.T
-        return linkage_table
+        return np.sqrt(linkage_table)
 
 
 
