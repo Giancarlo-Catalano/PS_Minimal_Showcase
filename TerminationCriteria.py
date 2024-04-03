@@ -5,6 +5,8 @@ from custom_types import Fitness
 
 
 class TerminationCriteria:
+    """ This class is used to provide a clean mechanism to control terminate an iterative process """
+    """ The main class you'll be using is PSEvaluationLimit"""
     def __init__(self):
         pass
 
@@ -13,21 +15,6 @@ class TerminationCriteria:
 
     def met(self, **kwargs):
         raise Exception("Implementation of TerminationCriteria does not implement termination_criteria_met")
-
-
-class EvaluationBudgetLimit(TerminationCriteria):
-    max_evaluations: int
-
-    def __init__(self, max_evaluations: int):
-        super().__init__()
-        self.max_evaluations = max_evaluations
-
-    def __repr__(self):
-        return f"EvaluationBudget({self.max_evaluations})"
-
-    def met(self, **kwargs):
-        return kwargs["evaluations"] >= self.max_evaluations
-
 
 class AsLongAsWanted(TerminationCriteria):
     def __init__(self):

@@ -5,6 +5,15 @@ from SearchSpace import SearchSpace
 
 
 class BenchmarkProblem:
+    """ This is an interface for toy problems, which makes my code much prettier"""
+    """ The main components of this class are:
+     -  a search space: the combinatorial search space
+     -  fitness_function: the fitness function to be MAXIMISEd
+     -  get_targets: the ideal PS catalog
+     -  repr_pr: a way to represent the PS which makes sense for the problem (ie checkerboard would use a grid)
+     
+     A useful related class is UnitaryProblem, another interface but it makes more sense because it's almost fully implemented
+     """
     search_space: SearchSpace
 
     def __init__(self, search_space: SearchSpace):
@@ -13,22 +22,17 @@ class BenchmarkProblem:
     def __repr__(self):
         raise Exception("An implementation of BenchmarkProblem does not implement __repr__")
 
-
-    def long_repr(self) -> str:
-        """default implementation"""
-        return self.__repr__()
-
     def get_reference_population(self, sample_size: int) -> PRef:
         return PRef.sample_from_search_space(search_space=self.search_space,
                                              fitness_function=self.fitness_function,
                                              amount_of_samples=sample_size)
 
     def repr_full_solution(self, fs: FullSolution) -> str:
-        """default behaviour"""
+        """default implementation"""
         return f"{fs}"
 
     def repr_ps(self, ps: PS) -> str:
-        """default behaviour"""
+        """default implementation"""
         return f"{ps}"
 
 

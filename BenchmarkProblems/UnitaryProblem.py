@@ -8,6 +8,7 @@ from custom_types import ArrayOfInts
 
 
 class UnitaryProblem(BenchmarkProblem):
+    """ This interface represents all problems where """
     amount_of_cliques: int
     clique_size: int
 
