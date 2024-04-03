@@ -117,6 +117,10 @@ class UnivariateLocalPerturbation(Metric):
     def set_pRef(self, pRef: PRef):
         self.linkage_calculator = LocalPerturbationCalculator(pRef)
 
+    def get_local_importance_array(self, ps:PS):
+        fixed_loci = ps.get_fixed_variable_positions()
+        return [self.linkage_calculator.get_delta_f_of_ps_at_locus_univariate(ps, i) for i in fixed_loci]
+
     def get_single_score(self, ps: PS) -> float:
         fixed_loci = ps.get_fixed_variable_positions()
         dfs = [self.linkage_calculator.get_delta_f_of_ps_at_locus_univariate(ps, i) for i in fixed_loci]

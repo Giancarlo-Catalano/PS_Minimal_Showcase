@@ -64,10 +64,10 @@ class UnitaryProblem(BenchmarkProblem):
                     return "*"
 
         def repr_clique(clique: np.ndarray) -> str:
-            return f'[{" ".join(repr_cell(cell) for cell in clique)}]'
+            return f'{" ".join(repr_cell(cell) for cell in clique)}'
 
         cliques = ps.values.reshape((-1, self.clique_size))
-        return " ".join(repr_clique(clique) for clique in cliques)
+        return "["+"  ".join(repr_clique(clique) for clique in cliques)+"]"
 
     def get_targets(self) -> list[PS]:
         optimal_clique_values = self.get_optimal_clique(self.clique_size).values

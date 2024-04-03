@@ -11,35 +11,38 @@ from scipy.stats import t
 
 class SignificantlyHighAverage(Metric):
     pRef: Optional[PRef]
-    normalised_pRef: Optional[PRef]
-    normalised_population_mean: float
+    pRef_mean: float
 
     def __init__(self):
         super().__init__()
         self.pRef = None
-        self.normalised_pRef = None
-        self.max_fitness = None
-        self.min_fitness = None
+        self.pRef_mean = None
 
-    @staticmethod
-    def get_normalised_pRef(pRef: PRef):
-        normalised_fitnesses = utils.remap_array_in_zero_one(pRef.fitness_array)
-        return PRef(full_solutions=pRef.full_solutions,
-                    fitness_array=normalised_fitnesses,  # this is the only thing that changes
-                    full_solution_matrix=pRef.full_solution_matrix,
-                    search_space=pRef.search_space)
 
     def set_pRef(self, pRef: PRef):
         self.pRef = pRef
-        self.normalised_pRef = self.get_normalised_pRef(self.pRef)
-        self.normalised_population_mean = np.average(self.normalised_pRef.fitness_array)
+        self.pRef_mean = np.average(self.pRef.fitness_array)
 
     def __repr__(self):
-        return "SIA"
+        return "Significance of PS"
+
+
+    def get_p_value_and_sample_mean(self, ps: PS) -> (float, float):
+        observations = self.pRef.fitnesses_of_observations(ps)
+        n = len(observations)
+        sample_mean = np.average(observations)
+        sample_stdev = np.std(observations)
+
+        if n < 1 or sample_stdev == 0:
+            return 0
+
+        t_score = (sample_mean - self.pRef_mean) / (sample_stdev / np.sqrt(n))
+        p_value = 1 - t.cdf(abs(t_score), df=n-1)
+        return p_value, sample_mean
 
     def get_single_normalised_score(self, ps: PS) -> float:
         self.used_evaluations += 1
-        observations = self.normalised_pRef.fitnesses_of_observations(ps)
+        observations = self.pRef.fitnesses_of_observations(ps)
         n = len(observations)
         sample_mean = np.average(observations)
         sample_stdev = np.std(observations)

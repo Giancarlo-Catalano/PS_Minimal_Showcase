@@ -18,7 +18,7 @@ class BenchmarkProblem:
         """default implementation"""
         return self.__repr__()
 
-    def get_pRef(self, sample_size: int) -> PRef:
+    def get_reference_population(self, sample_size: int) -> PRef:
         return PRef.sample_from_search_space(search_space=self.search_space,
                                              fitness_function=self.fitness_function,
                                              amount_of_samples=sample_size)

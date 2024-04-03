@@ -138,7 +138,7 @@ class PSEvaluationLimit(TerminationCriteria):
         super().__init__()
 
     def __repr__(self):
-        return f"PSEvaluationLimit({self.ps_limit}"
+        return f"PSEvaluationLimit({self.ps_limit})"
 
     def met(self, **kwargs):
         return kwargs["ps_evaluations"] >= self.ps_limit

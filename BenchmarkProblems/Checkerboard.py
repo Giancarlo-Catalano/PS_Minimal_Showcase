@@ -25,7 +25,7 @@ class CheckerBoard(BenchmarkProblem):
                 return f"{cell_value}"
 
         def repr_row(row: np.ndarray) -> str:
-            return "[" + ", ".join(repr_cell(cell) for cell in row) + "]"
+            return "[" + " ".join(repr_cell(cell) for cell in row) + "]"
 
         return "\n".join(repr_row(row) for row in ps.values.reshape((self.rows, self.columns)))
 
@@ -34,7 +34,7 @@ class CheckerBoard(BenchmarkProblem):
     def fitness_function(self, fs: FullSolution) -> float:
         grid = fs.values.reshape((self.rows, self.columns))
         grid_without_last_row = grid[:-1]
-        grid_without_last_column = grid[:, -1]
+        grid_without_last_column = grid[:, :-1]
 
         grid_shifted_up = grid[1:]
         grid_shifted_left = grid[:, 1:]

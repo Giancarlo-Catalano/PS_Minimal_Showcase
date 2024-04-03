@@ -3,10 +3,11 @@ from typing import Iterable, Callable
 import numpy as np
 
 import utils
+from EvaluatedFS import EvaluatedFS
 from FullSolution import FullSolution
-from custom_types import Fitness, BooleanMatrix, ArrayOfFloats
-from SearchSpace import SearchSpace
 from PS import PS
+from SearchSpace import SearchSpace
+from custom_types import Fitness, BooleanMatrix, ArrayOfFloats
 
 
 class PRef:
@@ -106,4 +107,15 @@ class PRef:
     def get_fitnesses_matching_var_val_pair(self, var_a: int, val_a: int, var_b: int, val_b: int) -> ArrayOfFloats:
         where = np.logical_and(self.full_solution_matrix[:, var_a] == val_a, self.full_solution_matrix[:, var_b] == val_b)
         return self.fitness_array[where]
+
+    def get_evaluated_FSs(self) -> list[EvaluatedFS]:
+        return [EvaluatedFS(full_solution=fs, fitness=fitness) for fs, fitness in zip(self.full_solutions, self.fitness_array)]
+
+
+
+    def describe_self(self):
+        min_fitness = np.min(self.fitness_array)
+        max_fitness = np.max(self.fitness_array)
+        avg_fitness = np.average(self.fitness_array)
+        print(f"This PRef contains {self.sample_size} samples, where the minimum is {min_fitness}, the maximum = {max_fitness} and the average is {avg_fitness}")
 

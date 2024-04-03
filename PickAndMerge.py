@@ -6,20 +6,20 @@ import numpy as np
 
 from FullSolution import FullSolution
 from PS import PS, STAR
-from PSMiners.Individual import Individual, tournament_select
+from EvaluatedPS import EvaluatedPS
 from SearchSpace import SearchSpace
 
 
-class FSSampler:
+class PickAndMergeSampler:
     search_space: SearchSpace
-    individuals: set[Individual]
+    individuals: set[EvaluatedPS]
     merge_limit: int
 
     tournament_size = 3
 
     def __init__(self,
                  search_space: SearchSpace,
-                 individuals: Iterable[Individual],
+                 individuals: Iterable[EvaluatedPS],
                  merge_limit: Optional[int] = None):
         self.search_space = search_space
         self.individuals = set(individuals)
@@ -33,7 +33,7 @@ class FSSampler:
 
         available = set(self.individuals)
 
-        def pick() -> Individual:
+        def pick() -> EvaluatedPS:
             return max(random.choices(list(available), k=self.tournament_size))
 
         current = PS.empty(self.search_space)
@@ -68,10 +68,10 @@ def test_pick_and_merge():
 
     print(f"The search space is {search_space}")
 
-    def group_starting_from(value: int, index: int, score: float) -> Individual:
+    def group_starting_from(value: int, index: int, score: float) -> EvaluatedPS:
         result_values = np.full(amount_of_variables, STAR)
         result_values[index:(index + size_of_groups)] = value
-        result = Individual(PS(result_values))
+        result = EvaluatedPS(PS(result_values))
         result.aggregated_score = score
         return result
 
@@ -84,8 +84,8 @@ def test_pick_and_merge():
     annoying_groups = [group_starting_from(starting_index % 2, starting_index * 2, 0.7)
                        for starting_index in range(amount_of_variables // 2)]
 
-    def test_with_basis(basis: list[Individual]):
-        sampler = FSSampler(search_space, basis, merge_limit=ceil(sqrt(search_space.amount_of_parameters)))
+    def test_with_basis(basis: list[EvaluatedPS]):
+        sampler = PickAndMergeSampler(search_space, basis, merge_limit=ceil(sqrt(search_space.amount_of_parameters)))
         print("Initialised a sampler with the following partial solutions:")
         for individual in basis:
             print(individual.ps)

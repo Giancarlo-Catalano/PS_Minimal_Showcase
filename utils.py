@@ -164,3 +164,11 @@ def announce(action: str):
 def repeat(n: int, action: Callable):
     for _ in range(n):
         action()
+
+
+
+
+def indent(input: str) -> str:
+    lines = input.split("\n")
+    lines = ["\t"+line for line in lines]
+    return "\n".join(lines)

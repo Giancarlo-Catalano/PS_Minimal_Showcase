@@ -119,3 +119,7 @@ class PS:
     def copy(self):
         return PS(self.values)
 
+
+def contains(fs: FullSolution, ps: PS) -> bool:
+   return all(x_psi_i in {STAR, x_i} for x_psi_i, x_i in zip(ps.values, fs.values))
+

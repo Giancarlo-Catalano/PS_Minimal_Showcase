@@ -1,6 +1,6 @@
 from typing import TypeAlias, Callable
 
-from EDA.FSIndividual import FSIndividual
+from EvaluatedFS import EvaluatedFS
 from FullSolution import FullSolution
 from PRef import PRef
 from SearchSpace import SearchSpace
@@ -22,7 +22,7 @@ class FSEvaluator:
         self.used_evaluations += 1
         return self._fitness_function(fs)
 
-    def evaluate_population(self, population: list[FSIndividual]) -> list[FSIndividual]:
+    def evaluate_population(self, population: list[EvaluatedFS]) -> list[EvaluatedFS]:
         for individual in population:
             individual.fitness = self.evaluate(individual.full_solution)
         return population
