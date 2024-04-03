@@ -64,3 +64,24 @@ class Explainer:
 
         # TODO find a good way to display them
 
+
+    def explanation_loop(self, evaluated_sampled_solutions: list[EvaluatedFS]):
+        first_round = True
+
+        while True:
+            if first_round:
+                print("Would you like to see some explanations of the solutions? Write an index, or n to exit")
+            else:
+                print("Type another index, or n to exit")
+            answer = input()
+            if answer.upper() == "N":
+                break
+            else:
+                try:
+                    index = int(answer)
+                except:
+                    print("That didn't work, please retry")
+                    continue
+                solution_to_explain = evaluated_sampled_solutions[index]
+                self.local_explanation_of_full_solution(solution_to_explain.full_solution)
+

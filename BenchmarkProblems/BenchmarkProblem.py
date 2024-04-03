@@ -31,6 +31,10 @@ class BenchmarkProblem:
         """default behaviour"""
         return f"{ps}"
 
+
+    def repr_fs(self, full_solution: FullSolution) -> str:
+        return self.repr_ps(PS.from_FS(full_solution))
+
     def fitness_function(self, fs: FullSolution) -> float:
         raise Exception("An implementation of BenchmarkProblem does not implement the fitness function!!!")
 

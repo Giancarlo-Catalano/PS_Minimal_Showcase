@@ -2,6 +2,7 @@
 import TerminationCriteria
 from BenchmarkProblems.BenchmarkProblem import BenchmarkProblem
 from BenchmarkProblems.Checkerboard import CheckerBoard
+from BenchmarkProblems.ParityProblem import ParityProblem
 from BenchmarkProblems.RoyalRoad import RoyalRoad
 from BenchmarkProblems.Trapk import Trapk
 from EvaluatedFS import EvaluatedFS
@@ -30,6 +31,7 @@ def show_overall_system(benchmark_problem: BenchmarkProblem):
 
     print("The catalog consists of:")
     for item in ps_catalog:
+        print("\n")
         print(indent(f"{benchmark_problem.repr_ps(item.ps)}, weight = {item.aggregated_score:.3f}"))
 
     print("\nFrom the catalog we can sample new solutions")
@@ -44,29 +46,12 @@ def show_overall_system(benchmark_problem: BenchmarkProblem):
     evaluated_sampled_solutions.sort(reverse=True)
 
     for index, sample in enumerate(evaluated_sampled_solutions):
-        print(f"[{index}]\t\t{sample.full_solution}, has fitness {sample.fitness:.2f}")
+        print(f"[{index}]")
+        print(indent(indent(f"{benchmark_problem.repr_fs(sample.full_solution)}, has fitness {sample.fitness:.2f}")))
 
 
     explainer = Explainer(benchmark_problem, ps_catalog, pRef)
-
-    first_round = True
-
-    while True:
-        if first_round:
-            print("Would you like to see some explanations of the solutions? Write an index, or n to exit")
-        else:
-            print("Type another index, or n to exit")
-        answer = input()
-        if answer.upper() == "N":
-            break
-        else:
-            try:
-                index = int(answer)
-            except:
-                print("That didn't work, please retry")
-                continue
-            solution_to_explain = evaluated_sampled_solutions[index]
-            explainer.local_explanation_of_full_solution(solution_to_explain.full_solution)
+    explainer.explanation_loop(evaluated_sampled_solutions)
 
     print("And that concludes the showcase")
 
@@ -74,5 +59,5 @@ def show_overall_system(benchmark_problem: BenchmarkProblem):
 
 
 if __name__ == '__main__':
-    problem = CheckerBoard(3, 3)
+    problem = Trapk(3, 5)
     show_overall_system(problem)
