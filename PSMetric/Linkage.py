@@ -193,7 +193,7 @@ class Linkage(Metric):
         if ps.fixed_count() < 2:
             return 0
         else:
-            return utils.harmonic_mean(self.get_linkage_scores(ps))
+            return np.min(self.get_linkage_scores(ps))
 
     def get_single_normalised_score(self, ps: PS) -> float:
         self.used_evaluations += 1

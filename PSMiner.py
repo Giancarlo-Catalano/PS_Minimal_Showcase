@@ -9,6 +9,7 @@ from FSEvaluator import FSEvaluator
 from PRef import PRef
 from PS import PS
 from PSMetric.Atomicity import Atomicity
+from PSMetric.Linkage import Linkage
 from PSMetric.LocalPerturbation import BivariateLocalPerturbation
 from PSMetric.MeanFitness import MeanFitness
 from PSMetric.Metric import Metric
@@ -84,7 +85,7 @@ class GCArchiveMiner:
 
         return population
 
-    def step_experimental(self):
+    def step(self):
         self.current_population = self.without_duplicates(self.current_population)
 
         # aggregate the various objectives into a single score
@@ -108,19 +109,6 @@ class GCArchiveMiner:
         self.current_population = [ind for ind in self.current_population if ind not in self.archive]
 
         self.current_population = self.evaluate_individuals(self.current_population)
-    def step(self):
-        self.current_population = self.without_duplicates(self.current_population)
-        self.current_population = self.evaluate_individuals(self.current_population)
-        self.current_population = self.with_aggregated_scores(self.current_population)
-        self.current_population = self.top(n=self.population_size, population=self.current_population)
-
-        parents = self.selection(self.current_population, self.population_size // 3)
-        parents = self.without_duplicates(parents)
-        children = [EvaluatedPS(child) for parent in parents for child in parent.ps.specialisations(self.search_space)]
-
-        self.archive.update(parents)
-        self.current_population.extend(children)
-        self.current_population = [ind for ind in self.current_population if ind not in self.archive]
 
     def evaluate_individuals(self, newborns: Population) -> Population:
         for individual in newborns:
@@ -137,7 +125,7 @@ class GCArchiveMiner:
                                             ps_evaluations=self.used_evaluations) or len(self.current_population) == 0
 
         while not should_terminate():
-            self.step_experimental()
+            self.step()
             iterations +=1
 
     def get_results(self, quantity_returned: int) -> list[EvaluatedPS]:
@@ -153,9 +141,16 @@ class GCArchiveMiner:
         return list(set(population))
     @classmethod
     def with_default_settings(cls, pRef: PRef):
+        """ atomicity can be measured in many many ways, and the paper suggest an approach that I've improved over time"""
+        """The function defined in the paper uses Atomicity(), but you should also try:
+            - Linkage(): faster
+            - BivariateLocalPerturbation(): much more accurate, but sloooow
+            - BivariateANOVALinkage(): slow but more mathematically sound
+            
+        """
         return cls(population_size=150,
                    pRef=pRef,
-                   metrics=[Simplicity(), MeanFitness(), BivariateLocalPerturbation()],
+                   metrics=[Simplicity(), MeanFitness(), Linkage()],
                    get_init=just_empty,
                    get_local=specialisations,
                    selection=truncation_selection)
