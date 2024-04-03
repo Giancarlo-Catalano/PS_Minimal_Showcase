@@ -7,7 +7,7 @@ from BenchmarkProblems.RoyalRoad import RoyalRoad
 from BenchmarkProblems.Trapk import Trapk
 from EvaluatedFS import EvaluatedFS
 from Explainer import Explainer
-from GCArchiveMiner import GCArchiveMiner
+from PSMiner import GCArchiveMiner
 from PickAndMerge import PickAndMergeSampler
 from utils import announce, indent
 
