@@ -102,7 +102,7 @@ class LocalPerturbationCalculator:
         f_ny = np.average(fs_ny)
         f_nn = np.average(fs_nn)
 
-        return abs(f_yy + f_nn - f_yn - f_ny)
+        return f_yy + f_nn - f_yn - f_ny
 
 
 class UnivariateLocalPerturbation(Metric):

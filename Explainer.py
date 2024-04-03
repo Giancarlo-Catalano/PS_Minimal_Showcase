@@ -4,10 +4,11 @@ from EvaluatedFS import EvaluatedFS
 from EvaluatedPS import EvaluatedPS
 from FullSolution import FullSolution
 from PRef import PRef
-from PS import contains, PS
+from PS import contains, PS, STAR
 from PSMetric.LocalPerturbation import BivariateLocalPerturbation, UnivariateLocalPerturbation
 from PSMetric.MeanFitness import MeanFitness
 from PSMetric.SignificantlyHighAverage import SignificantlyHighAverage
+from utils import indent
 
 
 class Explainer:
@@ -48,11 +49,12 @@ class Explainer:
 
     def local_explanation_of_full_solution(self, full_solution: FullSolution):
         contained_pss = [ps.ps for ps in self.ps_catalog if contains(full_solution, ps.ps)]
+        contained_pss = self.only_non_obscured_pss(contained_pss)
 
         fs_as_ps = PS.from_FS(full_solution)
-        print(f"The solution {self.benchmark_problem.repr_ps(fs_as_ps)} contains the following PSs:")
+        print(f"The solution \n {indent(self.benchmark_problem.repr_ps(fs_as_ps))}\ncontains the following PSs:")
         for ps in contained_pss:
-            print("\t" + self.get_small_description_of_ps(ps))
+            print(indent(self.get_small_description_of_ps(ps)))
 
 
         # local_importances = self.local_importance_metric.get_local_importance_array(fs_as_ps)
@@ -63,6 +65,26 @@ class Explainer:
         local_linkages = self.local_linkage_metric.get_local_linkage_table(ps)
 
         # TODO find a good way to display them
+
+
+
+    def only_non_obscured_pss(self, pss: list[PS]) -> list[PS]:
+        def obscures(ps_a:PS, ps_b:PS):
+            a_fixed_pos = set(ps_a.get_fixed_variable_positions())
+            b_fixed_pos = set(ps_b.get_fixed_variable_positions())
+            if a_fixed_pos == b_fixed_pos:
+                return False
+            return b_fixed_pos.issubset(a_fixed_pos)
+
+        def get_those_that_are_not_obscured_by(ps:PS, candidates: set[PS]) -> set[PS]:
+            return {candidate for candidate in candidates if not obscures(ps, candidate)}
+
+        current_candidates = set(pss)
+
+        for ps in pss:
+            current_candidates = get_those_that_are_not_obscured_by(ps, current_candidates)
+
+        return list(current_candidates)
 
 
     def explanation_loop(self, evaluated_sampled_solutions: list[EvaluatedFS]):

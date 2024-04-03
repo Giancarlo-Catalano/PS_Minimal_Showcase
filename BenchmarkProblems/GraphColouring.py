@@ -4,6 +4,7 @@ from typing import TypeAlias
 
 from BenchmarkProblems.BenchmarkProblem import BenchmarkProblem
 from FullSolution import FullSolution
+from PS import PS, STAR
 from SearchSpace import SearchSpace
 
 Node: TypeAlias = int
@@ -29,7 +30,7 @@ class GraphColouring(BenchmarkProblem):
 
 
     def __repr__(self):
-        return f"GraphColouring(#colours = {self.amount_of_colours}, #nodes = {self.amount_of_nodes})"
+        return f"GraphColouring(#colours = {self.amount_of_colours}, #nodes = {self.amount_of_nodes}), connections are {self.connections}"
 
     def long_repr(self) -> str:
         return self.__repr__()+"  "+", ".join(f"{connection}" for connection in self.connections)
@@ -50,3 +51,13 @@ class GraphColouring(BenchmarkProblem):
     def fitness_function(self, fs: FullSolution) -> float:
         return float(sum([1 for (node_a, node_b) in self.connections
                           if fs.values[node_a] != fs.values[node_b]]))
+
+
+    def repr_ps(self, ps: PS) -> str:
+        colours = ["red", "green", "blue", "yellow", "purple", "orange", "black", "white", "pink", "brown", "gray", "cyan"]
+        def repr_node_and_colour(node_index, colour_index: int):
+            return f"#{node_index} = {colours[colour_index]}"
+
+        return "\n".join([repr_node_and_colour(node, colour)
+                          for node, colour in enumerate(ps.values)
+                          if colour != STAR])
