@@ -1,4 +1,23 @@
 #!/usr/bin/env python3
+
+
+""" This is the source code related to the paper 'Mining Potentially Explanatory Patterns via Partial Solutions',
+    The authors of the paper are Giancarlo Catalano (me),
+      Sandy Brownlee, David Cairns (Stirling Uni)
+      John McCall (RGU)
+      Russell Ainsle (BT).
+
+
+    This code is a minimal implementation of the system I proposed in the paper,
+    and I hope you can find the answers to any questions that you have!
+
+    I recommend playing around with:
+        - The problem being solved
+        - The metrics used to search for PSs (find them in PSMiner.with_default_settings)
+        - the sample sizes etc...
+"""
+
+
 import TerminationCriteria
 from BenchmarkProblems.BenchmarkProblem import BenchmarkProblem
 from BenchmarkProblems.Checkerboard import CheckerBoard
@@ -8,20 +27,34 @@ from BenchmarkProblems.RoyalRoad import RoyalRoad
 from BenchmarkProblems.Trapk import Trapk
 from EvaluatedFS import EvaluatedFS
 from Explainer import Explainer
-from PSMiner import GCArchiveMiner
+from PSMiner import PSMiner
 from PickAndMerge import PickAndMergeSampler
 from utils import announce, indent
 
 
 def show_overall_system(benchmark_problem: BenchmarkProblem):
+    """
+    This function gives an overview of the system:
+        1. Generate a reference population (a PRef)
+        2. Generate a PS Catalog using the PS Miner
+        3. Sample new solutions from the catalog using Pick & Merge
+        4. Explain those new solutions using the catalog
+
+    :param benchmark_problem: a benchmark problem, find more in the BenchmarkProblems directory
+    :return: Nothing! Just printing
+    """
+
+
     print(f"The problem is {benchmark_problem}")
+
+    # 1. Generating the reference population
     pRef_size = 10000
     with announce("Generating Reference Population"):
         pRef = benchmark_problem.get_reference_population(pRef_size)
-
     pRef.describe_self()
 
-    ps_miner = GCArchiveMiner.with_default_settings(pRef)
+    # 2. Obtaining the PS catalog
+    ps_miner = PSMiner.with_default_settings(pRef)
     ps_evaluation_budget = 10000
     termination_criterion = TerminationCriteria.PSEvaluationLimit(ps_evaluation_budget)
 
@@ -35,6 +68,7 @@ def show_overall_system(benchmark_problem: BenchmarkProblem):
         print("\n")
         print(indent(f"{benchmark_problem.repr_ps(item.ps)}, weight = {item.aggregated_score:.3f}"))
 
+    # 3. Sampling new solutions
     print("\nFrom the catalog we can sample new solutions")
     new_solutions_to_produce = 12
     sampler = PickAndMergeSampler(search_space=benchmark_problem.search_space,
@@ -50,7 +84,7 @@ def show_overall_system(benchmark_problem: BenchmarkProblem):
         print(f"[{index}]")
         print(indent(indent(f"{benchmark_problem.repr_fs(sample.full_solution)}, has fitness {sample.fitness:.2f}")))
 
-
+    # 4. Explainability, at least locally.
     explainer = Explainer(benchmark_problem, ps_catalog, pRef)
     explainer.explanation_loop(evaluated_sampled_solutions)
 
@@ -63,4 +97,5 @@ if __name__ == '__main__':
     #problem = GraphColouring.random(amount_of_nodes=6, amount_of_colours=3, chance_of_connection=0.3)
     problem = CheckerBoard(4,4)
     #problem = RoyalRoad(4, 4)
+
     show_overall_system(problem)

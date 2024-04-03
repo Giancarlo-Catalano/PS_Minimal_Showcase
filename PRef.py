@@ -5,20 +5,24 @@ import numpy as np
 import utils
 from EvaluatedFS import EvaluatedFS
 from FullSolution import FullSolution
-from PS import PS
+from PS import PS, STAR
 from SearchSpace import SearchSpace
 from custom_types import Fitness, BooleanMatrix, ArrayOfFloats
 
 
 class PRef:
+    """
+    This class represents the referenece population, and you should think of it as a list of solutions,
+    and a list of their fitnesses. Everything else is just to make the calculations faster / easier to implement.
+    """
     full_solutions: list[FullSolution]
     fitness_array: ArrayOfFloats
-    full_solution_matrix: BooleanMatrix
+    full_solution_matrix: np.ndarray
     search_space: SearchSpace
 
     def __init__(self, full_solutions: Iterable[FullSolution],
                  fitness_array: Iterable[Fitness],
-                 full_solution_matrix: BooleanMatrix,
+                 full_solution_matrix: np.ndarray,
                  search_space: SearchSpace):
         self.full_solutions = list(full_solutions)
         self.fitness_array = np.array(fitness_array)
@@ -29,32 +33,12 @@ class PRef:
         mean_fitness = np.average(self.fitness_array)
         return f"PRef with {len(self.full_solutions)} samples, mean = {mean_fitness:.2f}"
 
-    def long_repr(self):
-        header_str = f"PRef with {len(self.full_solutions)} samples"
-
-        fs_str = ""
-        for fs, fitness in zip(self.full_solutions, self.fitness_array):
-            fs_str += f"{fs}, fitness = {fitness}\n"
-
-        matrix_str = f"The matrix has dimensions {self.full_solution_matrix.shape}"
-
-        return "\n".join([header_str, fs_str, matrix_str])
-
     @classmethod
     def from_full_solutions(cls, full_solutions: Iterable[FullSolution],
                             fitness_values: Iterable[Fitness],
                             search_space: SearchSpace):
         matrix = np.array([fs.values for fs in full_solutions])
         return cls(full_solutions, fitness_values, matrix, search_space)
-
-    @classmethod
-    def from_just_matrix(cls, solution_matrix: np.ndarray,
-                         fitness_array: Iterable[Fitness],
-                         search_space: SearchSpace):
-        return cls(full_solutions=[],  # dummy value
-                   fitness_array=fitness_array,
-                   full_solution_matrix=solution_matrix,
-                   search_space=search_space)
 
     @classmethod
     def sample_from_search_space(cls, search_space: SearchSpace,
@@ -65,11 +49,16 @@ class PRef:
         return cls.from_full_solutions(samples, fitnesses, search_space)
 
     def fitnesses_of_observations(self, ps: PS) -> ArrayOfFloats:
+        """
+        This is the most important function of the class, and it roughly corresponds to the obs_PRef(ps) in the paper
+        :param ps: a partial solution, where the * values are represented by -1
+        :return: a list of floats, corresponding to the fitnesses of the observations of the ps within the reference population
+        """
         remaining_rows = self.full_solution_matrix
         remaining_fitnesses = self.fitness_array
 
         for variable_index, variable_value in enumerate(ps.values):
-            if variable_value >= 0:
+            if variable_value != STAR:
                 which_to_keep = remaining_rows[:, variable_index] == variable_value
 
                 # update the current filtered results
@@ -82,14 +71,6 @@ class PRef:
     def sample_size(self) -> int:
         return len(self.fitness_array)
 
-
-    @classmethod
-    def concat(cls, a, b):
-        new_full_solutions = a.full_solutions + b.full_solutions
-        new_fitness_array = np.concatenate((a.fitness_array, b.fitness_array))
-        new_full_solution_matrix = np.vstack((a.full_solution_matrix, b.full_solution_matrix))
-
-        return cls(new_full_solutions, new_fitness_array, new_full_solution_matrix, a.search_space)
 
     def get_with_normalised_fitnesses(self):
         normalised_fitnesses = utils.remap_array_in_zero_one(self.fitness_array)
@@ -110,7 +91,6 @@ class PRef:
 
     def get_evaluated_FSs(self) -> list[EvaluatedFS]:
         return [EvaluatedFS(full_solution=fs, fitness=fitness) for fs, fitness in zip(self.full_solutions, self.fitness_array)]
-
 
 
     def describe_self(self):
