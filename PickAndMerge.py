@@ -4,9 +4,9 @@ from typing import Iterable, Optional
 
 import numpy as np
 
+from EvaluatedPS import EvaluatedPS
 from FullSolution import FullSolution
 from PS import PS, STAR
-from EvaluatedPS import EvaluatedPS
 from SearchSpace import SearchSpace
 
 
@@ -93,7 +93,6 @@ def test_pick_and_merge():
         print("\n")
         for _ in range(12):
             print(sampler.sample())
-
 
     test_with_basis(good_disjoint_groups)
 

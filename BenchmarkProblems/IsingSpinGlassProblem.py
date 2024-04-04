@@ -187,7 +187,6 @@ class IsingSpinGlassProblem(BenchmarkProblem):
 
         return horizontal_differentials + vertical_differentials
 
-
     def repr_ps(self, ps: PS) -> str:
         def repr_cell(cell_value):
             if cell_value == STAR:
@@ -195,18 +194,15 @@ class IsingSpinGlassProblem(BenchmarkProblem):
             else:
                 return f"{cell_value}"
 
-
         def repr_row(row: np.ndarray):
-            return "["+(" ".join(repr_cell(cell) for cell in row))+"]"
+            return "[" + (" ".join(repr_cell(cell) for cell in row)) + "]"
 
         grid = ps.values.reshape((self.height, self.width))
 
-        return "\n"+("\n".join(repr_row(row) for row in grid))
-
+        return "\n" + ("\n".join(repr_row(row) for row in grid))
 
     def __repr__(self):
         return f"IsingSpinGlass({self.amount_of_variables} x {self.amount_of_variables})"
-
 
     def get_global_optima_fitness(self) -> float:
         return float(self.global_optima)

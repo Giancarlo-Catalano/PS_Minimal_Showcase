@@ -10,13 +10,12 @@ from PSMetric.Metric import Metric
 
 class SignificantlyHighAverage(Metric):
     pRef: Optional[PRef]
-    pRef_mean: float
+    pRef_mean: Optional[float]
 
     def __init__(self):
         super().__init__()
         self.pRef = None
         self.pRef_mean = None
-
 
     def set_pRef(self, pRef: PRef):
         self.pRef = pRef
@@ -24,7 +23,6 @@ class SignificantlyHighAverage(Metric):
 
     def __repr__(self):
         return "Significance of PS"
-
 
     def get_p_value_and_sample_mean(self, ps: PS) -> (float, float):
         observations = self.pRef.fitnesses_of_observations(ps)
@@ -36,7 +34,7 @@ class SignificantlyHighAverage(Metric):
             return 0
 
         t_score = (sample_mean - self.pRef_mean) / (sample_stdev / np.sqrt(n))
-        p_value = 1 - t.cdf(abs(t_score), df=n-1)
+        p_value = 1 - t.cdf(abs(t_score), df=n - 1)
         return p_value, sample_mean
 
     def get_single_normalised_score(self, ps: PS) -> float:
@@ -50,7 +48,7 @@ class SignificantlyHighAverage(Metric):
             return 0
 
         t_score = (sample_mean - self.normalised_population_mean) / (sample_stdev / np.sqrt(n))
-        cumulative_score = t.cdf(abs(t_score), df=n-1)  # p_value = 1 - cumulative_score
+        cumulative_score = t.cdf(abs(t_score), df=n - 1)  # p_value = 1 - cumulative_score
 
         def invert_and_augment(score: float):
             return 1. - np.sqrt(score * (2. - score))

@@ -8,11 +8,11 @@ class BenchmarkProblem:
     """ This is an interface for toy problems, which makes my code much prettier"""
     """ The main components of this class are:
      -  a search space: the combinatorial search space
-     -  fitness_function: the fitness function to be MAXIMISEd
+     -  fitness_function: the fitness function to be MAXIMISED
      -  get_targets: the ideal PS catalog
      -  repr_pr: a way to represent the PS which makes sense for the problem (ie checkerboard would use a grid)
      
-     A useful related class is UnitaryProblem, another interface but it makes more sense because it's almost fully implemented
+     A useful related class to look at is UnitaryProblem
      """
     search_space: SearchSpace
 
@@ -34,7 +34,6 @@ class BenchmarkProblem:
     def repr_ps(self, ps: PS) -> str:
         """default implementation"""
         return f"{ps}"
-
 
     def repr_fs(self, full_solution: FullSolution) -> str:
         return self.repr_ps(PS.from_FS(full_solution))

@@ -32,7 +32,6 @@ class SATProblem(BenchmarkProblem):
         search_space = SearchSpace([2 for var in range(self.amount_of_variables)])
         super().__init__(search_space)
 
-
     def long_repr(self) -> str:
         def repr_var(var_number):
             if var_number < 0:
@@ -44,13 +43,10 @@ class SATProblem(BenchmarkProblem):
             numbers = SATProblem.clause_to_numbers(clause)
             return " OR ".join(repr_var(var_number) for var_number in numbers)
 
-
-
         result = repr(self) + "clauses are :"
         result += "\n".join(repr_clause(clause) for clause in self.clauses)
 
         return result
-
 
     @staticmethod
     def numbers_to_clause(numbers: list[int], amount_of_variables: int) -> Clause:
@@ -66,6 +62,7 @@ class SATProblem(BenchmarkProblem):
                 return index + 1
             elif value == -1:
                 return -(index + 1)
+
         return [get_number(index, value)
                 for index, value in enumerate(clause)
                 if value != 0]
@@ -147,8 +144,8 @@ class SATProblem(BenchmarkProblem):
             return cls(solvable=data["solvable"],
                        amount_of_clauses=data["amount_of_clauses"],
                        amount_of_variables=amount_of_variables,
-                       clauses = [SATProblem.numbers_to_clause(numbers, amount_of_variables)
-                                  for numbers in data["clauses"]])
+                       clauses=[SATProblem.numbers_to_clause(numbers, amount_of_variables)
+                                for numbers in data["clauses"]])
 
     def to_json_file(self, file_location: str):
         result = dict()
@@ -172,9 +169,8 @@ class SATProblem(BenchmarkProblem):
     def __repr__(self):
         return f"SATProblem(#vars = {self.amount_of_variables}, #clauses = {self.amount_of_clauses})"
 
-
     def get_global_optima_fitness(self) -> float:
         if self.solvable:
             return self.amount_of_clauses
         else:
-            return None
+            return np.nan

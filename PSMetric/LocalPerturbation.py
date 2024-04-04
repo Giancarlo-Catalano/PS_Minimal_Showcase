@@ -94,7 +94,7 @@ class LocalPerturbationCalculator:
         fs_yy, fs_ny, fs_yn, fs_nn = fs
         if any(len(fs) == 0 for fs in fs):
             # warnings.warn(
-            #    f"Encountered a PS with insufficient observations ({ps}) when calculating bivariate Local perturbation")
+            #    f"Encountered a PS with insufficient observations ({ps}) when calculating bivLocal perturbation")
             return 0  # panic
 
         f_yy = np.average(fs_yy)
@@ -107,6 +107,7 @@ class LocalPerturbationCalculator:
 
 class UnivariateLocalPerturbation(Metric):
     linkage_calculator: Optional[LocalPerturbationCalculator]
+
     def __init__(self):
         self.pRef = None
         super().__init__()
@@ -117,7 +118,7 @@ class UnivariateLocalPerturbation(Metric):
     def set_pRef(self, pRef: PRef):
         self.linkage_calculator = LocalPerturbationCalculator(pRef)
 
-    def get_local_importance_array(self, ps:PS):
+    def get_local_importance_array(self, ps: PS):
         fixed_loci = ps.get_fixed_variable_positions()
         return [self.linkage_calculator.get_delta_f_of_ps_at_locus_univariate(ps, i) for i in fixed_loci]
 
@@ -159,12 +160,10 @@ class BivariateLocalPerturbation(Metric):
         dfs = [self.linkage_calculator.get_delta_f_of_ps_at_loci_bivariate(ps, a, b) for a, b in pairs]
         return np.min(dfs)
 
-
     def get_single_normalised_score(self, ps: PS) -> float:
         perturbation = self.get_single_score(ps)
         perturbation_normalised = perturbation / (2 * (self.max_fitness - self.min_fitness))
         return perturbation_normalised
-
 
     def get_local_linkage_table(self, ps: PS) -> np.ndarray:
         fixed_loci = ps.get_fixed_variable_positions()
@@ -179,13 +178,3 @@ class BivariateLocalPerturbation(Metric):
 
         linkage_table += linkage_table.T
         return np.sqrt(linkage_table)
-
-
-
-
-
-
-
-
-
-

@@ -15,7 +15,6 @@ class MeanFitness(Metric):
     min_fitness: Optional[float]
     median_fitness: Optional[float]
 
-
     def __init__(self):
         super().__init__()
         self.pRef = None
@@ -33,16 +32,13 @@ class MeanFitness(Metric):
     def __repr__(self):
         return "MeanFitness"
 
-
-
     def get_single_score(self, ps: PS) -> float:
         observed_fitnesses = self.pRef.fitnesses_of_observations(ps)
         if len(observed_fitnesses) == 0:
-            #warnings.warn(f"The passed PS {ps} has no observations, and thus the MeanFitness could not be calculated")
+            # warnings.warn(f"The passed PS {ps} has no observations, and thus the MeanFitness could not be calculated")
             return -1
 
         return np.average(observed_fitnesses)
-
 
     def get_single_normalised_score(self, ps: PS) -> float:
         observed_fitnesses = self.normalised_pRef.fitnesses_of_observations(ps)
@@ -55,23 +51,22 @@ class MeanFitness(Metric):
     def get_single_normalised_score_obsolete(self, ps: PS) -> float:
         self.used_evaluations += 1
         average_fitness = self.get_single_score(ps)
-        return (average_fitness - self.min_fitness)/(self.max_fitness - self.min_fitness)
-
+        return (average_fitness - self.min_fitness) / (self.max_fitness - self.min_fitness)
 
 
 class ChanceOfGood(Metric):
     pRef: Optional[PRef]
     median_fitness: Optional[float]
 
-
     def __init__(self):
         super().__init__()
         self.pRef = None
         self.median_fitness = None
+
     def set_pRef(self, pRef: PRef):
         self.pRef = pRef
 
-        self.median_fitness = np.median(pRef.fitness_array)
+        self.median_fitness = float(np.median(pRef.fitness_array))
 
     def __repr__(self):
         return "ChanceOfGood"

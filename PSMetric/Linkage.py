@@ -22,15 +22,16 @@ class Linkage(Metric):
         return "Linkage"
 
     def set_pRef(self, pRef: PRef):
-        #print("Calculating linkages...", end="")
+        # print("Calculating linkages...", end="")
         self.linkage_table = self.get_linkage_table_fast(pRef)
-        #self.normalised_linkage_table = self.get_quantized_linkage_table(self.linkage_table)
-        #print("Finished")
+        # self.normalised_linkage_table = self.get_quantized_linkage_table(self.linkage_table)
+        # print("Finished")
         self.normalised_linkage_table = self.get_normalised_linkage_table(self.linkage_table)
 
     @staticmethod
     def get_linkage_table_fast(pRef: PRef) -> LinkageTable:
         overall_average = np.average(pRef.fitness_array)
+
         def get_mean_benefit_of_ps(ps: PS):
             return np.average(pRef.fitnesses_of_observations(ps)) - overall_average
 
@@ -43,8 +44,8 @@ class Linkage(Metric):
                     .with_fixed_value(var_y, val_y))
 
         marginal_benefits = [[get_mean_benefit_of_ps(one_fixed_var(var, val))
-                                   for val in range(cardinality)]
-                                  for var, cardinality in enumerate(pRef.search_space.cardinalities)]
+                              for val in range(cardinality)]
+                             for var, cardinality in enumerate(pRef.search_space.cardinalities)]
 
         def interaction_effect_between_vars(var_x: int, var_y: int) -> float:
 
@@ -92,6 +93,7 @@ class Linkage(Metric):
 
         def interaction_effect_between_vars(var_x: int, var_y: int) -> float:
             """Returns the chi squared value between x and y"""
+
             def chi_square_addend(val_a, val_b):
                 expected_conditional = marginal_probabilities[var_x][val_a] * marginal_probabilities[var_y][val_b]
                 observed_conditional = get_p_of_ps(two_fixed_vars(var_x, val_a, var_y, val_b))
@@ -104,7 +106,6 @@ class Linkage(Metric):
                        for val_a in range(cardinality_x)
                        for val_b in range(cardinality_y))
 
-
         linkage_table = np.zeros((pRef.search_space.amount_of_parameters, pRef.search_space.amount_of_parameters))
         for var_a in range(pRef.search_space.amount_of_parameters):
             for var_b in range(var_a, pRef.search_space.amount_of_parameters):
@@ -114,7 +115,6 @@ class Linkage(Metric):
         upper_triangle = np.triu(linkage_table, k=1)
         linkage_table = linkage_table + upper_triangle.T
         return linkage_table
-
 
     @staticmethod
     def get_linkage_table(pRef: PRef) -> LinkageTable:

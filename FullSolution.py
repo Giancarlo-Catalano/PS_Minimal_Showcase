@@ -1,5 +1,6 @@
 import random
 from typing import Iterable
+
 import numpy as np
 
 from SearchSpace import SearchSpace
@@ -30,8 +31,7 @@ class FullSolution:
     def random(cls, search_space: SearchSpace):
         return cls(random.randrange(card) for card in search_space.cardinalities)
 
-
     def with_different_value(self, variable_index: int, new_value: int):
         new_values = self.values.copy()
-        new_values[variable_index]=new_value
+        new_values[variable_index] = new_value
         return FullSolution(new_values)

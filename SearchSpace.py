@@ -40,6 +40,5 @@ class SearchSpace(Sized):
         cardinalities = tuple(ss.cardinalities for ss in to_concat)
         return cls(np.concatenate(cardinalities))
 
-
     def random_digit(self, position: int) -> int:
         return random.randrange(self.cardinalities[position])

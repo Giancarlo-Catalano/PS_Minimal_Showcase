@@ -16,12 +16,10 @@ class BinVal(BenchmarkProblem):
 
         header = 1
         for value in reversed(fs.values):
-            result += header*value
+            result += header * value
             header *= 2
         return float(result)
-
 
     def get_targets(self) -> list[PS]:
         empty = PS.empty(self.search_space)
         return [empty.with_fixed_value(variable_position=var, fixed_value=1) for var in range(self.amount_of_bits)]
-

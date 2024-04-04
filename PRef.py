@@ -52,7 +52,8 @@ class PRef:
         """
         This is the most important function of the class, and it roughly corresponds to the obs_PRef(ps) in the paper
         :param ps: a partial solution, where the * values are represented by -1
-        :return: a list of floats, corresponding to the fitnesses of the observations of the ps within the reference population
+        :return: a list of floats, corresponding to the fitnesses of the observations of the ps
+        within the reference population
         """
         remaining_rows = self.full_solution_matrix
         remaining_fitnesses = self.fitness_array
@@ -71,7 +72,6 @@ class PRef:
     def sample_size(self) -> int:
         return len(self.fitness_array)
 
-
     def get_with_normalised_fitnesses(self):
         normalised_fitnesses = utils.remap_array_in_zero_one(self.fitness_array)
         return PRef(full_solutions=self.full_solutions,
@@ -79,23 +79,22 @@ class PRef:
                     full_solution_matrix=self.full_solution_matrix,
                     search_space=self.search_space)
 
-
     def get_fitnesses_matching_var_val(self, var: int, val: int) -> ArrayOfFloats:
         where = self.full_solution_matrix[:, var] == val
         return self.fitness_array[where]
 
-
     def get_fitnesses_matching_var_val_pair(self, var_a: int, val_a: int, var_b: int, val_b: int) -> ArrayOfFloats:
-        where = np.logical_and(self.full_solution_matrix[:, var_a] == val_a, self.full_solution_matrix[:, var_b] == val_b)
+        where = np.logical_and(self.full_solution_matrix[:, var_a] == val_a,
+                               self.full_solution_matrix[:, var_b] == val_b)
         return self.fitness_array[where]
 
     def get_evaluated_FSs(self) -> list[EvaluatedFS]:
-        return [EvaluatedFS(full_solution=fs, fitness=fitness) for fs, fitness in zip(self.full_solutions, self.fitness_array)]
-
+        return [EvaluatedFS(full_solution=fs, fitness=fitness) for fs, fitness in
+                zip(self.full_solutions, self.fitness_array)]
 
     def describe_self(self):
         min_fitness = np.min(self.fitness_array)
         max_fitness = np.max(self.fitness_array)
         avg_fitness = np.average(self.fitness_array)
-        print(f"This PRef contains {self.sample_size} samples, where the minimum is {min_fitness}, the maximum = {max_fitness} and the average is {avg_fitness}")
-
+        print(
+            f"This PRef contains {self.sample_size} samples, where the minimum is {min_fitness}, the maximum = {max_fitness} and the average is {avg_fitness}")

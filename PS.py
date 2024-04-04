@@ -101,17 +101,14 @@ class PS:
         new_values = np.max((a.values, b.values), axis=0)
         return cls(new_values)
 
-
     def present_in(self, full_solution: FullSolution) -> bool:
         same_fixed_value = self.values == full_solution.values
         is_unfixed = self.values == STAR
         matching_cells = np.logical_or(same_fixed_value, is_unfixed)
         return np.all(matching_cells)
 
-
     def is_empty(self) -> bool:
         return np.all(self.values == STAR)
-
 
     def fixed_count(self) -> int:
         return int(np.sum(self.values != STAR, dtype=int))
@@ -121,5 +118,4 @@ class PS:
 
 
 def contains(fs: FullSolution, ps: PS) -> bool:
-   return all(x_psi_i in {STAR, x_i} for x_psi_i, x_i in zip(ps.values, fs.values))
-
+    return all(x_psi_i in {STAR, x_i} for x_psi_i, x_i in zip(ps.values, fs.values))

@@ -10,12 +10,10 @@ class CheckerBoard(BenchmarkProblem):
     def __init__(self, rows: int, columns: int):
         self.rows = rows
         self.columns = columns
-        super().__init__(SearchSpace([2 for cell in range(rows*columns)]))
-
+        super().__init__(SearchSpace([2 for cell in range(rows * columns)]))
 
     def __repr__(self):
         return f"Checkerboard({self.rows}, {self.columns})"
-
 
     def repr_ps(self, ps: PS) -> str:
         def repr_cell(cell_value: int) -> str:
@@ -28,8 +26,6 @@ class CheckerBoard(BenchmarkProblem):
             return "[" + " ".join(repr_cell(cell) for cell in row) + "]"
 
         return "\n".join(repr_row(row) for row in ps.values.reshape((self.rows, self.columns)))
-
-
 
     def fitness_function(self, fs: FullSolution) -> float:
         grid = fs.values.reshape((self.rows, self.columns))
@@ -45,7 +41,6 @@ class CheckerBoard(BenchmarkProblem):
 
         # could have been np.sum(grid[1:] != grid[:-1]) + np.sum(grid[:, 1:] != grid[:, :-1])
 
-
     @staticmethod
     def fitness_of_flat_clique(fs: FullSolution) -> float:
-        return np.sum(fs.values[:-1] != fs.values[1:])
+        return float(np.sum(fs.values[:-1] != fs.values[1:]))

@@ -28,7 +28,6 @@ def remap_array_in_zero_one(input_array: np.ndarray):
     return (input_array - min_value) / (max_value - min_value)
 
 
-
 def harmonic_mean(values: Iterable[float]) -> float:
     if len(values) == 0:
         raise Exception("Trying to get the harmonic mean of no values!")
@@ -39,6 +38,7 @@ def harmonic_mean(values: Iterable[float]) -> float:
 
 def get_descriptive_stats(data: np.ndarray) -> (float, float, float, float, float):
     return np.min(data), np.median(data), np.max(data), np.average(data), np.std(data)
+
 
 class ExecutionTime(ContextDecorator):
     start_time: float
@@ -93,7 +93,8 @@ def announce(action: str):
 
 """
 
+
 def indent(input: str) -> str:
     lines = input.split("\n")
-    lines = ["\t"+line for line in lines]
+    lines = ["\t" + line for line in lines]
     return "\n".join(lines)

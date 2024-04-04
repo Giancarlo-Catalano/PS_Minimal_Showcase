@@ -58,16 +58,16 @@ class BivariateANOVALinkage(Metric):
             # Calculating the sum of squares for the interaction
             # (Normally we'd also calculate the marginal sum of squares, but we don't need them here.
 
-            #debug
+            # debug
             warnings.filterwarnings("error")
             try:
                 sum_sq_interaction = np.sum([(np.mean(fitnesses[where_val_i & where_val_j]) -
-                                             np.mean(fitnesses[where_val_i]) -
-                                             np.mean(fitnesses[where_val_j]) +
-                                             grand_mean) ** 2 for where_val_i, where_val_j in
-                                            itertools.product(where_values_i, where_values_j)])
+                                              np.mean(fitnesses[where_val_i]) -
+                                              np.mean(fitnesses[where_val_j]) +
+                                              grand_mean) ** 2 for where_val_i, where_val_j in
+                                             itertools.product(where_values_i, where_values_j)])
             except RuntimeWarning as w:  # sometimes we get a mean of empty slice error
-                #print(f"Received the warning {w} when calculating the sum_sq_interaction")
+                # print(f"Received the warning {w} when calculating the sum_sq_interaction")
                 sum_sq_interaction = 0
 
             warnings.resetwarnings()
@@ -108,11 +108,10 @@ class BivariateANOVALinkage(Metric):
         np.fill_diagonal(table, 0)
         return table
 
-
-    def get_normalised_linkage_scores(self, ps: PS, include_reflexive = False) -> np.ndarray:
+    def get_normalised_linkage_scores(self, ps: PS, include_reflexive=False) -> np.ndarray:
         fixed = ps.values != STAR
         fixed_combinations: np.array = np.outer(fixed, fixed)
-        fixed_combinations = np.triu(fixed_combinations, k = 0 if include_reflexive else 1)
+        fixed_combinations = np.triu(fixed_combinations, k=0 if include_reflexive else 1)
         return self.normalised_linkage_table[fixed_combinations]
 
     def get_single_normalised_score(self, ps: PS) -> float:

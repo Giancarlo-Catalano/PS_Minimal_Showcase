@@ -65,7 +65,6 @@ class Atomicity(Metric):
                  for val in range(ss.cardinalities[var])]
                 for var in range(ss.amount_of_parameters)]
 
-
     def get_isolated_benefits(self, ps: PS) -> ArrayOfFloats:
         return np.array([self.global_isolated_benefits[var][val]
                          for var, val in enumerate(ps.values)

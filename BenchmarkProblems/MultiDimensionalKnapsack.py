@@ -10,6 +10,8 @@ from SearchSpace import SearchSpace
 from custom_types import ArrayOfInts
 
 Item: TypeAlias = ArrayOfInts
+
+
 class MultiDimensionalKnapsack(BenchmarkProblem):
     amount_of_dimensions: int
     items: np.ndarray
@@ -17,19 +19,17 @@ class MultiDimensionalKnapsack(BenchmarkProblem):
 
     penalty: int
 
-
     def __init__(self,
                  items: Iterable[Iterable[int]],
                  targets: Iterable[int]):
-        assert(len(items) > 0)
+        assert (len(items) > 0)
         amount_of_dimensions = len(items[0])
         self.amount_of_dimensions = amount_of_dimensions
         self.items = np.array([np.array(item) for item in items])
         self.targets = np.array(targets)
         search_space = SearchSpace([2 for item in items])
         super().__init__(search_space)
-        self.penalty = max(targets)*self.amount_of_dimensions
-
+        self.penalty = max(targets) * self.amount_of_dimensions
 
     @classmethod
     def random(cls,
@@ -43,18 +43,17 @@ class MultiDimensionalKnapsack(BenchmarkProblem):
         items = [random_item() for _ in range(amount_of_items)]
         targets = random_item()
 
-        return cls(items = items,
+        return cls(items=items,
                    targets=targets)
 
     def full_solution_to_sum_of_metrics(self, fs: FullSolution) -> ArrayOfInts:
         return np.sum(self.items[fs.values.astype(bool)], axis=0)
 
-
     def manhattan_distance(self, gotten: ArrayOfInts, targets: ArrayOfInts) -> float:
-        return float(np.sum(np.abs(gotten-targets)))
+        return float(np.sum(np.abs(gotten - targets)))
 
     def euclidean_distance(self, gotten: ArrayOfInts, targets: ArrayOfInts) -> float:
-        return float(np.sqrt(np.square(gotten-targets)))
+        return float(np.sqrt(np.square(gotten - targets)))
 
     def distance_between_metrics(self, gotten: ArrayOfInts, targets: ArrayOfInts) -> float:
         return self.manhattan_distance(gotten, targets)
@@ -64,7 +63,7 @@ class MultiDimensionalKnapsack(BenchmarkProblem):
 
         fitness = -self.distance_between_metrics(gotten, self.targets)
         if any(gotten > target for gotten, target in zip(gotten, self.targets)):
-            return float(fitness-self.penalty)
+            return float(fitness - self.penalty)
         else:
             return float(fitness)
 
@@ -72,14 +71,12 @@ class MultiDimensionalKnapsack(BenchmarkProblem):
         all_zeros = FullSolution([0 for item in self.items])
         return self.fitness_function(all_zeros)
 
-
     def __repr__(self):
         return f"MultiDimensionalKnapsack(dimensions={self.amount_of_dimensions}, #items={len(self.items)})"
 
     def long_repr(self) -> str:
         items_str = "\n\t".join(f"{index}\t{item}" for index, item in enumerate(self.items))
-        return "MDK(items = \n\t"+items_str+f"\ntargets = {self.targets}"
-
+        return "MDK(items = \n\t" + items_str + f"\ntargets = {self.targets}"
 
     def repr_ps(self, ps: PS) -> str:
         def repr_pair(index, value):
@@ -89,6 +86,3 @@ class MultiDimensionalKnapsack(BenchmarkProblem):
                 return f"{index}"
 
         return "[" + ", ".join(repr_pair(index, value) for index, value in enumerate(ps.values) if value != STAR) + "]"
-
-
-

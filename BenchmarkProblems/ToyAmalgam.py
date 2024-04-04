@@ -22,10 +22,10 @@ class ToyProblem(Enum):
     PARITY = auto()
 
     def __repr__(self):
-        return "CORTP"[self.value-1]
+        return "CORTP"[self.value - 1]
 
     def __str__(self):
-        return "CORTP"[self.value-1]
+        return "CORTP"[self.value - 1]
 
 
 def toy_enum_from_string(string: str) -> ToyProblem:
@@ -78,13 +78,13 @@ class ToyAmalgam(BenchmarkProblem):
     def get_bit_counts(self, full_solution: FullSolution) -> ArrayOfInts:
         bits = full_solution.values.reshape((-1, self.clique_size))
         return np.sum(bits, axis=1)
+
     def fitness_function(self, fs: FullSolution) -> float:
         bit_counts = self.get_bit_counts(fs)
         return sum(self.fitness_for_clique_bitcount(bc, problem) for bc, problem in zip(bit_counts, self.problems))
 
     def __repr__(self):
         return f"ToyAmalgam({''.join(f'{p}' for p in self.problems)}, clique size = {self.clique_size}"
-
 
     def get_targets(self) -> list[PS]:
         def make_target(problem_class, position):

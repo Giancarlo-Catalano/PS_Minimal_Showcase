@@ -16,7 +16,6 @@ class ParityProblem(UnitaryProblem):
         else:
             return 0.0
 
-
     @staticmethod
     def get_optimal_clique(clique_size: int) -> FullSolution:
-        return FullSolution([(n+1) % 2 for n in range(clique_size)])
+        return FullSolution([(n + 1) % 2 for n in range(clique_size)])

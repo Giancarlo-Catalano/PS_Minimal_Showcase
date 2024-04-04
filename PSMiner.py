@@ -5,16 +5,14 @@ import numpy as np
 
 import utils
 from BenchmarkProblems.BenchmarkProblem import BenchmarkProblem
+from EvaluatedPS import EvaluatedPS
 from FSEvaluator import FSEvaluator
 from PRef import PRef
 from PS import PS
-from PSMetric.Atomicity import Atomicity
 from PSMetric.Linkage import Linkage
-from PSMetric.LocalPerturbation import BivariateLocalPerturbation
 from PSMetric.MeanFitness import MeanFitness
 from PSMetric.Metric import Metric
 from PSMetric.Simplicity import Simplicity
-from EvaluatedPS import EvaluatedPS
 from SearchSpace import SearchSpace
 from TerminationCriteria import TerminationCriteria, PSEvaluationLimit
 from get_init import just_empty
@@ -27,6 +25,7 @@ GetInitType: TypeAlias = [[PRef, Optional[int]], list[PS]]
 GetLocalType: TypeAlias = [[PS, SearchSpace], list[PS]]
 SelectionType: TypeAlias = [[list[EvaluatedPS], int], list[EvaluatedPS]]
 
+
 class PSMiner:
     """This class is the PS miner, which outputs a PS catalog when used right"""
     """There are many parts that can be modified, and these were tested in the paper, 
@@ -38,7 +37,7 @@ class PSMiner:
     get_local: GetLocalType  # generates the offspring of a selected ps
 
     pRef: PRef  # the PRef which remains constant throughout the process
-    selection: SelectionType  #  the selection operator
+    selection: SelectionType  # the selection operator
 
     current_population: list[EvaluatedPS]
     archive: set[EvaluatedPS]  # the archive, which will contain all the selected PSs
@@ -68,8 +67,6 @@ class PSMiner:
         self.current_population = [EvaluatedPS(ps) for ps in self.get_init(self.pRef, quantity=self.population_size)]
         self.current_population = self.evaluate_individuals(self.current_population)  # experimental
         self.archive = set()
-
-
 
     def __repr__(self):
         return f"PSMiner(population_size = {self.population_size})"
@@ -148,7 +145,7 @@ class PSMiner:
 
         while not should_terminate():
             self.step()
-            iterations +=1
+            iterations += 1
 
     def get_results(self, quantity_returned: int) -> list[EvaluatedPS]:
         """
@@ -169,6 +166,7 @@ class PSMiner:
     @staticmethod
     def without_duplicates(population: Population) -> Population:
         return list(set(population))
+
     @classmethod
     def with_default_settings(cls, pRef: PRef):
         """ atomicity can be measured in many many ways, and the paper suggest an approach that I've improved over time"""
@@ -184,7 +182,6 @@ class PSMiner:
                    get_init=just_empty,
                    get_local=specialisations,
                    selection=truncation_selection)
-
 
     @classmethod
     def test_with_problem(cls, benchmark_problem: BenchmarkProblem):

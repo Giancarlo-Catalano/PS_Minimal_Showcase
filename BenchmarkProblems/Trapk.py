@@ -10,7 +10,6 @@ class Trapk(UnitaryProblem):
     def get_problem_name(self) -> str:
         return "Trapk"
 
-
     @staticmethod
     def unitary_function(bitcount: int, clique_size: int) -> float:
         if bitcount == clique_size:
