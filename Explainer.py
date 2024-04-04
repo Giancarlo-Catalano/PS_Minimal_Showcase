@@ -4,7 +4,7 @@ from EvaluatedFS import EvaluatedFS
 from EvaluatedPS import EvaluatedPS
 from FullSolution import FullSolution
 from PRef import PRef
-from PS import contains, PS, STAR
+from PS import contains, PS
 from PSMetric.LocalPerturbation import BivariateLocalPerturbation, UnivariateLocalPerturbation
 from PSMetric.MeanFitness import MeanFitness
 from PSMetric.SignificantlyHighAverage import SignificantlyHighAverage
@@ -21,7 +21,6 @@ class Explainer:
     local_importance_metric: UnivariateLocalPerturbation
     local_linkage_metric: BivariateLocalPerturbation
 
-
     def __init__(self,
                  benchmark_problem: BenchmarkProblem,
                  ps_catalog: list[EvaluatedPS],
@@ -35,13 +34,12 @@ class Explainer:
         self.local_importance_metric = UnivariateLocalPerturbation()
         self.local_linkage_metric = BivariateLocalPerturbation()
 
-        for metric in [self.mean_fitness_metric, self.statistically_high_fitness_metric, self.local_importance_metric, self.local_linkage_metric]:
+        for metric in [self.mean_fitness_metric, self.statistically_high_fitness_metric, self.local_importance_metric,
+                       self.local_linkage_metric]:
             metric.set_pRef(self.pRef)
-
 
     def t_test_for_mean_with_ps(self, ps: PS) -> (float, float):
         return self.statistically_high_fitness_metric.get_p_value_and_sample_mean(ps)
-
 
     def get_small_description_of_ps(self, ps: PS) -> str:
         p_value, mean = self.t_test_for_mean_with_ps(ps)
@@ -49,13 +47,13 @@ class Explainer:
 
     def local_explanation_of_full_solution(self, full_solution: FullSolution):
         contained_pss = [ps.ps for ps in self.ps_catalog if contains(full_solution, ps.ps)]
-        contained_pss = self.only_non_obscured_pss(contained_pss)
+        contained_pss = Explainer.only_non_obscured_pss(contained_pss)
 
         fs_as_ps = PS.from_FS(full_solution)
         print(f"The solution \n {indent(self.benchmark_problem.repr_ps(fs_as_ps))}\ncontains the following PSs:")
         for ps in contained_pss:
             print(indent(self.get_small_description_of_ps(ps)))
-
+            print()
 
         # local_importances = self.local_importance_metric.get_local_importance_array(fs_as_ps)
         # local_linkages = self.local_linkage_metric.get_local_linkage_table(fs_as_ps)
@@ -66,18 +64,17 @@ class Explainer:
 
         # TODO find a good way to display them
 
-
-
-    def only_non_obscured_pss(self, pss: list[PS]) -> list[PS]:
-        def obscures(ps_a:PS, ps_b:PS):
+    @staticmethod
+    def only_non_obscured_pss(pss: list[PS]) -> list[PS]:
+        def obscures(ps_a: PS, ps_b: PS):
             a_fixed_pos = set(ps_a.get_fixed_variable_positions())
             b_fixed_pos = set(ps_b.get_fixed_variable_positions())
             if a_fixed_pos == b_fixed_pos:
                 return False
             return b_fixed_pos.issubset(a_fixed_pos)
 
-        def get_those_that_are_not_obscured_by(ps:PS, candidates: set[PS]) -> set[PS]:
-            return {candidate for candidate in candidates if not obscures(ps, candidate)}
+        def get_those_that_are_not_obscured_by(ps_list: PS, candidates: set[PS]) -> set[PS]:
+            return {candidate for candidate in candidates if not obscures(ps_list, candidate)}
 
         current_candidates = set(pss)
 
@@ -85,7 +82,6 @@ class Explainer:
             current_candidates = get_those_that_are_not_obscured_by(ps, current_candidates)
 
         return list(current_candidates)
-
 
     def explanation_loop(self, evaluated_sampled_solutions: list[EvaluatedFS]):
         first_round = True
@@ -101,9 +97,8 @@ class Explainer:
             else:
                 try:
                     index = int(answer)
-                except:
+                except ValueError:
                     print("That didn't work, please retry")
                     continue
                 solution_to_explain = evaluated_sampled_solutions[index]
                 self.local_explanation_of_full_solution(solution_to_explain.full_solution)
-
