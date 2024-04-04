@@ -1,13 +1,9 @@
-import itertools
-import random
-from typing import Any, Iterable, Callable
-
-import numpy as np
-from pandas import DataFrame
-import plotly.express as px
-
 import time
 from contextlib import ContextDecorator
+from typing import Iterable
+
+import numpy as np
+
 
 def unzip(zipped):
     if len(zipped) == 0:

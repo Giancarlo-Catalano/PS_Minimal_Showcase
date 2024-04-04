@@ -7,7 +7,7 @@ from EvaluatedFS import EvaluatedFS
 from FullSolution import FullSolution
 from PS import PS, STAR
 from SearchSpace import SearchSpace
-from custom_types import Fitness, BooleanMatrix, ArrayOfFloats
+from custom_types import Fitness, ArrayOfFloats
 
 
 class PRef:

@@ -2,7 +2,6 @@ from typing import Optional
 
 import numpy as np
 
-import utils
 from PRef import PRef
 from PS import PS
 from PSMetric.Metric import Metric

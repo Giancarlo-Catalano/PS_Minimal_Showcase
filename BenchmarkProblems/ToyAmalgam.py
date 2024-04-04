@@ -3,7 +3,6 @@ from enum import Enum, auto
 import numpy as np
 
 from BenchmarkProblems.BenchmarkProblem import BenchmarkProblem
-from BenchmarkProblems.Checkerboard import CheckerBoard
 from BenchmarkProblems.Constant import Constant
 from BenchmarkProblems.OneMax import OneMax
 from BenchmarkProblems.ParityProblem import ParityProblem

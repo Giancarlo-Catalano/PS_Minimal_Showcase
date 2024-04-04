@@ -4,7 +4,6 @@ from typing import TypeAlias, Optional
 import numpy as np
 
 import utils
-from BenchmarkProblems.BenchmarkProblem import BenchmarkProblem
 from PRef import PRef
 from PS import PS, STAR
 from PSMetric.Linkage import Linkage

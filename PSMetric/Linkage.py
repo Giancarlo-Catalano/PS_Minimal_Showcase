@@ -2,7 +2,6 @@ from typing import TypeAlias, Optional
 
 import numpy as np
 
-import utils
 from PRef import PRef
 from PS import PS, STAR
 from PSMetric.Metric import Metric

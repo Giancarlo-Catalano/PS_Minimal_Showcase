@@ -1,15 +1,7 @@
 import functools
-import random
 from typing import TypeAlias, Optional
 
-import numpy as np
-
-import utils
 from PS import PS
-from PSMetric.Metric import MultipleMetrics
-from custom_types import ArrayOfFloats
-
-Metrics: TypeAlias = tuple
 
 
 @functools.total_ordering

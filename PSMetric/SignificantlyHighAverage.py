@@ -1,12 +1,11 @@
 from typing import Optional
 
 import numpy as np
+from scipy.stats import t
 
-import utils
 from PRef import PRef
 from PS import PS
 from PSMetric.Metric import Metric
-from scipy.stats import t
 
 
 class SignificantlyHighAverage(Metric):

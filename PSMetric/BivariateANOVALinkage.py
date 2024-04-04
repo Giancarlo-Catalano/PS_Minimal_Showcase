@@ -3,13 +3,12 @@ import warnings
 from typing import TypeAlias, Optional
 
 import numpy as np
+from scipy.stats import f
 
-import utils
 from PRef import PRef
 from PS import PS, STAR
 from PSMetric.Linkage import Linkage
 from PSMetric.Metric import Metric
-from scipy.stats import f
 
 LinkageTable: TypeAlias = np.ndarray
 
