@@ -10,6 +10,7 @@ from FSEvaluator import FSEvaluator
 from PRef import PRef
 from PS import PS
 from PSMetric.Linkage import Linkage
+from PSMetric.LocalPerturbation import BivariateLocalPerturbation
 from PSMetric.MeanFitness import MeanFitness
 from PSMetric.Metric import Metric
 from PSMetric.Simplicity import Simplicity
@@ -178,7 +179,7 @@ class PSMiner:
         """
         return cls(population_size=150,
                    pRef=pRef,
-                   metrics=[Simplicity(), MeanFitness(), Linkage()],
+                   metrics=[Simplicity(), MeanFitness(), BivariateLocalPerturbation()],
                    get_init=just_empty,
                    get_local=specialisations,
                    selection=truncation_selection)

@@ -1,4 +1,6 @@
 # Explainer? I barely know her!
+import numpy as np
+
 from BenchmarkProblems.BenchmarkProblem import BenchmarkProblem
 from EvaluatedFS import EvaluatedFS
 from EvaluatedPS import EvaluatedPS
@@ -21,6 +23,8 @@ class Explainer:
     local_importance_metric: UnivariateLocalPerturbation
     local_linkage_metric: BivariateLocalPerturbation
 
+    overall_average: float
+
     def __init__(self,
                  benchmark_problem: BenchmarkProblem,
                  ps_catalog: list[EvaluatedPS],
@@ -28,6 +32,7 @@ class Explainer:
         self.benchmark_problem = benchmark_problem
         self.ps_catalog = ps_catalog
         self.pRef = pRef
+        self.overall_average = np.average(self.pRef.fitness_array)
 
         self.mean_fitness_metric = MeanFitness()
         self.statistically_high_fitness_metric = SignificantlyHighAverage()
@@ -42,8 +47,11 @@ class Explainer:
         return self.statistically_high_fitness_metric.get_p_value_and_sample_mean(ps)
 
     def get_small_description_of_ps(self, ps: PS) -> str:
-        p_value, mean = self.t_test_for_mean_with_ps(ps)
-        return f"{self.benchmark_problem.repr_ps(ps)}, mean fitness = {mean:.2f}, p-value = {p_value:e}"
+        p_value, _ = self.t_test_for_mean_with_ps(ps)
+        observations, not_observations = self.pRef.fitnesses_of_observations_and_complement(ps)
+        avg_when_present = np.average(observations)
+        avg_when_absent = np.average(not_observations)
+        return f"{self.benchmark_problem.repr_ps(ps)}, avg when present = {avg_when_present:.2f}, avg when absent = {avg_when_absent:.2f}, p-value = {p_value:e}"
 
     def local_explanation_of_full_solution(self, full_solution: FullSolution):
         contained_pss = [ps.ps for ps in self.ps_catalog if contains(full_solution, ps.ps)]

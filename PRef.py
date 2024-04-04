@@ -68,6 +68,16 @@ class PRef:
 
         return remaining_fitnesses
 
+    def fitnesses_of_observations_and_complement(self, ps: PS) -> (ArrayOfFloats, ArrayOfFloats):
+        selected_rows = np.full(shape=self.fitness_array.shape, fill_value=True, dtype=bool)
+
+        for variable_index, variable_value in enumerate(ps.values):
+            if variable_value != STAR:
+                rows_where_variable_matches = self.full_solution_matrix[:, variable_index] == variable_value
+                selected_rows = np.logical_and(selected_rows, rows_where_variable_matches)
+
+        return self.fitness_array[selected_rows], self.fitness_array[np.logical_not(selected_rows)]
+
     @property
     def sample_size(self) -> int:
         return len(self.fitness_array)
