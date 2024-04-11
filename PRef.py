@@ -8,7 +8,23 @@ from FullSolution import FullSolution
 from PS import PS, STAR
 from SearchSpace import SearchSpace
 from custom_types import Fitness, ArrayOfFloats
+from numba import njit
 
+
+@njit
+def get_observation_fitnesses(ps_values: np.ndarray, fs_matrix: np.ndarray, fitness_array: np.ndarray) -> np.ndarray:
+    remaining_rows = fs_matrix
+    remaining_fitnesses = fitness_array
+
+    for variable_index, variable_value in enumerate(ps_values):
+        if variable_value != STAR:
+            which_to_keep = remaining_rows[:, variable_index] == variable_value
+
+            # update the current filtered results
+            remaining_rows = remaining_rows[which_to_keep]
+            remaining_fitnesses = remaining_fitnesses[which_to_keep]
+
+    return remaining_fitnesses
 
 class PRef:
     """
@@ -55,18 +71,7 @@ class PRef:
         :return: a list of floats, corresponding to the fitnesses of the observations of the ps
         within the reference population
         """
-        remaining_rows = self.full_solution_matrix
-        remaining_fitnesses = self.fitness_array
-
-        for variable_index, variable_value in enumerate(ps.values):
-            if variable_value != STAR:
-                which_to_keep = remaining_rows[:, variable_index] == variable_value
-
-                # update the current filtered results
-                remaining_rows = remaining_rows[which_to_keep]
-                remaining_fitnesses = remaining_fitnesses[which_to_keep]
-
-        return remaining_fitnesses
+        return get_observation_fitnesses(ps.values, self.full_solution_matrix, self.fitness_array)
 
     def fitnesses_of_observations_and_complement(self, ps: PS) -> (ArrayOfFloats, ArrayOfFloats):
         selected_rows = np.full(shape=self.fitness_array.shape, fill_value=True, dtype=bool)

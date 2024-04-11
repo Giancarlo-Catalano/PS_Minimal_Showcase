@@ -105,8 +105,11 @@ class Explainer:
             else:
                 try:
                     index = int(answer)
+                    solution_to_explain = evaluated_sampled_solutions[index]
                 except ValueError:
                     print("That didn't work, please retry")
                     continue
-                solution_to_explain = evaluated_sampled_solutions[index]
+                except IndexError:
+                    print("Value is too big, try again")
+                    continue
                 self.local_explanation_of_full_solution(solution_to_explain.full_solution)

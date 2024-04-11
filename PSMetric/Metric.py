@@ -31,3 +31,11 @@ class Metric:
     def get_unnormalised_scores(self, pss: Iterable[PS]) -> ArrayOfFloats:
         """default implementation, subclasses might overwrite this"""
         return np.array([self.get_single_score(ps) for ps in pss])
+
+
+
+
+def test_different_metrics_for_ps(ps: PS, metrics: list[Metric]):
+    print(f"Testing various metrics on the ps {ps}")
+    for metric in metrics:
+        print(f"For {metric}, the score is {metric.get_single_score(ps):.3f}")

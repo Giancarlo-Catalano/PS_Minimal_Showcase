@@ -1,4 +1,6 @@
 import heapq
+import json
+import warnings
 from typing import Optional, TypeAlias
 
 import numpy as np
@@ -7,18 +9,21 @@ import utils
 from BenchmarkProblems.BenchmarkProblem import BenchmarkProblem
 from EvaluatedPS import EvaluatedPS
 from FSEvaluator import FSEvaluator
+from FullSolution import FullSolution
+from GA.FullSolutionGA import FullSolutionGA
 from PRef import PRef
 from PS import PS
+from PSMetric.Atomicity import Atomicity
 from PSMetric.Linkage import Linkage
 from PSMetric.LocalPerturbation import BivariateLocalPerturbation
 from PSMetric.MeanFitness import MeanFitness
 from PSMetric.Metric import Metric
 from PSMetric.Simplicity import Simplicity
 from SearchSpace import SearchSpace
-from TerminationCriteria import TerminationCriteria, PSEvaluationLimit
+from TerminationCriteria import TerminationCriteria, PSEvaluationLimit, IterationLimit
 from get_init import just_empty
 from get_local import specialisations
-from selection import truncation_selection
+from selection import truncation_selection, tournament_selection
 from utils import announce
 
 Population: TypeAlias = list[EvaluatedPS]
@@ -88,7 +93,8 @@ class PSMiner:
         """
         metric_matrix = np.array([ind.metric_scores for ind in population])
         for column in range(metric_matrix.shape[1]):
-            metric_matrix[:, column] = utils.remap_array_in_zero_one(metric_matrix[:, column])
+            if not isinstance(self.metrics[column], MeanFitness):
+                metric_matrix[:, column] = utils.remap_array_in_zero_one(metric_matrix[:, column])
 
         averages = np.average(metric_matrix, axis=1)
         for individual, score in zip(population, averages):
@@ -179,10 +185,10 @@ class PSMiner:
         """
         return cls(population_size=150,
                    pRef=pRef,
-                   metrics=[Simplicity(), MeanFitness(), BivariateLocalPerturbation()],
+                   metrics=[Simplicity(), MeanFitness(), Atomicity()],
                    get_init=just_empty,
                    get_local=specialisations,
-                   selection=truncation_selection)
+                   selection=tournament_selection)
 
     @classmethod
     def test_with_problem(cls, benchmark_problem: BenchmarkProblem):
@@ -200,3 +206,53 @@ class PSMiner:
         best = algorithm.get_results(12)
         for item in best:
             print(item)
+
+
+
+
+def measure_T2_success_rate(benchmark_problem:BenchmarkProblem):
+    pRef_size = 10**4
+    generations_to_evolve_for = list(range(0, 5, 5))
+    budget = 10**4
+
+    ga = FullSolutionGA(search_space=benchmark_problem.search_space,
+                        mutation_rate=1/benchmark_problem.search_space.amount_of_parameters,
+                        crossover_rate=0.5,
+                        elite_size=3,
+                        tournament_size=3,
+                        population_size=pRef_size,
+                        fitness_function=benchmark_problem.fitness_function)
+
+    total_generations = 0
+
+    def run_generations_and_get_pRef(next_generation: int) -> PRef:
+        generations_to_execute = next_generation - total_generations
+        termination_criterion = IterationLimit(generations_to_execute)
+        ga.run(termination_criterion)
+        population = ga.current_population
+        solutions, fitnesses = utils.unzip([(ind.full_solution, ind.fitness) for ind in population])
+        return PRef.from_full_solutions(full_solutions=solutions,
+                                        fitness_values=fitnesses,
+                                        search_space=benchmark_problem.search_space)
+
+
+    targets = benchmark_problem.get_targets()
+    targets = [EvaluatedPS(ps) for ps in targets]   # makes line (1) easier to implement
+    def run_ps_miner(pRef: PRef) -> int:
+        ps_miner = PSMiner.with_default_settings(pRef)
+        ps_miner.run(termination_criteria=PSEvaluationLimit(budget))
+        results = ps_miner.get_results(50)
+        return len([target for target in targets if target in results])  # (1)
+
+    result_dict = {}
+    for generation in generations_to_evolve_for:
+        with utils.execution_time() as pref_timer:
+            new_pRef = run_generations_and_get_pRef(generation)
+            total_generations = generation
+        warnings.warn(f"Generating the pref for generation {generation} took {pref_timer.execution_time} seconds")
+        with utils.execution_time() as miner_timer:
+            found_targets: int = run_ps_miner(new_pRef)
+        warnings.warn(f"The run to {generation} took {miner_timer.execution_time} seconds")
+        result_dict[generation] = found_targets
+
+    print(json.dumps(result_dict))

@@ -16,6 +16,9 @@
         - The metrics used to search for PSs (find them in PSMiner.with_default_settings)
         - the sample sizes etc...
 """
+import itertools
+
+import numpy as np
 
 import TerminationCriteria
 from BenchmarkProblems.BenchmarkProblem import BenchmarkProblem
@@ -23,9 +26,17 @@ from BenchmarkProblems.Checkerboard import CheckerBoard
 from BenchmarkProblems.GraphColouring import GraphColouring
 from BenchmarkProblems.RoyalRoad import RoyalRoad
 from BenchmarkProblems.Trapk import Trapk
+from BenchmarkProblems.UnitaryProblem import UnitaryProblem
 from EvaluatedFS import EvaluatedFS
 from Explainer import Explainer
-from PSMiner import PSMiner
+from PS import STAR, PS
+from PSMetric.Atomicity import Atomicity
+from PSMetric.BivariateANOVALinkage import BivariateANOVALinkage
+from PSMetric.GlobalPerturbation import UnivariateGlobalPerturbation, BivariateGlobalPerturbation
+from PSMetric.Linkage import Linkage
+from PSMetric.LocalPerturbation import UnivariateLocalPerturbation, BivariateLocalPerturbation
+from PSMetric.Metric import test_different_metrics_for_ps
+from PSMiner import PSMiner, measure_T2_success_rate
 from PickAndMerge import PickAndMergeSampler
 from utils import announce, indent
 
@@ -88,9 +99,56 @@ def show_overall_system(benchmark_problem: BenchmarkProblem):
     print("And that concludes the showcase")
 
 
-if __name__ == '__main__':
-    problem = GraphColouring.random(amount_of_nodes=6, amount_of_colours=3, chance_of_connection=0.3)
-    # problem = CheckerBoard(4, 4)
-    # problem = RoyalRoad(4, 4)
 
+
+def test_atomicities(benchmark_problem: UnitaryProblem):
+    atomicities = [Atomicity(), Linkage(), BivariateANOVALinkage(),
+                   UnivariateLocalPerturbation(), BivariateLocalPerturbation(),
+                   UnivariateGlobalPerturbation(), BivariateGlobalPerturbation()]
+
+    with announce("Generating the pRef"):
+        pRef = benchmark_problem.get_reference_population(10000)
+
+    with announce("Setting the PRefs"):
+        for metric in atomicities:
+            metric.set_pRef(pRef)
+
+    cliques_to_be_tested: list[np.ndarray]
+    clique_size = benchmark_problem.clique_size
+
+    unfixed = PS.empty(benchmark_problem.search_space)
+    single_zero = unfixed.with_fixed_value(0, 0)
+    single_one = unfixed.with_fixed_value(0, 1)
+    pair_zero = single_zero.with_fixed_value(1, 0)
+    pair_one = single_one.with_fixed_value(1, 1)
+    clique_zero = unfixed.copy()
+    clique_zero.values[0:clique_size] = 0
+    clique_one = unfixed.copy()
+    clique_one.values[0:clique_size] = 1
+
+
+    test_ps_set = [] #[single_zero, single_one, pair_zero, pair_one, clique_zero, clique_one]
+
+    digits = [STAR, 0, 1]
+    for values in itertools.combinations_with_replacement(digits, r=clique_size):
+        new_ps = unfixed.copy()
+        new_ps.values[0:clique_size] = values
+        if not new_ps.is_empty():
+            test_ps_set.append(new_ps)
+
+    for test_ps in test_ps_set:
+        test_different_metrics_for_ps(test_ps, atomicities)
+        print("-"*40)
+
+
+
+if __name__ == '__main__':
+    # problem = GraphColouring.random(amount_of_nodes=6, amount_of_colours=3, chance_of_connection=0.3)
+    # problem = CheckerBoard(4, 4)
+    #problem = Trapk(4, 4)
+    # problem = Trapk(5, 5)
+    problem = RoyalRoad(5, 4)
     show_overall_system(problem)
+    # measure_T2_success_rate(problem)
+
+    # test_atomicities(problem)
