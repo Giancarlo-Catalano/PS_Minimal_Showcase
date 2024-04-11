@@ -1,0 +1,12 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite it as below."
+authors:
+  - family-names: Catalano
+    given-names: Giancarlo
+    orcid: https://orcid.org/0009-0000-6504-2541
+title: "PS Assisted Explainability"
+version: 1.0.0
+identifiers:
+  - type: doi
+    value: 10.1145/3638530.3654318
+date-released: 2024-04-05
