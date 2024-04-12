@@ -121,6 +121,10 @@ class BivariateANOVALinkage(Metric):
         else:
             return np.average(self.get_normalised_linkage_scores(ps))
 
+
+    def get_single_score(self, ps: PS) -> float:
+        return self.get_single_normalised_score(ps)
+
     def get_quantized_linkage_table(self, linkage_table: LinkageTable):
         in_zero_one_range = Linkage.get_normalised_linkage_table(linkage_table)
         return np.array(in_zero_one_range > 0.5, dtype=float)

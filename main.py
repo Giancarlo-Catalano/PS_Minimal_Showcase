@@ -16,18 +16,33 @@
         - The metrics used to search for PSs (find them in PSMiner.with_default_settings)
         - the sample sizes etc...
 """
+import itertools
+
+import numpy as np
 
 import TerminationCriteria
+from BenchmarkProblems.BT.BTProblem import BTProblem
 from BenchmarkProblems.BenchmarkProblem import BenchmarkProblem
 from BenchmarkProblems.Checkerboard import CheckerBoard
 from BenchmarkProblems.GraphColouring import GraphColouring
 from BenchmarkProblems.RoyalRoad import RoyalRoad
 from BenchmarkProblems.Trapk import Trapk
+from BenchmarkProblems.UnitaryProblem import UnitaryProblem
 from EvaluatedFS import EvaluatedFS
 from Explainer import Explainer
-from PSMiner import PSMiner
+from PS import STAR, PS
+from PSMetric.Atomicity import Atomicity
+from PSMetric.BivariateANOVALinkage import BivariateANOVALinkage
+from PSMetric.GlobalPerturbation import UnivariateGlobalPerturbation, BivariateGlobalPerturbation
+from PSMetric.Linkage import Linkage
+from PSMetric.LocalPerturbation import UnivariateLocalPerturbation, BivariateLocalPerturbation
+from PSMetric.Metric import test_different_metrics_for_ps
+from PSMiner import PSMiner, measure_T2_success_rate
+from PSMiners.MuPlusLambda.MPLLR import MPLLR
 from PickAndMerge import PickAndMergeSampler
 from utils import announce, indent
+
+from pdf.testing import demo_hello_world
 
 
 def show_overall_system(benchmark_problem: BenchmarkProblem):
@@ -51,7 +66,7 @@ def show_overall_system(benchmark_problem: BenchmarkProblem):
     pRef.describe_self()
 
     # 2. Obtaining the PS catalog
-    ps_miner = PSMiner.with_default_settings(pRef)
+    ps_miner = MPLLR.with_default_settings(pRef)
     ps_evaluation_budget = 10000
     termination_criterion = TerminationCriteria.PSEvaluationLimit(ps_evaluation_budget)
 
@@ -89,8 +104,14 @@ def show_overall_system(benchmark_problem: BenchmarkProblem):
 
 
 if __name__ == '__main__':
-    problem = GraphColouring.random(amount_of_nodes=6, amount_of_colours=3, chance_of_connection=0.3)
+    # problem = GraphColouring.random(amount_of_nodes=6, amount_of_colours=3, chance_of_connection=0.3)
     # problem = CheckerBoard(4, 4)
-    # problem = RoyalRoad(4, 4)
-
+    # problem = BTProblem.from_default_files()
+    problem = Trapk(5, 5)
+    #problem = Trapk(5, 5)
     show_overall_system(problem)
+    #measure_T2_success_rate(problem)
+
+    #print(f"Problem")
+
+    # test_atomicities(problem)

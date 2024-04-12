@@ -53,6 +53,9 @@ class UnivariateGlobalPerturbation(Metric):
     def get_single_normalised_score(self, ps: PS) -> float:
         return np.min(self.normalised_importance_array, where=ps.values != STAR, initial=1)
 
+    def get_single_score(self, ps: PS) -> float:
+        return self.get_single_normalised_score(ps)
+
 
 class BivariateGlobalPerturbation(Metric):
     linkage_table: Optional[ImportanceArray]
@@ -108,6 +111,10 @@ class BivariateGlobalPerturbation(Metric):
 
     def get_single_normalised_score(self, ps: PS) -> float:
         return np.min(self.get_all_normalised_linkages(ps, include_reflexive=True))
+
+
+    def get_single_score(self, ps: PS) -> float:
+        return self.get_single_normalised_score(ps)
 
 
 class AlternativeBivariateGlobalLinkage(Metric):

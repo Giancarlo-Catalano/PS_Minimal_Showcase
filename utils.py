@@ -1,6 +1,6 @@
 import time
 from contextlib import ContextDecorator
-from typing import Iterable
+from typing import Iterable, Any
 
 import numpy as np
 
@@ -98,3 +98,21 @@ def indent(input: str) -> str:
     lines = input.split("\n")
     lines = ["\t" + line for line in lines]
     return "\n".join(lines)
+
+
+def break_list(input_list: list[Any], group_size: int) -> list[list[Any]]:
+    def start(which):
+        return group_size * which
+
+    def end(which):
+        return group_size * (which + 1)
+
+    return [input_list[start(i):end(i)] for i in range(len(input_list) // group_size)]
+
+
+def join_lists(many_lists: Iterable[list]) -> list:
+    result = []
+    for sub_list in many_lists:
+        result.extend(sub_list)
+
+    return result
