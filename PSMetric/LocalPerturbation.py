@@ -133,8 +133,9 @@ class UnivariateLocalPerturbation(Metric):
 
 class BivariateLocalPerturbation(Metric):
     linkage_calculator: Optional[LocalPerturbationCalculator]
-    min_fitness: float
-    max_fitness: float
+
+
+    fitness_range: float
 
     def __init__(self):
         self.pRef = None
@@ -145,8 +146,7 @@ class BivariateLocalPerturbation(Metric):
 
     def set_pRef(self, pRef: PRef):
         self.linkage_calculator = LocalPerturbationCalculator(pRef)
-        self.min_fitness = np.min(pRef.fitness_array)
-        self.max_fitness = np.max(pRef.fitness_array)
+        self.fitness_range = np.max(pRef.fitness_array) - np.min(pRef.fitness_array)
 
     def get_single_score(self, ps: PS) -> float:
         if ps.fixed_count() < 2:
@@ -161,8 +161,15 @@ class BivariateLocalPerturbation(Metric):
         return np.min(dfs)
 
     def get_single_normalised_score(self, ps: PS) -> float:
+        if ps.fixed_count() < 2:
+            if ps.fixed_count() == 1:
+                fixed_locus = ps.get_fixed_variable_positions()[0]
+                perturbation = self.linkage_calculator.get_delta_f_of_ps_at_locus_univariate(ps, fixed_locus)
+                return (perturbation + self.fitness_range) / (2 * self.fitness_range)  # note how perturbation is not divided by 2, because it's univariate now
+            else:
+                return 0
         perturbation = self.get_single_score(ps)
-        perturbation_normalised = perturbation / (2 * (self.max_fitness - self.min_fitness))
+        perturbation_normalised = ((perturbation / 2) + self.fitness_range) / (2 * self.fitness_range)
         return perturbation_normalised
 
     def get_local_linkage_table(self, ps: PS) -> np.ndarray:

@@ -28,6 +28,7 @@ from BenchmarkProblems.GraphColouring import GraphColouring
 from BenchmarkProblems.RoyalRoad import RoyalRoad
 from BenchmarkProblems.Trapk import Trapk
 from BenchmarkProblems.UnitaryProblem import UnitaryProblem
+from DEAP.Testing import run_deap_for_benchmark_problem
 from EvaluatedFS import EvaluatedFS
 from Explainer import Explainer
 from PS import STAR, PS
@@ -109,9 +110,12 @@ if __name__ == '__main__':
     # problem = BTProblem.from_default_files()
     problem = Trapk(5, 5)
     #problem = Trapk(5, 5)
-    show_overall_system(problem)
+    #show_overall_system(problem)
     #measure_T2_success_rate(problem)
 
     #print(f"Problem")
 
     # test_atomicities(problem)
+
+
+    run_deap_for_benchmark_problem(problem)

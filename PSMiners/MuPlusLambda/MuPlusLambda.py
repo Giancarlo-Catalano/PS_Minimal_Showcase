@@ -43,9 +43,9 @@ class MuPlusLambda(AbstractPSMiner):
 
     def get_initial_population(self):
         return AbstractPSMiner.get_mixed_initial_population(search_space=self.search_space,
-                                                            from_uniform=0.33,
-                                                            from_geometric=0.33,
-                                                            from_half_fixed=0.34,
+                                                            from_uniform=0,
+                                                            from_geometric=1,
+                                                            from_half_fixed=0,
                                                             population_size=self.lambda_parameter)
 
     def get_offspring(self, individual: EvaluatedPS) -> list[EvaluatedPS]:
@@ -53,6 +53,7 @@ class MuPlusLambda(AbstractPSMiner):
                 for _ in range(self.offspring_amount)]
 
     def step(self):
+        self.current_population = self.without_duplicates(self.current_population)
         selected_parents = self.selection_operator.select_n(self.mu_parameter, self.current_population)
 
         children = []

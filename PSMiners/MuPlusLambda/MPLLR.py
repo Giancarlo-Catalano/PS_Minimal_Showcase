@@ -109,5 +109,5 @@ class MPLLR(MuPlusLambda):
                    mutation_operator=MultimodalMutationOperator(0.5, pRef.search_space),
                    selection_operator=TruncationSelection(),
                    pRef=pRef,
-                   food_weight=0.3)
+                   food_weight=0)
 
