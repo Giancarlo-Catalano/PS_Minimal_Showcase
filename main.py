@@ -67,7 +67,7 @@ def show_overall_system(benchmark_problem: BenchmarkProblem):
     pRef.describe_self()
 
     # 2. Obtaining the PS catalog
-    ps_miner = MPLLR.with_default_settings(pRef)
+    ps_miner = PSMiner.with_default_settings(pRef)
     ps_evaluation_budget = 10000
     termination_criterion = TerminationCriteria.PSEvaluationLimit(ps_evaluation_budget)
 
@@ -108,7 +108,7 @@ if __name__ == '__main__':
     # problem = GraphColouring.random(amount_of_nodes=6, amount_of_colours=3, chance_of_connection=0.3)
     # problem = CheckerBoard(4, 4)
     # problem = BTProblem.from_default_files()
-    problem = Trapk(5, 5)
+    problem = RoyalRoad(5, 5)
     #problem = Trapk(5, 5)
     #show_overall_system(problem)
     #measure_T2_success_rate(problem)
