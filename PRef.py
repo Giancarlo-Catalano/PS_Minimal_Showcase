@@ -12,7 +12,8 @@ from numba import njit
 
 
 @njit
-def get_observation_fitnesses(ps_values: np.ndarray, fs_matrix: np.ndarray, fitness_array: np.ndarray) -> np.ndarray:
+def get_observation_fitnesses_original(ps_values: np.ndarray, fs_matrix: np.ndarray,
+                                       fitness_array: np.ndarray) -> np.ndarray:
     remaining_rows = fs_matrix
     remaining_fitnesses = fitness_array
 
@@ -25,6 +26,39 @@ def get_observation_fitnesses(ps_values: np.ndarray, fs_matrix: np.ndarray, fitn
             remaining_fitnesses = remaining_fitnesses[which_to_keep]
 
     return remaining_fitnesses
+
+
+@njit
+def get_observation_fitnesses(ps_values: np.ndarray, fs_matrix: np.ndarray,
+                                    fitness_array: np.ndarray) -> np.ndarray:
+    if np.all(ps_values == -1):
+        return fitness_array
+
+    def positions_for(index):
+        return fs_matrix[:, index] == ps_values[index]
+
+    fixed_positions = [index for index, value in enumerate(ps_values) if value != -1]
+
+    which_rows = positions_for(fixed_positions[0])
+
+    for fixed_position in fixed_positions[1:]:
+        which_rows = np.logical_and(which_rows, positions_for(fixed_position))
+
+    return fitness_array[which_rows]
+
+
+@njit
+def get_observation_fitnesses_other(ps_values: np.ndarray, fs_matrix: np.ndarray, fitness_array: np.ndarray) -> np.ndarray:
+    if np.all(ps_values == -1):
+        return fitness_array
+
+    rows = [fs_matrix[:, variable_index] == variable_value
+            for variable_index, variable_value in enumerate(ps_values)
+            if variable_value != -1]
+
+    matching_matrix = np.array(rows)
+    return np.all(matching_matrix, axis=0)
+
 
 class PRef:
     """

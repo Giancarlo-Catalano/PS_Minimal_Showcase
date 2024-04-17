@@ -185,7 +185,7 @@ class PSMiner:
         """
         return cls(population_size=150,
                    pRef=pRef,
-                   metrics=[Simplicity(), MeanFitness(), Atomicity()],
+                   metrics=[MeanFitness(), Atomicity()],
                    get_init=just_empty,
                    get_local=specialisations,
                    selection=tournament_selection)
@@ -218,7 +218,7 @@ def measure_T2_success_rate(benchmark_problem:BenchmarkProblem):
     ga = FullSolutionGA(search_space=benchmark_problem.search_space,
                         mutation_rate=1/benchmark_problem.search_space.amount_of_parameters,
                         crossover_rate=0.5,
-                        elite_size=3,
+                        elite_proportion=3,
                         tournament_size=3,
                         population_size=pRef_size,
                         fitness_function=benchmark_problem.fitness_function)
