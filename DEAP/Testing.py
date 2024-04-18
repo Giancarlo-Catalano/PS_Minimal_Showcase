@@ -3,10 +3,14 @@ import random
 import numpy as np
 
 from BenchmarkProblems.BenchmarkProblem import BenchmarkProblem
+from EvaluatedPS import EvaluatedPS
 from PS import PS
 from PSMetric.Atomicity import Atomicity
+from PSMetric.GlobalPerturbation import BivariateGlobalPerturbation
+from PSMetric.Linkage import Linkage
 from PSMetric.LocalPerturbation import BivariateLocalPerturbation
 from PSMetric.MeanFitness import MeanFitness
+from PSMetric.Metric import Metric
 from PSMetric.Simplicity import Simplicity
 from utils import announce
 from deap import algorithms, creator, base, tools
@@ -68,11 +72,26 @@ def run_deap_for_benchmark_problem(benchmark_problem: BenchmarkProblem):
     def random_cell_value() -> int:
         return random.choice([-1, 0, 1])
 
+
+    def ps_to_deap_individual(ps: PS):
+        return creator.DEAPPSIndividual(list(ps.values))
+
     def random_ps_values():
-        return creator.DEAPPSIndividual(list(PS.random(benchmark_problem.search_space).values))
+        return ps_to_deap_individual(PS.random(benchmark_problem.search_space))
 
     def always_empty_ps():
-        return creator.DEAPPSIndividual(list(PS.empty(benchmark_problem.search_space).values))
+        return ps_to_deap_individual(PS.empty(benchmark_problem.search_space))
+
+    def geometric_distribution_ps():
+        result = PS.empty(benchmark_problem.search_space)
+        chance_of_success = 0.79
+        while random.random() < chance_of_success:
+            var_index = random.randrange(benchmark_problem.search_space.amount_of_parameters)
+            value = random.randrange(benchmark_problem.search_space.cardinalities[var_index])
+            result = result.with_fixed_value(var_index, value)
+        return ps_to_deap_individual(result)
+
+
 
     def random_but_sometimes_empty():
         if random.random() < 0.8:
@@ -82,7 +101,7 @@ def run_deap_for_benchmark_problem(benchmark_problem: BenchmarkProblem):
 
     toolbox.register("attr_cell", random_cell_value)
     toolbox.register("ps_individual",
-                     random_but_sometimes_empty)
+                     geometric_distribution_ps)
 
     def evaluate(ps_individual) -> tuple:
         ps = PS(ps_individual)
@@ -96,9 +115,6 @@ def run_deap_for_benchmark_problem(benchmark_problem: BenchmarkProblem):
     # print(f"Is the fitness valid? {ind1.fitness.valid}")
     # print(ind1.fitness)
 
-
-
-    # ## TODO
     toolbox.register("mate", tools.cxUniform, indpb=1/benchmark_problem.search_space.amount_of_parameters)
     lower_bounds = [-1 for _ in benchmark_problem.search_space.cardinalities]
     upper_bounds = [card-1 for card in benchmark_problem.search_space.cardinalities]
@@ -125,9 +141,9 @@ def run_deap_for_benchmark_problem(benchmark_problem: BenchmarkProblem):
 
         pop, logbook = nsgaiii(toolbox=toolbox,
                                mu = 300,
-                               cxpb=0.5,
+                               cxpb=1,
                                mutpb=0.2,
-                               ngen=30,
+                               ngen=100,
                                stats=stats)
     else:
         toolbox.register("select", tools.selTournament, tournsize=3)
@@ -144,9 +160,42 @@ def run_deap_for_benchmark_problem(benchmark_problem: BenchmarkProblem):
     print(logbook)
 
     print("The last population is ")
+    new_pop = []
     for ind in pop:
-        ps = PS(ind)
-        metrics_str = "\t".join(f"{s:.2f}" for s in ind.fitness.values)
-        print(f"{ps} with metrics {metrics_str}")
+        new_e_ps = EvaluatedPS(PS(ind))
+        new_e_ps.metric_scores = ind.fitness.values
+        new_pop.append(new_e_ps)
+
+    pop = list(set(new_pop))
+    pop.sort(key=lambda x: x.metric_scores[-1], reverse=True)
+
+    for ind in pop:
+        print(benchmark_problem.repr_ps(ind.ps))
+        print(f"Has score {ind.metric_scores}\n")
+
+
+
+
+
+def comprehensive_search(benchmark_problem: BenchmarkProblem,
+                         metric: Metric,
+                         sample_size: int,
+                         amount = 12,
+                         reverse=True):
+    all_ps = PS.all_possible(benchmark_problem.search_space)
+
+    pRef = benchmark_problem.get_reference_population(sample_size)
+    metric.set_pRef(pRef)
+
+    evaluated_pss = [EvaluatedPS(ps) for ps in all_ps]
+    for evaluated_ps in evaluated_pss:
+        evaluated_ps.aggregated_score = metric.get_single_normalised_score(evaluated_ps.ps)
+
+    evaluated_pss.sort(reverse=reverse)
+    print(f"The best in the search space, according to {metric} are")
+    to_show = evaluated_pss[:amount] if amount is not None else evaluated_pss
+    for e_ps in to_show:
+        print(e_ps)
+
 
 

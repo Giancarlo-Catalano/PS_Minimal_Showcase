@@ -186,7 +186,7 @@ class PSMiner:
         """
         return cls(population_size=300,
                    pRef=pRef,
-                   metrics=[MeanFitness(), BivariateLocalPerturbation()],
+                   metrics=[Atomicity()],
                    get_init=just_empty,
                    get_local=specialisations,
                    selection=truncation_selection)

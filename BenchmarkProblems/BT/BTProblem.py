@@ -132,3 +132,27 @@ class BTProblem(BenchmarkProblem):
 
     def get_amount_of_first_choices(self, wvs: list[WorkerVariables]) -> int:
         return len([wv for wv in wvs if wv.which_rota==0])
+
+
+    def repr_ps(self, ps: PS) -> str:
+        variables = self.get_variables_from_ps(ps)
+        def variable_is_empty(variables_for_worker: WorkerVariables):
+            return variables_for_worker.which_rota is None# and variables_for_worker.starting_week is None
+
+        workers_and_vars = [(worker, variables)
+                            for worker, variables in zip(self.workers, variables)
+                            if not variable_is_empty(variables)]
+
+
+        def repr_worker_vars_pair(worker: Worker, vars: WorkerVariables) -> str:
+            result = f"{worker.name}: "
+            if vars.which_rota is not None:
+                result += f"rota #{vars.which_rota},"
+            if vars.starting_week is not None:
+                result += f"start {vars.starting_week},"
+
+            return result
+
+        return utils.indent("\n".join(repr_worker_vars_pair(w, wv) for w, wv in workers_and_vars))
+
+

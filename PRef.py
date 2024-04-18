@@ -1,6 +1,8 @@
 from typing import Iterable, Callable
 
+import numba
 import numpy as np
+from numba import jit
 
 import utils
 from EvaluatedFS import EvaluatedFS
@@ -8,6 +10,63 @@ from FullSolution import FullSolution
 from PS import PS, STAR
 from SearchSpace import SearchSpace
 from custom_types import Fitness, ArrayOfFloats
+
+@jit
+def get_relevant_rows_in_matrix_old(fs_matrix, fs_fitnesses, ps_values) -> np.ndarray:
+    only_relevant_rows = fs_matrix[:, ps_values != STAR]
+    only_relevant_values = ps_values[ps_values != STAR]
+
+    # Rewrite np.all() to use np.alltrue() for Numba compatibility
+    def alltrue(arr):
+        for elem in arr:
+            if not elem:
+                return False
+        return True
+
+    where_matching = np.array([alltrue(row == only_relevant_values) for row in only_relevant_rows])
+    return fs_fitnesses[where_matching]
+
+@jit
+def get_relevant_rows_in_matrix_shortcircuit(full_solution_matrix, fitness_array, values):
+    only_relevant_rows = full_solution_matrix[:, values != STAR]
+    only_relevant_values = values[values != STAR]
+    return np.array([fitness for fs, fitness in zip(only_relevant_rows, fitness_array)
+                     if np.array_equal(fs, only_relevant_values)])
+
+
+@jit
+def get_relevant_rows_in_matrix(fs_matrix, fs_fitnesses, ps_values) -> np.ndarray:
+    # Find the indices where ps_values is not equal to STAR
+    relevant_indices = np.where(ps_values != STAR)[0]
+
+    # Extract only the relevant values from ps_values
+    relevant_values = ps_values[relevant_indices]
+
+    # Extract only the relevant columns from fs_matrix
+    relevant_matrix = fs_matrix[:, relevant_indices]
+
+    # Initialize an empty list to store matching row indices
+    matching_rows = []
+
+    # Iterate over rows of the relevant matrix
+    for row in relevant_matrix:
+        # Initialize a flag to track whether the row matches the relevant values
+        match = True
+
+        # Iterate over elements of the row and relevant values simultaneously
+        for elem, val in zip(row, relevant_values):
+            if elem != val:
+                match = False
+                break  # Exit inner loop early if mismatch is found
+
+        # If match is still True after iterating over all elements, add the row index to matching_rows
+        matching_rows.append(match)
+
+    # Convert matching_rows to a NumPy array
+    matching_rows = np.array(matching_rows)
+
+    # Return the corresponding fitness values for the matching rows
+    return fs_fitnesses[matching_rows]
 
 
 class PRef:
@@ -48,6 +107,7 @@ class PRef:
         fitnesses = [fitness_function(fs) for fs in samples]
         return cls.from_full_solutions(samples, fitnesses, search_space)
 
+
     def fitnesses_of_observations(self, ps: PS) -> ArrayOfFloats:
         """
         This is the most important function of the class, and it roughly corresponds to the obs_PRef(ps) in the paper
@@ -68,6 +128,13 @@ class PRef:
 
         return remaining_fitnesses
 
+    def fitnesses_of_observations_experimental(self, ps: PS) -> np.ndarray:
+        return get_relevant_rows_in_matrix(self.full_solution_matrix, self.fitness_array, ps.values)
+
+
+
+    def fitnesses_of_observations_other_experimental(self, ps: PS) -> np.ndarray:
+        return get_relevant_rows_in_matrix_shortcircuit(self.full_solution_matrix, self.fitness_array, ps.values)
     def fitnesses_of_observations_and_complement(self, ps: PS) -> (ArrayOfFloats, ArrayOfFloats):
         selected_rows = np.full(shape=self.fitness_array.shape, fill_value=True, dtype=bool)
 

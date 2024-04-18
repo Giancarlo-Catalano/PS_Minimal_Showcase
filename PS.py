@@ -1,3 +1,4 @@
+import itertools
 import random
 from typing import Iterable
 
@@ -115,6 +116,12 @@ class PS:
 
     def copy(self):
         return PS(self.values)
+
+    @classmethod
+    def all_possible(cls, search_space: SearchSpace):
+        levels = (range(-1, c) for c in search_space.cardinalities)
+        values = itertools.product(*levels)
+        return [cls(values) for values in values]
 
 
 def contains(fs: FullSolution, ps: PS) -> bool:
