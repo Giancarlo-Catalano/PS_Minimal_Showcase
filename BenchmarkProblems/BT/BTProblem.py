@@ -19,33 +19,18 @@ class BTProblem(BenchmarkProblem):
     calendar_length: int
     workers: list[Worker]
     weights = [1, 1, 1, 1, 1, 10, 10]
-    uses_custom_starting_days: bool
-    can_switch_rotas: bool
-    considers_skills: bool
-    considers_areas: bool
-    considers_times: bool
     all_skills: set[Skill]
 
     def __init__(self,
                  workers: list[Worker],
-                 calendar_length: int,
-                 custom_starting_days = False,
-                 can_switch_rotas = False,
-                 considers_skills = False,
-                 considers_areas = False,
-                 considers_times = False):
+                 calendar_length: int):
 
-        self.uses_custom_starting_days = custom_starting_days
-        self.can_switch_rotas = can_switch_rotas
-        self.considers_skills = considers_skills
-        self.considers_areas = considers_areas
-        self.considers_times = considers_times
         self.workers = workers
         self.calendar_length = calendar_length
 
         assert(calendar_length % 7 == 0)
 
-        variable_cardinalities = utils.join_lists(worker.get_variable_cardinalities(self.uses_custom_starting_days)
+        variable_cardinalities = utils.join_lists(worker.get_variable_cardinalities(custom_starting_days=False)
                                                   for worker in self.workers)
         super().__init__(SearchSpace(variable_cardinalities))
 
@@ -73,11 +58,6 @@ class BTProblem(BenchmarkProblem):
         result = dict()
         result["calendar_length"] = self.calendar_length
         result["weights"] = self.weights
-        result["custom_starting_days"] = self.uses_custom_starting_days
-        result["can_switch_rotas"] = self.can_switch_rotas
-        result["considers_skills"] = self.considers_skills
-        result["considers_areas"] = self.considers_areas
-        result["considers_times"] = self.considers_times
         result["workers"] = [worker.to_json() for worker in self.workers]
         return result
 
@@ -112,7 +92,7 @@ class BTProblem(BenchmarkProblem):
 
     def get_range_score_from_wvs(self, wvs: list[WorkerVariables]) -> float:
         """assumes that all of the wvs's are valid, ie that none of the attributes are None"""
-        rotas = [wv.effective_rota(worker, consider_starting_week=self.uses_custom_starting_days)
+        rotas = [wv.effective_rota(worker, consider_starting_week=False)
                  for wv, worker in zip(wvs, self.workers)]
 
         rotas_by_skill = {skill: [rota for rota, worker in zip(rotas, self.workers)
@@ -136,23 +116,8 @@ class BTProblem(BenchmarkProblem):
 
     def repr_ps(self, ps: PS) -> str:
         variables = self.get_variables_from_ps(ps)
-        def variable_is_empty(variables_for_worker: WorkerVariables):
-            return variables_for_worker.which_rota is None# and variables_for_worker.starting_week is None
-
-        workers_and_vars = [(worker, variables)
-                            for worker, variables in zip(self.workers, variables)
-                            if not variable_is_empty(variables)]
-
-
-        def repr_worker_vars_pair(worker: Worker, vars: WorkerVariables) -> str:
-            result = f"{worker.name}: "
-            if vars.which_rota is not None:
-                result += f"rota #{vars.which_rota},"
-            if vars.starting_week is not None:
-                result += f"start {vars.starting_week},"
-
-            return result
-
-        return utils.indent("\n".join(repr_worker_vars_pair(w, wv) for w, wv in workers_and_vars))
+        return utils.indent("\n".join(f"{w.name}: rota#{wv.which_rota}"
+                                      for w, wv in zip(self.workers, variables)
+                                      if wv.which_rota is not None))
 
 

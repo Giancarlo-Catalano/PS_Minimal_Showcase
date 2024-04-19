@@ -24,6 +24,7 @@ import TerminationCriteria
 from BenchmarkProblems.BT.BTProblem import BTProblem
 from BenchmarkProblems.BenchmarkProblem import BenchmarkProblem
 from BenchmarkProblems.Checkerboard import CheckerBoard
+from BenchmarkProblems.EfficientBTProblem.EfficientBTProblem import EfficientBTProblem
 from BenchmarkProblems.GraphColouring import GraphColouring
 from BenchmarkProblems.RoyalRoad import RoyalRoad
 from BenchmarkProblems.Trapk import Trapk
@@ -107,7 +108,7 @@ def show_overall_system(benchmark_problem: BenchmarkProblem):
 if __name__ == '__main__':
     # problem = GraphColouring.random(amount_of_nodes=6, amount_of_colours=3, chance_of_connection=0.3)
     # problem = CheckerBoard(4, 4)
-    problem = BTProblem.from_default_files()
+    problem = EfficientBTProblem.from_default_files()
     #problem = RoyalRoad(5, 4)
     #problem = Trapk(2, 4)
     #show_overall_system(problem)

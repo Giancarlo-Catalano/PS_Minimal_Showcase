@@ -107,14 +107,6 @@ def run_deap_for_benchmark_problem(benchmark_problem: BenchmarkProblem):
         ps = PS(ps_individual)
         return tuple(metric.get_single_score(ps) for metric in metrics)
 
-    # ind1 = toolbox.ps_individual()
-    # print(f"Created the individual {ind1}")
-    # print(f"Is the fitness valid? {ind1.fitness.valid}")
-    #
-    # ind1.fitness.values = evaluate(ind1)
-    # print(f"Is the fitness valid? {ind1.fitness.valid}")
-    # print(ind1.fitness)
-
     toolbox.register("mate", tools.cxUniform, indpb=1/benchmark_problem.search_space.amount_of_parameters)
     lower_bounds = [-1 for _ in benchmark_problem.search_space.cardinalities]
     upper_bounds = [card-1 for card in benchmark_problem.search_space.cardinalities]
@@ -143,7 +135,7 @@ def run_deap_for_benchmark_problem(benchmark_problem: BenchmarkProblem):
                                mu = 300,
                                cxpb=1,
                                mutpb=0.2,
-                               ngen=100,
+                               ngen=10,
                                stats=stats)
     else:
         toolbox.register("select", tools.selTournament, tournsize=3)

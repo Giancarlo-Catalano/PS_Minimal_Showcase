@@ -26,7 +26,7 @@ def get_relevant_rows_in_matrix_old(fs_matrix, fs_fitnesses, ps_values) -> np.nd
     where_matching = np.array([alltrue(row == only_relevant_values) for row in only_relevant_rows])
     return fs_fitnesses[where_matching]
 
-@jit
+@numba.njit
 def get_relevant_rows_in_matrix_shortcircuit(full_solution_matrix, fitness_array, values):
     only_relevant_rows = full_solution_matrix[:, values != STAR]
     only_relevant_values = values[values != STAR]
@@ -129,7 +129,7 @@ class PRef:
         return remaining_fitnesses
 
     def fitnesses_of_observations_experimental(self, ps: PS) -> np.ndarray:
-        return get_relevant_rows_in_matrix(self.full_solution_matrix, self.fitness_array, ps.values)
+        return get_relevant_rows_in_matrix_shortcircuit(self.full_solution_matrix, self.fitness_array, ps.values)
 
 
 
