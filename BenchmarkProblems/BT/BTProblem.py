@@ -52,7 +52,7 @@ class BTProblem(BenchmarkProblem):
         return cls.from_csv_files(employee_data_file=r"C:\Users\gac8\PycharmProjects\PS-PDF\resources\BT\employeeData.csv",
                                   employee_skills_file=r"C:\Users\gac8\PycharmProjects\PS-PDF\resources\BT\employeeSkillsData.csv",
                                   rota_file=r"C:\Users\gac8\PycharmProjects\PS-PDF\resources\BT\roster_pattern_days.csv",
-                                  calendar_length=28)
+                                  calendar_length=7*13)
 
     def to_json(self) -> dict:
         result = dict()

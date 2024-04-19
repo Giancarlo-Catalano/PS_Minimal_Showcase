@@ -57,6 +57,24 @@ def nsgaiii(toolbox,
 
     return pop, logbook
 
+
+
+def nsgaiii_pure_functionality(toolbox, mu, ngen, cxpb, mutpb):
+    def fill_evaluation_gaps(input_pop):
+        for ind in input_pop:
+            if not ind.fitness.valid:
+                ind.fitness.values = toolbox.evaluate(ind)
+        return input_pop
+
+    pop = fill_evaluation_gaps(toolbox.population(n=mu))
+
+    # Begin the generational process
+    for gen in range(1, ngen):
+        offspring = algorithms.varAnd(pop, toolbox, cxpb, mutpb)
+        offspring = fill_evaluation_gaps(offspring)
+        pop = toolbox.select(pop + offspring, mu)
+    return pop
+
 def run_deap_for_benchmark_problem(benchmark_problem: BenchmarkProblem):
     print("Starting run_deap_for_benchmark_problem")
     with announce("Generating the pRef"):
