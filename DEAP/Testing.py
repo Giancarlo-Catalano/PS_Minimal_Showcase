@@ -1,5 +1,5 @@
 import random
-
+import matplotlib.pyplot as plt
 import numpy as np
 from deap.tools import selNSGA2
 
@@ -79,11 +79,9 @@ def nsgaiii_pure_functionality(toolbox, mu, ngen, cxpb, mutpb):
         pop = toolbox.select(pop + offspring, mu)
     return pop
 
-def run_deap_for_benchmark_problem(benchmark_problem: BenchmarkProblem):
-    print("Starting run_deap_for_benchmark_problem")
+def get_toolbox_for_problem(benchmark_problem: BenchmarkProblem, metrics: list[Metric]):
     with announce("Generating the pRef"):
         pRef = benchmark_problem.get_reference_population(sample_size=10000)
-    metrics = [Atomicity()]
     for metric in metrics:
         metric.set_pRef(pRef)
 
@@ -103,8 +101,9 @@ def run_deap_for_benchmark_problem(benchmark_problem: BenchmarkProblem):
 
 
 
-    toolbox.register("ps_individual",
+    toolbox.register("make_random_ps",
                      geometric_distribution_ps)
+
 
     def evaluate(ps) -> tuple:
         return tuple(metric.get_single_score(ps) for metric in metrics)
@@ -115,45 +114,22 @@ def run_deap_for_benchmark_problem(benchmark_problem: BenchmarkProblem):
     toolbox.register("mutate", tools.mutUniformInt, low=lower_bounds, up=upper_bounds, indpb=1/benchmark_problem.search_space.amount_of_parameters)
 
     toolbox.register("evaluate", evaluate)
-    toolbox.register("population", tools.initRepeat, list, toolbox.ps_individual)
-    #
-    #
+    toolbox.register("population", tools.initRepeat, list, toolbox.make_random_ps)
 
+    toolbox.register("select", gc_selNSGA2)
+    return toolbox
+
+def get_stats_object():
     stats = tools.Statistics(key=lambda ind: ind.fitness.values)
     stats.register("avg", np.mean, axis=0)
     stats.register("min", np.min, axis=0)
     stats.register("max", np.max, axis=0)
+    return stats
 
 
-
-    with_nsgaii = True
-
-    if with_nsgaii:
-        toolbox.register("select", gc_selNSGA2)
-
-        pop, logbook = nsgaii(toolbox=toolbox,
-                              mu = 300,
-                              cxpb=0.5,
-                              mutpb=1/benchmark_problem.search_space.amount_of_parameters,
-                              ngen=100,
-                              stats=stats)
-    else:
-        toolbox.register("select", tools.selTournament, tournsize=3)
-        pop, logbook = algorithms.eaSimple(toolbox.population(n=300),
-                                           toolbox,
-                                           cxpb=0.5,
-                                           mutpb=0.2,
-                                           ngen=15,
-                                           verbose=True,
-                                           stats=stats)
-
-
-    print("The logbook is")
-    print(logbook)
-
-    print("The last population is ")
+def report_in_order_of_last_metric(population, benchmark_problem):
     new_pop = []
-    for ind in pop:
+    for ind in population:
         new_e_ps = EvaluatedPS(PS(ind))
         new_e_ps.metric_scores = ind.fitness.values
         new_pop.append(new_e_ps)
@@ -166,6 +142,50 @@ def run_deap_for_benchmark_problem(benchmark_problem: BenchmarkProblem):
         print(f"Has score {ind.metric_scores}\n")
 
 
+def plot_stats_for_run(logbook, metrics: list[Metric]):
+    generations = logbook.select("gen")
+    num_variables = len(metrics)
+
+
+    avg_matrix = np.array([logbook[generation]["avg"] for generation in generations])
+    max_matrix = np.array([logbook[generation]["max"] for generation in generations])
+
+    # Create a new figure with subplots
+    fig, axs = plt.subplots(1, num_variables, figsize=(12, 6))  # 1 row, `num_variables` columns
+
+    # Loop through each variable to create a subplot
+    for metric_index, metric in enumerate(metrics):
+        axs[metric_index].plot(generations, avg_matrix[:, metric_index], label='Average', linestyle='-', marker='o')
+        axs[metric_index].plot(generations, max_matrix[:, metric_index], label='Maximum', linestyle='--', marker='x')
+        axs[metric_index].set_xlabel('Generation')
+        axs[metric_index].set_ylabel('Value')
+        axs[metric_index].set_title(f'{metric}')
+        axs[metric_index].legend()  # Add legend to each subplot
+
+    # Adjust layout to ensure plots don't overlap
+    plt.tight_layout()
+
+    # Display the plots
+    plt.show()
+def run_deap_for_benchmark_problem(benchmark_problem: BenchmarkProblem):
+    print("Starting run_deap_for_benchmark_problem")
+    metrics = [Simplicity(), MeanFitness(), Atomicity()]
+    pop, logbook = nsgaii(toolbox=get_toolbox_for_problem(benchmark_problem, metrics),
+                          mu = 300,
+                          cxpb=0.5,
+                          mutpb=1/benchmark_problem.search_space.amount_of_parameters,
+                          ngen=100,
+                          stats=get_stats_object())
+
+    print("The last population is ")
+    report_in_order_of_last_metric(pop, benchmark_problem)
+
+    plot_stats_for_run(logbook, metrics)
+
+
+
+
+
 
 
 
@@ -176,12 +196,15 @@ def comprehensive_search(benchmark_problem: BenchmarkProblem,
                          reverse=True):
     all_ps = PS.all_possible(benchmark_problem.search_space)
 
-    pRef = benchmark_problem.get_reference_population(sample_size)
+    with announce("Generating the PRef"):
+        pRef = benchmark_problem.get_reference_population(sample_size)
     metric.set_pRef(pRef)
 
     evaluated_pss = [EvaluatedPS(ps) for ps in all_ps]
-    for evaluated_ps in evaluated_pss:
-        evaluated_ps.aggregated_score = metric.get_single_normalised_score(evaluated_ps.ps)
+    #evaluated_pss = [ps for ps in evaluated_pss if ps.ps.fixed_count() < 7]
+    with announce(f"Evaluating all the PSs, there are {len(evaluated_pss)} of them"):
+        for evaluated_ps in evaluated_pss:
+            evaluated_ps.aggregated_score = metric.get_single_normalised_score(evaluated_ps.ps)
 
     evaluated_pss.sort(reverse=reverse)
     print(f"The best in the search space, according to {metric} are")
