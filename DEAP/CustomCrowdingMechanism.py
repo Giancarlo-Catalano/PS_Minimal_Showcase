@@ -7,6 +7,17 @@ from deap.tools import sortNondominated, sortLogNondominated
 from PS import STAR
 from SearchSpace import SearchSpace
 
+def get_food_supplies(population) -> np.ndarray:
+    """The result is an array, where for each variable in the search space we give the proportion
+    of the individuals in the population which have that variable fixed"""
+    counts = np.sum([individual.values != STAR for individual in population], dtype=float, axis=0)
+    return np.divide(1.0, counts, out=np.zeros_like(counts), where=counts != 0)
+
+def get_food_score(individual, fixed_counts_supply: np.ndarray):
+    if individual.is_empty():
+        return 0 #np.average(fixed_counts_supply)  # very arbitrary to be honest
+    return np.average([food for val, food in zip(individual, fixed_counts_supply)
+                         if val != STAR])
 
 def gc_selNSGA2(individuals, k, nd='standard'):
     """Apply NSGA-II selection operator on the *individuals*. Usually, the
@@ -26,6 +37,9 @@ def gc_selNSGA2(individuals, k, nd='standard'):
        non-dominated sorting genetic algorithm for multi-objective
        optimization: NSGA-II", 2002.
     """
+    # this is new, read the comments below
+
+
     if nd == 'standard':
         pareto_fronts = sortNondominated(individuals, k)
     elif nd == 'log':
@@ -34,44 +48,37 @@ def gc_selNSGA2(individuals, k, nd='standard'):
         raise Exception('selNSGA2: The choice of non-dominated sorting '
                         'method "{0}" is invalid.'.format(nd))
 
-    for front in pareto_fronts:
-        gc_assignCrowdingDist(front)
+    # usually, here you would assign a crowing distance like so:
+    # for front in pareto_fronts:
+    #  gc_assignCrowdingDist(front)
+
+    # instead, we ignore the fronts and assign our own crowding at the start
+
 
     chosen = list(chain(*pareto_fronts[:-1]))
     k = k - len(chosen)
     if k > 0:
-        sorted_front = sorted(pareto_fronts[-1], key=attrgetter("fitness.crowding_dist"), reverse=True)
+        last_pareto_front = pareto_fronts[-1]
+        food_supply = get_food_supplies(individuals)  #note: on the entire population, not on the front
+        for individual in last_pareto_front:
+            individual.fitness.crowding_dist = get_food_score(individual, food_supply)
+        sorted_front = sorted(last_pareto_front, key=attrgetter("fitness.crowding_dist"), reverse=True)
         chosen.extend(sorted_front[:k])
 
     return chosen
 
 
-def get_fixed_counts_food_supply(population, search_space: SearchSpace) -> np.ndarray:
-    """The result is an array, where for each variable in the search space we give the proportion
-    of the individuals in the population which have that variable fixed"""
 
-    counts = np.zeros(search_space.amount_of_parameters, dtype=int)
-    for individual in population:
-        counts += np.array(individual) != STAR
 
-    counts = counts.astype(dtype=float)
-
-    return np.divide(1.0, counts, out=np.zeros_like(counts), where=counts != 0)
-
-def get_food_score(self, individual: Individual, fixed_counts_supply: np.ndarray):
-
-    if individual.ps.is_empty():
-        return 0.5
-
-    food_for_each_var = [food for val, food in zip(individual.ps.values, fixed_counts_supply)
-                         if val != STAR]
-    return np.average(food_for_each_var)
-
-def gc_assignCrowdingDist(individuals):
+def gc_assignCrowdingDist(population):
     """Assign a crowding distance to each individual's fitness. The
     crowding distance can be retrieve via the :attr:`crowding_dist`
     attribute of each individual's fitness.
     """
-    if len(individuals) == 0:
+    if len(population) == 0:
         return
+
+    food_supply = get_food_supplies(population)
+    for individual in population:
+        individual.fitness.crowding_dist = get_food_score(individual, food_supply)
 

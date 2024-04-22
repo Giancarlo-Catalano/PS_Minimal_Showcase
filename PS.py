@@ -124,5 +124,15 @@ class PS:
         return [cls(values) for values in values]
 
 
+    def __getitem__(self, item) -> int:
+        return self.values[item]
+
+    def __setitem__(self, key, value):
+        self.values[key] = value
+
+
 def contains(fs: FullSolution, ps: PS) -> bool:
     return all(x_psi_i in {STAR, x_i} for x_psi_i, x_i in zip(ps.values, fs.values))
+
+
+

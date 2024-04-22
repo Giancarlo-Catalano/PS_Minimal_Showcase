@@ -1,8 +1,10 @@
 import random
 
 import numpy as np
+from deap.tools import selNSGA2
 
 from BenchmarkProblems.BenchmarkProblem import BenchmarkProblem
+from DEAP.CustomCrowdingMechanism import gc_selNSGA2
 from EvaluatedPS import EvaluatedPS
 from PS import PS
 from PSMetric.Atomicity import Atomicity
@@ -16,14 +18,15 @@ from utils import announce
 from deap import algorithms, creator, base, tools
 
 
-def nsgaiii(toolbox,
-            stats,
-            mu,
-            ngen,
-            cxpb,
-            mutpb):
+
+def nsgaii(toolbox,
+           stats,
+           mu,
+           ngen,
+           cxpb,
+           mutpb):
     logbook = tools.Logbook()
-    logbook.header = "gen", "evals", "std", "min", "avg", "max"
+    logbook.header = "gen", "evals", "min", "avg", "max"
 
     pop = toolbox.population(n=mu)
     # Evaluate the individuals with an invalid fitness
@@ -39,6 +42,7 @@ def nsgaiii(toolbox,
 
     # Begin the generational process
     for gen in range(1, ngen):
+        pop = list(set(pop))
         offspring = algorithms.varAnd(pop, toolbox, cxpb, mutpb)
 
         # Evaluate the individuals with an invalid fitness
@@ -79,20 +83,14 @@ def run_deap_for_benchmark_problem(benchmark_problem: BenchmarkProblem):
     print("Starting run_deap_for_benchmark_problem")
     with announce("Generating the pRef"):
         pRef = benchmark_problem.get_reference_population(sample_size=10000)
-    metrics = [Simplicity(), MeanFitness(), Atomicity()]
+    metrics = [Atomicity()]
     for metric in metrics:
         metric.set_pRef(pRef)
 
     creator.create("FitnessMax", base.Fitness, weights=[1.0 for metric in metrics])
-    creator.create("DEAPPSIndividual", np.ndarray, fitness=creator.FitnessMax)
-
+    creator.create("DEAPPSIndividual", PS,
+                   fitness=creator.FitnessMax)
     toolbox = base.Toolbox()
-    def random_cell_value() -> int:
-        return random.choice([-1, 0, 1])
-
-
-    def ps_to_deap_individual(ps: PS):
-        return creator.DEAPPSIndividual(ps.values)
 
     def geometric_distribution_ps():
         result = PS.empty(benchmark_problem.search_space)
@@ -101,17 +99,14 @@ def run_deap_for_benchmark_problem(benchmark_problem: BenchmarkProblem):
             var_index = random.randrange(benchmark_problem.search_space.amount_of_parameters)
             value = random.randrange(benchmark_problem.search_space.cardinalities[var_index])
             result = result.with_fixed_value(var_index, value)
-        return ps_to_deap_individual(result)
+        return creator.DEAPPSIndividual(result)
 
 
 
-
-    toolbox.register("attr_cell", random_cell_value)
     toolbox.register("ps_individual",
                      geometric_distribution_ps)
 
-    def evaluate(ps_individual) -> tuple:
-        ps = PS(ps_individual)
+    def evaluate(ps) -> tuple:
         return tuple(metric.get_single_score(ps) for metric in metrics)
 
     toolbox.register("mate", tools.cxUniform, indpb=1/benchmark_problem.search_space.amount_of_parameters)
@@ -126,7 +121,6 @@ def run_deap_for_benchmark_problem(benchmark_problem: BenchmarkProblem):
 
     stats = tools.Statistics(key=lambda ind: ind.fitness.values)
     stats.register("avg", np.mean, axis=0)
-    stats.register("std", np.std, axis=0)
     stats.register("min", np.min, axis=0)
     stats.register("max", np.max, axis=0)
 
@@ -135,14 +129,14 @@ def run_deap_for_benchmark_problem(benchmark_problem: BenchmarkProblem):
     with_nsgaii = True
 
     if with_nsgaii:
-        toolbox.register("select", tools.selNSGA2)
+        toolbox.register("select", gc_selNSGA2)
 
-        pop, logbook = nsgaiii(toolbox=toolbox,
-                               mu = 300,
-                               cxpb=1,
-                               mutpb=0.2,
-                               ngen=10,
-                               stats=stats)
+        pop, logbook = nsgaii(toolbox=toolbox,
+                              mu = 300,
+                              cxpb=0.5,
+                              mutpb=1/benchmark_problem.search_space.amount_of_parameters,
+                              ngen=100,
+                              stats=stats)
     else:
         toolbox.register("select", tools.selTournament, tournsize=3)
         pop, logbook = algorithms.eaSimple(toolbox.population(n=300),
