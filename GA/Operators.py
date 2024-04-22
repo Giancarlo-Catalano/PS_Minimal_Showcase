@@ -57,7 +57,7 @@ class FSCrossoverOperator:
         raise Exception(f"The class {self.__repr__()} does not implement .crossed")
 
 
-class TwoPointCrossover(FSCrossoverOperator):
+class TwoPointFSCrossover(FSCrossoverOperator):
     def __init__(self):
         super().__init__()
 

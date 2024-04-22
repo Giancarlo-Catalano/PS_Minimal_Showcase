@@ -84,7 +84,7 @@ def run_deap_for_benchmark_problem(benchmark_problem: BenchmarkProblem):
         metric.set_pRef(pRef)
 
     creator.create("FitnessMax", base.Fitness, weights=[1.0 for metric in metrics])
-    creator.create("DEAPPSIndividual", list, fitness=creator.FitnessMax)
+    creator.create("DEAPPSIndividual", np.ndarray, fitness=creator.FitnessMax)
 
     toolbox = base.Toolbox()
     def random_cell_value() -> int:
@@ -92,13 +92,7 @@ def run_deap_for_benchmark_problem(benchmark_problem: BenchmarkProblem):
 
 
     def ps_to_deap_individual(ps: PS):
-        return creator.DEAPPSIndividual(list(ps.values))
-
-    def random_ps_values():
-        return ps_to_deap_individual(PS.random(benchmark_problem.search_space))
-
-    def always_empty_ps():
-        return ps_to_deap_individual(PS.empty(benchmark_problem.search_space))
+        return creator.DEAPPSIndividual(ps.values)
 
     def geometric_distribution_ps():
         result = PS.empty(benchmark_problem.search_space)
@@ -111,11 +105,6 @@ def run_deap_for_benchmark_problem(benchmark_problem: BenchmarkProblem):
 
 
 
-    def random_but_sometimes_empty():
-        if random.random() < 0.8:
-            return always_empty_ps()
-        else:
-            return random_ps_values()
 
     toolbox.register("attr_cell", random_cell_value)
     toolbox.register("ps_individual",
@@ -143,11 +132,10 @@ def run_deap_for_benchmark_problem(benchmark_problem: BenchmarkProblem):
 
 
 
-    with_nsgaiii = True
+    with_nsgaii = True
 
-    if with_nsgaiii:
-        ref_points = tools.uniform_reference_points(len(metrics), 12)
-        toolbox.register("select", tools.selNSGA3, ref_points=ref_points)
+    if with_nsgaii:
+        toolbox.register("select", tools.selNSGA2)
 
         pop, logbook = nsgaiii(toolbox=toolbox,
                                mu = 300,

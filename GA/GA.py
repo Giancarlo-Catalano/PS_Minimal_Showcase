@@ -10,7 +10,7 @@ from EvaluatedFS import EvaluatedFS
 from FSEvaluator import FSEvaluator
 from FullSolution import FullSolution
 from GA.Operators import FSMutationOperator, FSCrossoverOperator, FSSelectionOperator, SinglePointFSMutation, \
-    TwoPointCrossover
+    TwoPointFSCrossover
 from SearchSpace import SearchSpace
 
 Population: TypeAlias = list[EvaluatedFS]
@@ -124,14 +124,14 @@ class GA:
 def test_FSGA(benchmark_problem: BenchmarkProblem):
     print("Testing the full solution GA")
     algorithm = GA(search_space=benchmark_problem.search_space,
-                               mutation_operator=SinglePointFSMutation(benchmark_problem.search_space),
-                               crossover_operator=TwoPointCrossover(),
-                               selection_operator=FSSelectionOperator(),
-                               crossover_rate=0.5,
-                               elite_proportion=0.02,
-                               tournament_size=3,
-                               population_size=500,
-                               fitness_function=benchmark_problem.fitness_function)
+                   mutation_operator=SinglePointFSMutation(benchmark_problem.search_space),
+                   crossover_operator=TwoPointFSCrossover(),
+                   selection_operator=FSSelectionOperator(),
+                   crossover_rate=0.5,
+                   elite_proportion=0.02,
+                   tournament_size=3,
+                   population_size=500,
+                   fitness_function=benchmark_problem.fitness_function)
 
     print("Now running the algorithm")
     termination_criterion = TerminationCriteria.FullSolutionEvaluationLimit(20000)

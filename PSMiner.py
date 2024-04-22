@@ -9,21 +9,18 @@ import utils
 from BenchmarkProblems.BenchmarkProblem import BenchmarkProblem
 from EvaluatedPS import EvaluatedPS
 from FSEvaluator import FSEvaluator
-from FullSolution import FullSolution
-from GA.FullSolutionGA import FullSolutionGA
+from GA.GA import GA
+from GA.Operators import SinglePointFSMutation, TwoPointFSCrossover, TournamentSelection
 from PRef import PRef
 from PS import PS
 from PSMetric.Atomicity import Atomicity
-from PSMetric.Linkage import Linkage
-from PSMetric.LocalPerturbation import BivariateLocalPerturbation
 from PSMetric.MeanFitness import MeanFitness
 from PSMetric.Metric import Metric
-from PSMetric.Simplicity import Simplicity
 from SearchSpace import SearchSpace
 from TerminationCriteria import TerminationCriteria, PSEvaluationLimit, IterationLimit
 from get_init import just_empty
 from get_local import specialisations
-from selection import truncation_selection, tournament_selection
+from selection import truncation_selection
 from utils import announce
 
 Population: TypeAlias = list[EvaluatedPS]
@@ -216,13 +213,15 @@ def measure_T2_success_rate(benchmark_problem:BenchmarkProblem):
     generations_to_evolve_for = list(range(0, 5, 5))
     budget = 10**5
 
-    ga = FullSolutionGA(search_space=benchmark_problem.search_space,
-                        mutation_rate=1/benchmark_problem.search_space.amount_of_parameters,
-                        crossover_rate=0.5,
-                        elite_proportion=3,
-                        tournament_size=3,
-                        population_size=pRef_size,
-                        fitness_function=benchmark_problem.fitness_function)
+    ga = GA(search_space=benchmark_problem.search_space,
+            mutation_operator=SinglePointFSMutation(benchmark_problem.search_space),
+            crossover_operator=TwoPointFSCrossover(),
+            selection_operator=TournamentSelection(),
+            crossover_rate=0.5,
+            elite_proportion=3,
+            tournament_size=3,
+            population_size=pRef_size,
+            fitness_function=benchmark_problem.fitness_function)
 
     total_generations = 0
 
