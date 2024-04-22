@@ -1,3 +1,4 @@
+import math
 from typing import TypeAlias
 
 import numpy as np
@@ -15,7 +16,7 @@ def rota_to_extended_pattern(rota: RotaPattern, calendar_length: int) -> Extende
     if len(pattern) >= calendar_length:
         return pattern[:calendar_length]
 
-    return np.tile(pattern, calendar_length // len(pattern))[:calendar_length]
+    return np.tile(pattern, math.ceil(calendar_length / len(pattern)))[:calendar_length]
 
 
 def get_rotated_by_starting_week(full_pattern: ExtendedPattern, starting_week: int) -> ExtendedPattern:

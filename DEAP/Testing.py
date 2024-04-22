@@ -1,6 +1,8 @@
 import random
+
 import matplotlib.pyplot as plt
 import numpy as np
+from deap import algorithms, creator, base, tools
 from deap.tools import selNSGA2
 
 from BenchmarkProblems.BenchmarkProblem import BenchmarkProblem
@@ -8,15 +10,10 @@ from DEAP.CustomCrowdingMechanism import gc_selNSGA2
 from EvaluatedPS import EvaluatedPS
 from PS import PS
 from PSMetric.Atomicity import Atomicity
-from PSMetric.GlobalPerturbation import BivariateGlobalPerturbation
-from PSMetric.Linkage import Linkage
-from PSMetric.LocalPerturbation import BivariateLocalPerturbation
 from PSMetric.MeanFitness import MeanFitness
 from PSMetric.Metric import Metric
 from PSMetric.Simplicity import Simplicity
 from utils import announce
-from deap import algorithms, creator, base, tools
-
 
 
 def nsgaii(toolbox,
@@ -79,7 +76,9 @@ def nsgaiii_pure_functionality(toolbox, mu, ngen, cxpb, mutpb):
         pop = toolbox.select(pop + offspring, mu)
     return pop
 
-def get_toolbox_for_problem(benchmark_problem: BenchmarkProblem, metrics: list[Metric]):
+def get_toolbox_for_problem(benchmark_problem: BenchmarkProblem,
+                            metrics: list[Metric],
+                            use_experimental_niching = False):
     with announce("Generating the pRef"):
         pRef = benchmark_problem.get_reference_population(sample_size=10000)
     for metric in metrics:
@@ -116,7 +115,10 @@ def get_toolbox_for_problem(benchmark_problem: BenchmarkProblem, metrics: list[M
     toolbox.register("evaluate", evaluate)
     toolbox.register("population", tools.initRepeat, list, toolbox.make_random_ps)
 
-    toolbox.register("select", gc_selNSGA2)
+    if use_experimental_niching:
+        toolbox.register("select", gc_selNSGA2)
+    else:
+        toolbox.register("select", selNSGA2)
     return toolbox
 
 def get_stats_object():
@@ -170,12 +172,13 @@ def plot_stats_for_run(logbook, metrics: list[Metric]):
 def run_deap_for_benchmark_problem(benchmark_problem: BenchmarkProblem):
     print("Starting run_deap_for_benchmark_problem")
     metrics = [Simplicity(), MeanFitness(), Atomicity()]
-    pop, logbook = nsgaii(toolbox=get_toolbox_for_problem(benchmark_problem, metrics),
-                          mu = 300,
-                          cxpb=0.5,
-                          mutpb=1/benchmark_problem.search_space.amount_of_parameters,
-                          ngen=100,
-                          stats=get_stats_object())
+    with announce("Running the algorithm"):
+        pop, logbook = nsgaii(toolbox=get_toolbox_for_problem(benchmark_problem, metrics, use_experimental_niching=True),
+                              mu = 300,
+                              cxpb=0.5,
+                              mutpb=1/benchmark_problem.search_space.amount_of_parameters,
+                              ngen=100,
+                              stats=get_stats_object())
 
     print("The last population is ")
     report_in_order_of_last_metric(pop, benchmark_problem)
