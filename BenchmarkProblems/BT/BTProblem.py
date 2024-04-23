@@ -62,7 +62,9 @@ class BTProblem(BenchmarkProblem):
         return result
 
     def __repr__(self):
-        return f"BTProblem(amount_of_workers = {len(self.workers)}, calendar_length={self.calendar_length})"
+        return (f"BTProblem(amount_of_workers = {len(self.workers)}, "
+                f"calendar_length={self.calendar_length}),"
+                f"#skills={len(self.all_skills)})")
 
     def get_variables_from_fs(self, fs: FullSolution) -> list[WorkerVariables]:
         broken_by_worker = utils.break_list(list(fs.values), 1)

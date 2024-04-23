@@ -80,9 +80,11 @@ def nsgaiii_pure_functionality(toolbox, mu, ngen, cxpb, mutpb):
 
 def get_toolbox_for_problem(benchmark_problem: BenchmarkProblem,
                             metrics: list[Metric],
-                            use_experimental_niching = False):
-    with announce("Generating the pRef"):
-        pRef = benchmark_problem.get_reference_population(sample_size=10000)
+                            use_experimental_niching = False,
+                            pRef = None):
+    if pRef is None:
+        with announce("Generating the pRef"):
+            pRef = benchmark_problem.get_reference_population(sample_size=10000)
     for metric in metrics:
         metric.set_pRef(pRef)
 
@@ -231,21 +233,28 @@ def comprehensive_search(benchmark_problem: BenchmarkProblem,
 
 
 
+def get_history_pRef(benchmark_problem: BenchmarkProblem,
+                     sample_size: int,
+                     which_algorithm: Literal["uniform", "GA", "SA"]):
+    match which_algorithm:
+        case "uniform": return uniformly_random_distribution_pRef(sample_size=sample_size,
+                                                                  benchmark_problem=benchmark_problem)
+        case "GA": return pRef_from_GA(benchmark_problem=benchmark_problem,
+                                       sample_size=sample_size,
+                                       ga_population_size=300)
+        case "SA": return pRef_from_SA(benchmark_problem=benchmark_problem,
+                                       sample_size=sample_size,
+                                       max_trace = sample_size)
+        case _: raise ValueError
+
+
 def run_nsgaii_on_history_pRef(benchmark_problem: BenchmarkProblem,
                                which_algorithm: Literal["uniform", "GA", "SA"],
                                ps_miner_generations = 100,
                                sample_size= 10000):
-    pRef = None
-    match which_algorithm:
-        case "uniform": pRef = uniformly_random_distribution_pRef(sample_size=sample_size,
-                                                                  benchmark_problem=benchmark_problem)
-        case "GA": pRef = pRef_from_GA(benchmark_problem=benchmark_problem,
-                                       sample_size=sample_size,
-                                       ga_population_size=300)
-        case "SA": pRef = pRef_from_SA(benchmark_problem=benchmark_problem,
-                                       sample_size=sample_size,
-                                       max_trace = sample_size)
-        case _: raise ValueError
+    pRef = get_history_pRef(benchmark_problem = benchmark_problem,
+                            sample_size=sample_size,
+                            which_algorithm=which_algorithm)
 
 
     metrics = [Simplicity(), MeanFitness(), Atomicity()]

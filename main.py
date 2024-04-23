@@ -31,6 +31,7 @@ from BenchmarkProblems.Trapk import Trapk
 from BenchmarkProblems.UnitaryProblem import UnitaryProblem
 from DEAP.Testing import run_deap_for_benchmark_problem, comprehensive_search, run_nsgaii_on_history_pRef
 from EvaluatedFS import EvaluatedFS
+from Experimentation.DetectingPatterns import test_and_produce_patterns
 from Explainer import Explainer
 from PS import STAR, PS
 from PSMetric.Atomicity import Atomicity
@@ -109,20 +110,15 @@ if __name__ == '__main__':
     # problem = GraphColouring.random(amount_of_nodes=6, amount_of_colours=3, chance_of_connection=0.3)
     # problem = CheckerBoard(4, 4)
     problem = EfficientBTProblem.from_default_files()
+    print(f"The problem is {problem}")
     # problem = RoyalRoad(5, 4)
-    #problem = Trapk(2, 4)
+    # problem = Trapk(2, 4)
     #show_overall_system(problem)
-    #measure_T2_success_rate(problem)
-
-    #print(f"Problem")
-
-    # test_atomicities(problem)
-
 
     #run_deap_for_benchmark_problem(problem)
 
     #comprehensive_search(problem, BivariateLocalPerturbation(), 10000, None)
-    run_nsgaii_on_history_pRef(benchmark_problem=problem,
-                               which_algorithm="uniform",
-                               sample_size=10000,
-                               ps_miner_generations=100)
+    test_and_produce_patterns(benchmark_problem=problem,
+                              csv_file_name="cohort_analysis.csv",
+                              method="SA",
+                              pRef_size=50000)
