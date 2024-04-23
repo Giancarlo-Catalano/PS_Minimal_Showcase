@@ -123,6 +123,6 @@ if __name__ == '__main__':
 
     #comprehensive_search(problem, BivariateLocalPerturbation(), 10000, None)
     run_nsgaii_on_history_pRef(benchmark_problem=problem,
-                               which_algorithm="SA",
+                               which_algorithm="uniform",
                                sample_size=10000,
                                ps_miner_generations=100)

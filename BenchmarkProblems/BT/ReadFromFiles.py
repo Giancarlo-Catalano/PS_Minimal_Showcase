@@ -95,8 +95,9 @@ def make_employees_from_ED(employee_rows: list[dict], skills_dict: dict, rotas: 
             else:
                 employee_rotas.append(rotas[rp_code])
 
-        name = random.choice(names_available)
-        names_available.remove(name)
+        employee_index = int(re.findall("\d+", employee_code)[0])
+        name = names[employee_index]
+        #names_available.remove(name)
 
         return Worker(available_skills=skills_dict[employee_code],
                       worker_id=employee_code,
