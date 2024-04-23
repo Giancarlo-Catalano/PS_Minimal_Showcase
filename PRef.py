@@ -99,6 +99,13 @@ class PRef:
         matrix = np.array([fs.values for fs in full_solutions])
         return cls(full_solutions, fitness_values, matrix, search_space)
 
+
+    @classmethod
+    def from_evaluated_full_solutions(cls, evaluated_fss: Iterable[EvaluatedFS],
+                                      search_space: SearchSpace):
+        fss, fitnesses = utils.unzip([(e_fs.full_solution, e_fs.fitness) for e_fs in evaluated_fss])
+        return cls.from_full_solutions(fss, fitnesses, search_space)
+
     @classmethod
     def sample_from_search_space(cls, search_space: SearchSpace,
                                  fitness_function: Callable,

@@ -29,7 +29,7 @@ from BenchmarkProblems.GraphColouring import GraphColouring
 from BenchmarkProblems.RoyalRoad import RoyalRoad
 from BenchmarkProblems.Trapk import Trapk
 from BenchmarkProblems.UnitaryProblem import UnitaryProblem
-from DEAP.Testing import run_deap_for_benchmark_problem, comprehensive_search
+from DEAP.Testing import run_deap_for_benchmark_problem, comprehensive_search, run_nsgaii_on_history_pRef
 from EvaluatedFS import EvaluatedFS
 from Explainer import Explainer
 from PS import STAR, PS
@@ -119,6 +119,10 @@ if __name__ == '__main__':
     # test_atomicities(problem)
 
 
-    run_deap_for_benchmark_problem(problem)
+    #run_deap_for_benchmark_problem(problem)
 
     #comprehensive_search(problem, BivariateLocalPerturbation(), 10000, None)
+    run_nsgaii_on_history_pRef(benchmark_problem=problem,
+                               which_algorithm="SA",
+                               sample_size=10000,
+                               ps_miner_generations=100)

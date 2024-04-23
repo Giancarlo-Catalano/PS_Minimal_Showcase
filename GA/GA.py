@@ -10,7 +10,7 @@ from EvaluatedFS import EvaluatedFS
 from FSEvaluator import FSEvaluator
 from FullSolution import FullSolution
 from GA.Operators import FSMutationOperator, FSCrossoverOperator, FSSelectionOperator, SinglePointFSMutation, \
-    TwoPointFSCrossover
+    TwoPointFSCrossover, TournamentSelection
 from SearchSpace import SearchSpace
 
 Population: TypeAlias = list[EvaluatedFS]
@@ -70,18 +70,18 @@ class GA:
         return heapq.nlargest(amount, self.current_population)
 
 
-    def select_one(self) -> FullSolution:
+    def select_one(self) -> EvaluatedFS:
         return self.selection_operator.select_single(population=self.current_population)
 
     def make_new_child(self) -> EvaluatedFS:
         if random.random() < self.crossover_rate:
             # do crossover
-            mother = self.select_one()
-            father = self.select_one()
+            mother = self.select_one().full_solution
+            father = self.select_one().full_solution
 
             child_ps = self.mutation_operator.mutated(self.crossover_operator.crossed(mother, father))
         else:
-            child_ps = self.mutation_operator.mutated(self.select_one())
+            child_ps = self.mutation_operator.mutated(self.select_one().full_solution)
         return EvaluatedFS(child_ps, 0)
 
     def make_new_evaluated_population(self) -> list[EvaluatedFS]:
@@ -126,7 +126,7 @@ def test_FSGA(benchmark_problem: BenchmarkProblem):
     algorithm = GA(search_space=benchmark_problem.search_space,
                    mutation_operator=SinglePointFSMutation(benchmark_problem.search_space),
                    crossover_operator=TwoPointFSCrossover(),
-                   selection_operator=FSSelectionOperator(),
+                   selection_operator=TournamentSelection(),
                    crossover_rate=0.5,
                    elite_proportion=0.02,
                    tournament_size=3,
