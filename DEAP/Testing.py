@@ -189,7 +189,10 @@ def run_deap_for_benchmark_problem(benchmark_problem: BenchmarkProblem):
     print("Starting run_deap_for_benchmark_problem")
     metrics = [Simplicity(), MeanFitness(), Atomicity()]
     with announce("Running the algorithm"):
-        pop, logbook = nsgaii(toolbox=get_toolbox_for_problem(benchmark_problem, metrics, use_experimental_niching=True),
+        toolbox = get_toolbox_for_problem(benchmark_problem,
+                                          metrics,
+                                          use_experimental_niching=True)
+        pop, logbook = nsgaii(toolbox=toolbox,
                               mu = 300,
                               cxpb=0.5,
                               mutpb=1/benchmark_problem.search_space.amount_of_parameters,
@@ -197,7 +200,7 @@ def run_deap_for_benchmark_problem(benchmark_problem: BenchmarkProblem):
                               stats=get_stats_object())
 
     print("The last population is ")
-    report_in_order_of_last_metric(pop, benchmark_problem)
+    report_in_order_of_last_metric(pop, benchmark_problem, limit_to=12)
 
     plot_stats_for_run(logbook, metrics)
 

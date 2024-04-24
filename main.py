@@ -31,7 +31,7 @@ from BenchmarkProblems.Trapk import Trapk
 from BenchmarkProblems.UnitaryProblem import UnitaryProblem
 from DEAP.Testing import run_deap_for_benchmark_problem, comprehensive_search, run_nsgaii_on_history_pRef
 from EvaluatedFS import EvaluatedFS
-from Experimentation.DetectingPatterns import test_and_produce_patterns
+from Experimentation.DetectingPatterns import test_and_produce_patterns, plot_nicely
 from Explainer import Explainer
 from PS import STAR, PS
 from PSMetric.Atomicity import Atomicity
@@ -43,6 +43,7 @@ from PSMetric.Metric import test_different_metrics_for_ps
 from PSMiner import PSMiner, measure_T2_success_rate
 from PSMiners.MuPlusLambda.MPLLR import MPLLR
 from PickAndMerge import PickAndMergeSampler
+from pymootesting import test_run_with_pymoo
 from utils import announce, indent
 
 from pdf.testing import demo_hello_world
@@ -110,8 +111,8 @@ if __name__ == '__main__':
     # problem = GraphColouring.random(amount_of_nodes=6, amount_of_colours=3, chance_of_connection=0.3)
     # problem = CheckerBoard(4, 4)
     problem = EfficientBTProblem.from_default_files()
-    print(f"The problem is {problem}")
-    # problem = RoyalRoad(5, 4)
+    #problem = RoyalRoad(5, 4)
+    #print(f"The problem is {problem}")
     # problem = Trapk(2, 4)
     #show_overall_system(problem)
 
@@ -119,6 +120,10 @@ if __name__ == '__main__':
 
     #comprehensive_search(problem, BivariateLocalPerturbation(), 10000, None)
     test_and_produce_patterns(benchmark_problem=problem,
-                              csv_file_name="cohort_analysis.csv",
-                              method="SA",
-                              pRef_size=50000)
+                               csv_file_name="cohort_analysis_trial.csv",
+                               method="SA",
+                               pRef_size=5000)
+
+    #test_run_with_pymoo(problem)
+
+    #plot_nicely(r"C:\Users\gac8\PycharmProjects\PS-PDF\Experimentation\diversity.csv")
