@@ -17,6 +17,7 @@
         - the sample sizes etc...
 """
 import itertools
+import json
 
 import numpy as np
 
@@ -31,7 +32,8 @@ from BenchmarkProblems.Trapk import Trapk
 from BenchmarkProblems.UnitaryProblem import UnitaryProblem
 from DEAP.Testing import run_deap_for_benchmark_problem, comprehensive_search, run_nsgaii_on_history_pRef
 from EvaluatedFS import EvaluatedFS
-from Experimentation.DetectingPatterns import test_and_produce_patterns, plot_nicely
+from Experimentation.DetectingPatterns import test_and_produce_patterns, plot_nicely, json_to_cohorts, cohorts_to_json, \
+    BTProblemPatternDetector, mine_cohorts_from_problem
 from Explainer import Explainer
 from PS import STAR, PS
 from PSMetric.Atomicity import Atomicity
@@ -108,22 +110,35 @@ def show_overall_system(benchmark_problem: BenchmarkProblem):
 
 
 if __name__ == '__main__':
-    # problem = GraphColouring.random(amount_of_nodes=6, amount_of_colours=3, chance_of_connection=0.3)
-    # problem = CheckerBoard(4, 4)
     problem = EfficientBTProblem.from_default_files()
-    #problem = RoyalRoad(5, 4)
-    #print(f"The problem is {problem}")
-    # problem = Trapk(2, 4)
     #show_overall_system(problem)
 
     #run_deap_for_benchmark_problem(problem)
 
     #comprehensive_search(problem, BivariateLocalPerturbation(), 10000, None)
-    test_and_produce_patterns(benchmark_problem=problem,
-                               csv_file_name="cohort_analysis_trial.csv",
-                               method="SA",
-                               pRef_size=5000)
+    # test_and_produce_patterns(benchmark_problem=problem,
+    #                           csv_file_name="Experimentation/cohort_analysis_trial.csv",
+    #                           method="SA",
+    #                           pRef_size=10000,
+    #                           verbose = False)
 
-    #test_run_with_pymoo(problem)
 
-    #plot_nicely(r"C:\Users\gac8\PycharmProjects\PS-PDF\Experimentation\diversity.csv")
+    cohorts = mine_cohorts_from_problem(benchmark_problem=problem,
+                              method="SA",
+                              pRef_size=100000,
+                              nsga_pop_size=600,
+                              verbose=True)
+
+    #plot_nicely(r"C:\Users\gac8\PycharmProjects\PS-PDF\Experimentation\cohort_analysis_trial.csv")
+
+
+    print("Then dumping them into a file!")
+    output_json_file = r"C:\Users\gac8\PycharmProjects\PS-PDF\Experimentation\cohorts_of_long_run.json"
+    with open(output_json_file, "w+") as file:
+        json.dump(cohorts_to_json(cohorts), file)
+
+    with announce("Then writing them into a csv file"):
+        detector = BTProblemPatternDetector(problem)
+        detector.cohorts_into_csv(csv_file_name=r"C:\Users\gac8\PycharmProjects\PS-PDF\Experimentation\data_from_long_run.csv",
+                                  cohorts=cohorts)
+

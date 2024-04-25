@@ -23,7 +23,8 @@ def nsgaii(toolbox,
            mu,
            ngen,
            cxpb,
-           mutpb):
+           mutpb,
+           verbose=False):
     logbook = tools.Logbook()
     logbook.header = "gen", "evals", "min", "avg", "max"
 
@@ -37,7 +38,8 @@ def nsgaii(toolbox,
     # Compile statistics about the population
     record = stats.compile(pop)
     logbook.record(gen=0, evals=len(invalid_ind), **record)
-    print(logbook.stream)
+    if verbose:
+        print(logbook.stream)
 
     # Begin the generational process
     for gen in range(1, ngen):
@@ -56,7 +58,8 @@ def nsgaii(toolbox,
         # Compile statistics about the new population
         record = stats.compile(pop)
         logbook.record(gen=gen, evals=len(invalid_ind), **record)
-        print(logbook.stream)
+        if verbose:
+            print(logbook.stream)
 
     return pop, logbook
 
@@ -238,17 +241,19 @@ def comprehensive_search(benchmark_problem: BenchmarkProblem,
 
 def get_history_pRef(benchmark_problem: BenchmarkProblem,
                      sample_size: int,
-                     which_algorithm: Literal["uniform", "GA", "SA"]):
-    match which_algorithm:
-        case "uniform": return uniformly_random_distribution_pRef(sample_size=sample_size,
-                                                                  benchmark_problem=benchmark_problem)
-        case "GA": return pRef_from_GA(benchmark_problem=benchmark_problem,
-                                       sample_size=sample_size,
-                                       ga_population_size=300)
-        case "SA": return pRef_from_SA(benchmark_problem=benchmark_problem,
-                                       sample_size=sample_size,
-                                       max_trace = sample_size)
-        case _: raise ValueError
+                     which_algorithm: Literal["uniform", "GA", "SA"],
+                     verbose=True):
+    with announce(f"Running the algorithm to generate the PRef using {which_algorithm}", verbose=verbose):
+        match which_algorithm:
+            case "uniform": return uniformly_random_distribution_pRef(sample_size=sample_size,
+                                                                      benchmark_problem=benchmark_problem)
+            case "GA": return pRef_from_GA(benchmark_problem=benchmark_problem,
+                                           sample_size=sample_size,
+                                           ga_population_size=300)
+            case "SA": return pRef_from_SA(benchmark_problem=benchmark_problem,
+                                           sample_size=sample_size,
+                                           max_trace = sample_size)
+            case _: raise ValueError
 
 
 def run_nsgaii_on_history_pRef(benchmark_problem: BenchmarkProblem,

@@ -4,7 +4,7 @@ from typing import Optional, TypeAlias
 import numpy as np
 
 from BenchmarkProblems.BT.RotaPattern import RotaPattern
-
+from custom_types import JSON
 
 Skill: TypeAlias = str
 
@@ -55,13 +55,24 @@ class Worker:
         else:
             return [len(self.available_rotas)]
 
-    def to_json(self) -> dict:
+    def to_json(self) -> JSON:
         result = dict()
         result["available_skills"] = list(self.available_skills)
         result["available_rotas"] = [rota.to_json() for rota in self.available_rotas]
         result["worker_id"] = self.worker_id
         result["name"] = self.name
         return result
+
+    @classmethod
+    def from_json(cls, data: JSON):
+        available_skills = set(elem for elem in data["available_skills"])
+        available_rotas = [RotaPattern.from_json(elem) for elem in data["available_rotas"]]
+        worker_id = data["worker_id"]
+        name = data["name"]
+        return cls(available_skills=available_skills,
+                   available_rotas=available_rotas,
+                   worker_id=worker_id,
+                   name=name)
 
 
 class WorkerVariables:

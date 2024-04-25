@@ -1,5 +1,6 @@
 from typing import Iterable, Callable
 
+import matplotlib.pyplot as plt
 import numba
 import numpy as np
 from numba import jit
@@ -182,3 +183,9 @@ class PRef:
         avg_fitness = np.average(self.fitness_array)
         print(
             f"This PRef contains {self.sample_size} samples, where the minimum is {min_fitness}, the maximum = {max_fitness} and the average is {avg_fitness}")
+
+
+
+
+def plot_solutions_in_pRef(pRef: PRef):
+    utils.plot_sequence_of_points(pRef.fitness_array)

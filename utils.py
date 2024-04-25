@@ -3,6 +3,7 @@ from contextlib import ContextDecorator
 from typing import Iterable, Any
 
 import numpy as np
+from matplotlib import pyplot as plt
 
 
 def unzip(zipped):
@@ -64,23 +65,27 @@ def execution_time():
 class Announce(ContextDecorator):
     action_str: str
     timer: ExecutionTime
+    verbose: bool
 
-    def __init__(self, action_str: str):
+    def __init__(self, action_str: str, verbose=True):
         self.action_str = action_str
         self.timer = ExecutionTime()
+        self.verbose = verbose
 
     def __enter__(self):
-        print(self.action_str, end="...")
+        if self.verbose:
+            print(self.action_str, end="...")
         self.timer.__enter__()
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         self.timer.__exit__(exc_type, exc_val, exc_tb)
         runtime = self.timer.execution_time
-        print(f"...Finished (took {runtime:2f} seconds)")
+        if self.verbose:
+            print(f"...Finished (took {runtime:2f} seconds)")
 
 
-def announce(action: str):
-    return Announce(action)
+def announce(action: str, verbose=True):
+    return Announce(action, verbose)
 
 
 """ Timing example
@@ -116,3 +121,9 @@ def join_lists(many_lists: Iterable[list]) -> list:
         result.extend(sub_list)
 
     return result
+
+
+def plot_sequence_of_points(sequence):
+    x_points, y_points = unzip(list(enumerate(sequence)))
+    plt.plot(x_points, y_points)
+    plt.show()

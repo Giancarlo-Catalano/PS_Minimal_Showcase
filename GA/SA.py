@@ -4,6 +4,7 @@ from typing import Callable
 
 import numpy as np
 
+import utils
 from EvaluatedFS import EvaluatedFS
 from FSEvaluator import FSEvaluator
 from FullSolution import FullSolution
@@ -65,6 +66,8 @@ class SA:
         #current_best = current_individual
         trace.append(copy.copy(current_individual))
         temperature = 1
+
+        prob_trace = []
 
         while temperature > 0.01 and len(trace) < max_trace:
             new_candidate_solution = self.mutation_operator.mutated(current_individual.full_solution)

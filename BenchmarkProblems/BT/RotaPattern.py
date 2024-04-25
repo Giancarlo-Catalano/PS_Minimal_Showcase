@@ -2,6 +2,8 @@ from typing import Optional
 
 import numpy as np
 
+from custom_types import JSON
+
 
 class WorkDay:
     working: bool
@@ -73,11 +75,21 @@ class RotaPattern:
     def __len__(self):
         return len(self.days)
 
-    def to_json(self):
+    def to_json(self) -> JSON:
         days_object = "".join("W" if day.working else "-" for day in self.days)
         ## if time was being used, then the days object might contain the times
         return {"week_size": self.workweek_length,
                 "days":days_object}
+
+    @classmethod
+    def from_json(cls, data: JSON):
+        week_size = data["week_size"]
+        def dummy_working_day() -> WorkDay:
+            return WorkDay.working_day(start_time=900, end_time=1600)
+
+        days_string = data["days"]
+        days = [dummy_working_day() if day == "W" else WorkDay.not_working() for day in days_string]
+        return cls(workweek_length=week_size, days=days)
 
 
 def get_workers_present_each_day_of_the_week(rotas: list[RotaPattern], calendar_length: int) -> np.ndarray:

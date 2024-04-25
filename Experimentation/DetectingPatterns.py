@@ -1,6 +1,7 @@
 import csv
 import functools
 import itertools
+import json
 import random
 from typing import TypeAlias, Iterable, Literal
 
@@ -15,17 +16,19 @@ from BenchmarkProblems.EfficientBTProblem.EfficientBTProblem import EfficientBTP
 from DEAP.Testing import get_history_pRef, get_toolbox_for_problem, nsgaii, get_stats_object, \
     report_in_order_of_last_metric
 from EvaluatedPS import EvaluatedPS
+from PRef import plot_solutions_in_pRef
 from PS import PS, STAR
 from PSMetric.Atomicity import Atomicity
 from PSMetric.LocalPerturbation import BivariateLocalPerturbation
 from PSMetric.MeanFitness import MeanFitness
 from PSMetric.Simplicity import Simplicity
+from custom_types import JSON
 from utils import announce
 import seaborn as sns
 import pandas as pd
 from statsmodels.graphics.boxplots import violinplot
 
-class PSComponent:
+class CohortMember:
     worker: Worker
     chosen_rota_index: int
     chosen_rota_entended: ExtendedPattern
@@ -40,10 +43,24 @@ class PSComponent:
         self.chosen_rota_extended = rota_to_extended_pattern(rota=worker.available_rotas[rota_index],
                                                              calendar_length=calendar_length)
 
+    def to_json(self) -> JSON:
+        return {"worker": self.worker.to_json(),
+                "chosen_rota": int(self.chosen_rota_index)}
 
-Cohort: TypeAlias = list[PSComponent]
+    @classmethod
+    def from_json(cls, element: JSON):
+        chosen_rota = int(element["chosen_rota"])
+        calendar_length = 91  # TODO fetch this from somewhere else
+        worker = Worker.from_json(element["worker"])
+        return cls(worker=worker, rota_index=chosen_rota, calendar_length=calendar_length)
 
 
+
+Cohort: TypeAlias = list[CohortMember]
+
+
+def cohort_to_json(cohort: Cohort) -> JSON:
+    return [member.to_json() for member in cohort]
 def get_amount_of_shared_skills(cohort: Cohort) -> int:
     if len(cohort) == 0:
         return 0
@@ -54,7 +71,7 @@ def get_amount_of_shared_skills(cohort: Cohort) -> int:
 
 
 def get_hamming_distances(cohort: Cohort) -> list[int]:
-    def hamming_distance(component_a: PSComponent, component_b: PSComponent) -> int:
+    def hamming_distance(component_a: CohortMember, component_b: CohortMember) -> int:
         rota_a = component_a.chosen_rota_extended
         rota_b = component_b.chosen_rota_extended
 
@@ -96,18 +113,27 @@ class BTProblemPatternDetector:
 
 
     def ps_to_cohort(self, ps: PS) -> Cohort:
-        def fixed_var_to_PSComponent(var: int, val: int) -> PSComponent:
+        def fixed_var_to_cohort_member(var: int, val: int) -> CohortMember:
             worker = self.bt_problem.workers[var]
-            return PSComponent(worker, val, calendar_length=self.bt_problem.calendar_length)
-        return [fixed_var_to_PSComponent(var, val)
+            return CohortMember(worker, val, calendar_length=self.bt_problem.calendar_length)
+        return [fixed_var_to_cohort_member(var, val)
                 for var, val in enumerate(ps.values)
                 if val != STAR]
 
+
+    def get_distribution_of_skills(self) -> dict:
+        distribution = {skill: 0 for skill in self.bt_problem.all_skills}
+        for worker in self.bt_problem.workers:
+            for skill in worker.available_skills:
+                distribution[skill] = distribution[skill]+1
+
+        return distribution
+
     def random_cohort(self, size: int) -> Cohort:
-        def random_PSComponent() -> PSComponent:
+        def random_PSComponent() -> CohortMember:
             random_worker: Worker = random.choice(self.bt_problem.workers)
             rota_index = random.randrange(len(random_worker.available_rotas))
-            return PSComponent(random_worker, rota_index, self.bt_problem.calendar_length)
+            return CohortMember(random_worker, rota_index, self.bt_problem.calendar_length)
 
         return [random_PSComponent() for _ in range(size)]
 
@@ -122,21 +148,18 @@ class BTProblemPatternDetector:
                 "control": control}
 
 
-    def get_rows_from_pss(self, pss: Iterable[PS],
-                          control_amount: int) -> list[dict]:
-        given_cohorts = [self.ps_to_cohort(ps) for ps in pss if ps.fixed_count() > 1]
-        control_cohorts = [self.random_cohort(size=len(random.choice(given_cohorts)))
-                           for _ in range(control_amount)]
-
-        return list(itertools.chain(
-            map(functools.partial(self.get_row_for_cohort, control=False), given_cohorts),
-            map(functools.partial(self.get_row_for_cohort, control=True), control_cohorts)))
+    def get_rows_from_cohorts(self, cohorts: list[Cohort], is_control = False) -> list[dict]:
+        return [self.get_row_for_cohort(cohort, is_control) for cohort in cohorts]
 
 
-    def evaluated_pss_into_csv(self, csv_file_name: str,
-                               pss: list[PS]):
-        with announce("Converting the cohorts into rows"):
-            rows = self.get_rows_from_pss(pss, len(pss*6))
+    def cohorts_into_csv(self, csv_file_name: str,
+                         cohorts: list[Cohort],
+                         remove_trivial_ps = True,
+                         verbose = False):
+        if remove_trivial_ps:
+            cohorts = [cohort for cohort in cohorts if len(cohort) > 1]
+        with announce("Converting the cohorts into rows", verbose):
+            rows = self.get_rows_from_cohorts(cohorts)
         headers = rows[0].keys()
         with open(csv_file_name, "w+", newline="") as file:
             csv_writer = csv.DictWriter(file, fieldnames=headers)
@@ -148,13 +171,19 @@ class BTProblemPatternDetector:
 def test_and_produce_patterns(benchmark_problem: BTProblem,
                               csv_file_name: str,
                               pRef_size: int,
-                              method: Literal["uniform", "GA", "SA"], ):
+                              method: Literal["uniform", "GA", "SA"],
+                              verbose = False):
     pRef = get_history_pRef(benchmark_problem=benchmark_problem,
                             which_algorithm = method,
-                            sample_size = pRef_size)
+                            sample_size = pRef_size,
+                            verbose=verbose)
+
+    if verbose:
+        print("Here is the pRef, in case you were curious")
+        plot_solutions_in_pRef(pRef)
 
     metrics = [Simplicity(), MeanFitness(), BivariateLocalPerturbation()]
-    with announce("Running the PS_mining algorithm"):
+    with announce("Running the PS_mining algorithm", verbose = verbose):
         toolbox = get_toolbox_for_problem(benchmark_problem,
                                           metrics, use_experimental_niching=True,
                                           pRef = pRef)
@@ -162,20 +191,68 @@ def test_and_produce_patterns(benchmark_problem: BTProblem,
                                            mu =200,
                                            cxpb=0.5,
                                            mutpb=1/benchmark_problem.search_space.amount_of_parameters,
-                                           ngen=100,
-                                           stats=get_stats_object())
-    print("The last population is ")
-    report_in_order_of_last_metric(final_population, benchmark_problem)
+                                           ngen=2,
+                                           stats=get_stats_object(),
+                                           verbose=verbose)
+    if verbose:
+        print("The last population is ")
+        report_in_order_of_last_metric(final_population, benchmark_problem)
 
     def get_table_for_individual(ps:PS):
         return metrics[-1].get_local_linkage_table(ps)
 
     detector = BTProblemPatternDetector(benchmark_problem)
-    with announce(f"Analysing data and writing to file {csv_file_name}"):
-        detector.evaluated_pss_into_csv(csv_file_name, final_population)
+    cohorts = [detector.ps_to_cohort(ps) for ps in final_population]
+    with announce(f"Analysing data and writing to file {csv_file_name}", verbose):
+        detector.cohorts_into_csv(csv_file_name, cohorts)
+
+    if verbose:
+        print("Either way, the cohorts were:>>")
+
+    cohorts_as_json = [cohort_to_json(cohort) for cohort in cohorts]
+    print(json.dumps(cohorts_as_json))
+
+
+def mine_cohorts_from_problem(benchmark_problem: BTProblem,
+                              method: Literal["uniform", "GA", "SA"],
+                              pRef_size: int,
+                              nsga_pop_size: int,
+                              verbose=True):
+    pRef = get_history_pRef(benchmark_problem=benchmark_problem,
+                            which_algorithm = method,
+                            sample_size = pRef_size,
+                            verbose=False)
+
+    if verbose:
+        plot_solutions_in_pRef(pRef)
+
+    metrics = [Simplicity(), MeanFitness(), BivariateLocalPerturbation()]
+    with announce("Running the PS_mining algorithm", verbose = verbose):
+        toolbox = get_toolbox_for_problem(benchmark_problem,
+                                          metrics, use_experimental_niching=True,
+                                          pRef = pRef)
+        final_population, logbook = nsgaii(toolbox=toolbox,
+                                           mu =nsga_pop_size,
+                                           cxpb=0.5,
+                                           mutpb=1/benchmark_problem.search_space.amount_of_parameters,
+                                           ngen=600,
+                                           stats=get_stats_object(),
+                                           verbose=verbose)
+
+    detector = BTProblemPatternDetector(benchmark_problem)
+    return [detector.ps_to_cohort(ps) for ps in final_population]
 
 
 
+def json_to_cohorts(json_file: str) -> list[Cohort]:
+    with open(json_file, "r") as file:
+        data = json.load(file)
+    return [[CohortMember.from_json(element) for element in cohort]
+            for cohort in data]
+
+
+def cohorts_to_json(cohorts: list[Cohort]) -> JSON:
+    return [cohort_to_json(cohort) for cohort in cohorts]
 
 
 
@@ -218,7 +295,7 @@ def plot_nicely(input_csv_file: str):
 
     f, ax = plt.subplots(figsize=(8, 8))
 
-    sns.violinplot(x="clique_size", y="skills_diversity", hue="is_control", data=df,
+    sns.violinplot(x="size", y="skill_variation", hue="control", data=df,
                    palette={True: "b", False: "y"})
     sns.despine(left=True)
 
