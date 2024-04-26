@@ -22,6 +22,7 @@ import json
 import numpy as np
 
 import TerminationCriteria
+import utils
 from BenchmarkProblems.BT.BTProblem import BTProblem
 from BenchmarkProblems.BenchmarkProblem import BenchmarkProblem
 from BenchmarkProblems.Checkerboard import CheckerBoard
@@ -33,7 +34,8 @@ from BenchmarkProblems.UnitaryProblem import UnitaryProblem
 from DEAP.Testing import run_deap_for_benchmark_problem, comprehensive_search, run_nsgaii_on_history_pRef
 from EvaluatedFS import EvaluatedFS
 from Experimentation.DetectingPatterns import test_and_produce_patterns, plot_nicely, json_to_cohorts, cohorts_to_json, \
-    BTProblemPatternDetector, mine_cohorts_from_problem
+    BTProblemPatternDetector, mine_cohorts_from_problem, analyse_data_from_json_cohorts, \
+    generate_control_data_for_cohorts
 from Explainer import Explainer
 from PS import STAR, PS
 from PSMetric.Atomicity import Atomicity
@@ -111,34 +113,26 @@ def show_overall_system(benchmark_problem: BenchmarkProblem):
 
 if __name__ == '__main__':
     problem = EfficientBTProblem.from_default_files()
-    #show_overall_system(problem)
 
-    #run_deap_for_benchmark_problem(problem)
-
-    #comprehensive_search(problem, BivariateLocalPerturbation(), 10000, None)
-    # test_and_produce_patterns(benchmark_problem=problem,
-    #                           csv_file_name="Experimentation/cohort_analysis_trial.csv",
+    # cohorts = mine_cohorts_from_problem(benchmark_problem=problem,
     #                           method="SA",
-    #                           pRef_size=10000,
-    #                           verbose = False)
+    #                           pRef_size=100000,
+    #                           nsga_pop_size=600,
+    #                           verbose=True)
+
+    cohorts_json = r"C:\Users\gac8\PycharmProjects\PS-PDF\Experimentation\long_run\cohorts_of_long_run.json"
+    non_control_csv = r"C:\Users\gac8\PycharmProjects\PS-PDF\Experimentation\long_run\real.csv"
+    control_csv = r"C:\Users\gac8\PycharmProjects\PS-PDF\Experimentation\long_run\control.csv"
+    merged_csv = r"C:\Users\gac8\PycharmProjects\PS-PDF\Experimentation\long_run\merged.csv"
 
 
-    cohorts = mine_cohorts_from_problem(benchmark_problem=problem,
-                              method="SA",
-                              pRef_size=100000,
-                              nsga_pop_size=600,
-                              verbose=True)
+    analyse_data_from_json_cohorts(problem = problem,
+                                   json_file_name=cohorts_json,
+                                   output_csv_file_name = control_csv)
 
-    #plot_nicely(r"C:\Users\gac8\PycharmProjects\PS-PDF\Experimentation\cohort_analysis_trial.csv")
+    generate_control_data_for_cohorts(problem = problem,
+                                     json_file_name=cohorts_json,
+                                     output_csv_file_name = non_control_csv)
 
 
-    print("Then dumping them into a file!")
-    output_json_file = r"C:\Users\gac8\PycharmProjects\PS-PDF\Experimentation\cohorts_of_long_run.json"
-    with open(output_json_file, "w+") as file:
-        json.dump(cohorts_to_json(cohorts), file)
-
-    with announce("Then writing them into a csv file"):
-        detector = BTProblemPatternDetector(problem)
-        detector.cohorts_into_csv(csv_file_name=r"C:\Users\gac8\PycharmProjects\PS-PDF\Experimentation\data_from_long_run.csv",
-                                  cohorts=cohorts)
-
+    utils.merge_csv_files(control_csv, non_control_csv, merged_csv)

@@ -55,12 +55,49 @@ class CohortMember:
         return cls(worker=worker, rota_index=chosen_rota, calendar_length=calendar_length)
 
 
+    def get_amount_of_skills(self) -> int:
+        return len(self.worker.available_skills)
+
+    def get_amount_of_working_hours(self) -> int:
+        return int(np.sum(self.chosen_rota_extended))
+
+
+    def get_amount_of_choices(self) -> int:
+        return len(self.worker.available_rotas)
+
+
 
 Cohort: TypeAlias = list[CohortMember]
 
-
 def cohort_to_json(cohort: Cohort) -> JSON:
     return [member.to_json() for member in cohort]
+
+
+# utilities for analysing variables
+
+def get_mean_error(values: Iterable) -> float:
+    if len(values) < 1:
+        raise ValueError
+    mean = np.average(values)
+    return sum(abs(x - mean) for x in values) / len(values)
+
+def get_max_difference(values: Iterable) -> float:
+    return max(values) - min(values)
+
+
+def get_min_difference(values: Iterable) -> float:
+    to_check = np.array(sorted(values))
+    differences = to_check[1:] - to_check[:-1]
+    return min(differences)
+
+
+def get_statistical_info_about_iterable(values: Iterable, var_name: str) -> dict:
+    return {f"{var_name}_mean": np.average(values),
+            f"{var_name}_mean_error": get_mean_error(values),
+            f"{var_name}_min_diff": get_min_difference(values),
+            f"{var_name}_max_diff": get_max_difference(values)}
+
+
 def get_amount_of_shared_skills(cohort: Cohort) -> int:
     if len(cohort) == 0:
         return 0
@@ -70,31 +107,6 @@ def get_amount_of_shared_skills(cohort: Cohort) -> int:
     return len(common_to_all)
 
 
-def get_hamming_distances(cohort: Cohort) -> list[int]:
-    def hamming_distance(component_a: CohortMember, component_b: CohortMember) -> int:
-        rota_a = component_a.chosen_rota_extended
-        rota_b = component_b.chosen_rota_extended
-
-        return int(np.sum(rota_a != rota_b))
-
-    return [hamming_distance(a, b)
-               for a, b in itertools.combinations(cohort, 2)]
-
-
-def get_average_hamming_distance(cohort: Cohort) -> float:
-    distances = get_hamming_distances(cohort)
-    return np.average(distances)
-
-
-def get_working_day_count_max_difference(cohort: Cohort) -> int:
-    workcounts = [component.chosen_rota_extended.sum(dtype=int) for component in cohort]
-    return max(workcounts) - min(workcounts)
-
-def get_skill_amount_max_difference(cohort: Cohort) -> int:
-    amounts = [len(component.worker.available_skills) for component in cohort]
-    return max(amounts) - min(amounts)
-
-
 def get_skill_variation(cohort: Cohort) -> float:
     all_skills = set(skill for component in cohort
                           for skill in component.worker.available_skills)
@@ -102,6 +114,37 @@ def get_skill_variation(cohort: Cohort) -> float:
     return len(all_skills) / sum_of_available_skills
 
 
+def get_hamming_distances(cohort: Cohort) -> list[int]:
+
+    def hamming_distance(component_a: CohortMember, component_b: CohortMember) -> int:
+        rota_a = component_a.chosen_rota_extended
+        rota_b = component_b.chosen_rota_extended
+
+        return int(np.sum(rota_a != rota_b))
+
+    if len(cohort) == 2:  # makes my life a lot easier for data analysis
+        distance = hamming_distance(cohort[0], cohort[1])
+        return [distance, distance]
+
+    return [hamming_distance(a, b)
+               for a, b in itertools.combinations(cohort, 2)]
+
+
+def get_ranges_in_weekdays(cohort: Cohort) -> np.ndarray:
+    total_pattern: np.ndarray = sum(member.chosen_rota_extended for member in cohort)
+    total_pattern = total_pattern.reshape((-1, 7))
+
+    def range_score(min_amount, max_amount):
+        if max_amount == 0:
+            return 0
+        return (max_amount - min_amount) / max_amount
+    def range_for_column(column_index: int) -> float:
+        values = total_pattern[:, column_index]
+        min_value = min(values)
+        max_values = max(values)
+        return range_score(min_value, max_values)
+
+    return np.array([range_for_column(i) for i in range(7)])
 
 
 class BTProblemPatternDetector:
@@ -138,14 +181,33 @@ class BTProblemPatternDetector:
         return [random_PSComponent() for _ in range(size)]
 
 
+    def generate_matching_random_cohorts(self, reference_cohorts: list[Cohort], amount_to_generate: int) -> list[Cohort]:
+        def pick_size() -> int:
+            random_cohort = random.choice(reference_cohorts)
+            return len(random_cohort)
+
+        return [self.random_cohort(pick_size()) for _ in range(amount_to_generate)]
+
+
     def get_row_for_cohort(self, cohort: Cohort, control: bool) -> dict:
-        return {"size": len(cohort),
-                "q_shared_skills": get_amount_of_shared_skills(cohort),
-                "hamming_avg": get_average_hamming_distance(cohort),
-                "workcount_range": get_working_day_count_max_difference(cohort),
-                "skill_q_range": get_skill_amount_max_difference(cohort),
-                "skill_variation": get_skill_variation(cohort),
-                "control": control}
+        skill_amounts = [member.get_amount_of_skills() for member in cohort]
+        hours_amounts = [member.get_amount_of_working_hours() for member in cohort]
+        choices_amounts = [member.get_amount_of_choices() for member in cohort]
+        hamming_distances = get_hamming_distances(cohort)
+        weekdays = get_ranges_in_weekdays(cohort)
+
+        skill_info = get_statistical_info_about_iterable(skill_amounts, "skill_quantity")
+        hours_info = get_statistical_info_about_iterable(hours_amounts, "hours")
+        choice_info = get_statistical_info_about_iterable(choices_amounts, "choices")
+        hamming_info = get_statistical_info_about_iterable(hamming_distances, "hamming")
+        weekdays_info = get_statistical_info_about_iterable(weekdays, "weekdays")
+
+        result = skill_info | hours_info | choice_info | hamming_info | weekdays_info
+        result["shared_skill_amount"] = get_amount_of_shared_skills(cohort)
+        result["skill_diversity"] = get_skill_variation(cohort)
+        result["control"] = control
+        result["size"] = len(cohort)
+        return result
 
 
     def get_rows_from_cohorts(self, cohorts: list[Cohort], is_control = False) -> list[dict]:
@@ -155,11 +217,12 @@ class BTProblemPatternDetector:
     def cohorts_into_csv(self, csv_file_name: str,
                          cohorts: list[Cohort],
                          remove_trivial_ps = True,
-                         verbose = False):
+                         verbose = False,
+                         is_control=False):
         if remove_trivial_ps:
             cohorts = [cohort for cohort in cohorts if len(cohort) > 1]
         with announce("Converting the cohorts into rows", verbose):
-            rows = self.get_rows_from_cohorts(cohorts)
+            rows = self.get_rows_from_cohorts(cohorts, is_control)
         headers = rows[0].keys()
         with open(csv_file_name, "w+", newline="") as file:
             csv_writer = csv.DictWriter(file, fieldnames=headers)
@@ -305,6 +368,40 @@ def plot_nicely(input_csv_file: str):
     plt.legend(loc='upper left')
 
     plt.show()
+
+
+
+def analyse_data_from_json_cohorts(
+        problem: BTProblem,
+        json_file_name: str,
+        output_csv_file_name: str):
+    detector = BTProblemPatternDetector(problem)
+    with announce(f"Reading the file {json_file_name} to obtain the cohorts"):
+        cohorts = json_to_cohorts(json_file_name)
+
+    with announce(f"Writing the data about the {len(cohorts)} into the file {output_csv_file_name}"):
+        detector.cohorts_into_csv(cohorts=cohorts, csv_file_name=output_csv_file_name, is_control=False)
+
+    print("All finished")
+
+
+def generate_control_data_for_cohorts(problem: BTProblem,
+                                      json_file_name: str,
+                                      output_csv_file_name: str):
+    detector = BTProblemPatternDetector(problem)
+    with announce(f"Reading the file {json_file_name} to obtain the REFERENCE cohorts"):
+        reference_cohorts = json_to_cohorts(json_file_name)
+
+    control_cohorts = detector.generate_matching_random_cohorts(reference_cohorts,
+                                                                amount_to_generate=10 * len(reference_cohorts))
+
+    with announce(f"Writing the data about the REFERENCE COHORTS {len(reference_cohorts)} into the file {output_csv_file_name}"):
+        detector.cohorts_into_csv(cohorts=control_cohorts, csv_file_name=output_csv_file_name, is_control=True)
+
+    print("All finished")
+
+
+
 
 
 

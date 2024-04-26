@@ -3,6 +3,7 @@ from contextlib import ContextDecorator
 from typing import Iterable, Any
 
 import numpy as np
+import pandas as pd
 from matplotlib import pyplot as plt
 
 
@@ -127,3 +128,8 @@ def plot_sequence_of_points(sequence):
     x_points, y_points = unzip(list(enumerate(sequence)))
     plt.plot(x_points, y_points)
     plt.show()
+
+
+def merge_csv_files(first_file_name: str, second_file_name: str, output_file_name: str):
+    concatenated_df = pd.concat([pd.read_csv(file) for file in [first_file_name, second_file_name]], ignore_index=True)
+    concatenated_df.to_csv(output_file_name, index=False)
