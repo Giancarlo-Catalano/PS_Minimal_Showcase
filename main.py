@@ -41,6 +41,7 @@ from Explainer import Explainer
 from PS import STAR, PS
 from PSMetric.Atomicity import Atomicity
 from PSMetric.BivariateANOVALinkage import BivariateANOVALinkage
+from PSMetric.Classic3 import test_classic3
 from PSMetric.GlobalPerturbation import UnivariateGlobalPerturbation, BivariateGlobalPerturbation
 from PSMetric.Linkage import Linkage
 from PSMetric.LocalPerturbation import UnivariateLocalPerturbation, BivariateLocalPerturbation
@@ -123,9 +124,9 @@ def mine_cohorts_and_write_to_file(benchmark_problem: BenchmarkProblem,
         print(f"\toutput_file_name={output_file_name}")
 
     cohorts = mine_cohorts_from_problem(benchmark_problem=problem,
-                              method="SA",
-                              pRef_size=1000,
-                              nsga_pop_size=60,
+                              method="GA",
+                              pRef_size=10000,
+                              nsga_pop_size=600,
                               verbose=verbose)
 
     with announce(f"Writing the cohorts ({len(cohorts)} onto the file", verbose):
@@ -158,11 +159,13 @@ def analyse_cohort_data(benchmark_problem: BTProblem,
 
 
 if __name__ == '__main__':
-    experimental_directory = r"C:\Users\gac8\PycharmProjects\PS-PDF\Experimentation"
-    current_directory = os.path.join(experimental_directory, "cohorts_"+utils.get_formatted_timestamp())
-    cohort_file = os.path.join(current_directory, "cohort.json")
-    csv_file = os.path.join(current_directory, "analysis.csv")
+    # experimental_directory = r"C:\Users\gac8\PycharmProjects\PS-PDF\Experimentation"
+    # current_directory = os.path.join(experimental_directory, "cohorts_"+utils.get_formatted_timestamp())
+    # cohort_file = os.path.join(current_directory, "cohort.json")
+    # csv_file = os.path.join(current_directory, "analysis.csv")
 
-    problem = EfficientBTProblem.from_default_files()
+    #problem = EfficientBTProblem.from_default_files()
+    problem = Trapk(4, 4)
+    # mine_cohorts_and_write_to_file(problem, cohort_file, verbose=True)
 
-    mine_cohorts_and_write_to_file(problem, cohort_file, verbose=True)
+    test_classic3(problem, 10000)
