@@ -168,4 +168,4 @@ if __name__ == '__main__':
     problem = Trapk(4, 4)
     # mine_cohorts_and_write_to_file(problem, cohort_file, verbose=True)
 
-    test_classic3(problem, 10000)
+    test_classic3(problem, 2000)

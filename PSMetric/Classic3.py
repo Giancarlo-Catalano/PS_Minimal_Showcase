@@ -17,8 +17,56 @@ from PSMetric.Atomicity import Atomicity
 from PSMetric.MeanFitness import MeanFitness
 from PSMetric.Simplicity import Simplicity
 from custom_types import ArrayOfFloats
+from utils import announce
 
-RowsOfPRef : TypeAlias =  np.ndarray
+
+
+class RowsOfPRef:
+    fsm: np.ndarray
+    fitnesses: Optional[ArrayOfFloats]
+    normalised_fitnesses: ArrayOfFloats
+
+
+    def __init__(self, fsm: np.ndarray, fitnesses: ArrayOfFloats, normalised_fitnesses: ArrayOfFloats):
+        self.fsm = fsm
+        self.fitnesses = fitnesses
+        self.normalised_fitnesses = normalised_fitnesses
+
+    @classmethod
+    def all_from_pRef(cls, pRef: PRef, normalised_fitnesses: ArrayOfFloats):
+        fsm = pRef.full_solution_matrix.copy()
+        fitnesses = pRef.fitness_array.copy()
+        normalised_fitnesses = normalised_fitnesses.copy()
+        return cls(fsm, fitnesses, normalised_fitnesses)
+
+
+    def invalidate_fitnesses(self):
+        self.fitnesses = None
+
+
+    def filter_by_var_val(self, var: int, val: int):
+        which = self.fsm[:, var] == val
+        self.fsm = self.fsm[which]
+        if self.fitnesses is not None:
+            self.fitnesses = self.fitnesses[which]
+        self.normalised_fitnesses = self.normalised_fitnesses[which]
+
+
+    def get_mean_fitness(self) -> float:
+        if self.fitnesses is None:
+            raise ValueError("in RowsOfPRef, fitnesses is None")
+
+        if len(self.fitnesses) == 0:
+            return -np.inf
+        return np.average(self.fitnesses)
+
+    def get_normalised_mean_fitness(self) -> float:
+        return float(np.sum(self.normalised_fitnesses))
+
+    def copy(self):
+        return RowsOfPRef(self.fsm, self.fitnesses, self.normalised_fitnesses)
+
+
 
 
 
@@ -47,19 +95,16 @@ class Classic3PSMetrics:
 
 
     def mf_of_rows(self, which_rows: RowsOfPRef)->float:
-        if len(which_rows) == 0:
-            return -np.inf
-        return np.average(self.pRef.fitness_array[which_rows])
+        return which_rows.get_mean_fitness()
 
     def normalised_mf_of_rows(self, which_rows: RowsOfPRef) -> float:
-        fitnesses = self.normalised_fitnesses[which_rows]
-        return float(np.sum(fitnesses))
+        return which_rows.get_normalised_mean_fitness()
 
     def calculate_isolated_benefits(self) -> list[list[float]]:
         """Requires self.normalised_pRef"""
         def benefit_when_isolating(var: int, val: int) -> float:
             relevant_rows = self.pRef.full_solution_matrix[:, var] == val
-            return self.normalised_mf_of_rows(relevant_rows)
+            return float(np.sum(self.normalised_fitnesses[relevant_rows]))
 
         ss = self.pRef.search_space
         return [[benefit_when_isolating(var, val)
@@ -78,11 +123,13 @@ class Classic3PSMetrics:
 
         fsm = self.pRef.full_solution_matrix
 
-        def subset_where_column_has_value(superset: RowsOfPRef, variable: int, value: int):
-            return np.array([index for index in superset
-                               if fsm[index][variable] == value])
+        def subset_where_column_has_value(superset: RowsOfPRef, variable: int, value: int) -> RowsOfPRef:
+            result = superset.copy()
+            result.filter_by_var_val(variable, value)
+            return result
 
-        with_all_fixed = np.arange(self.pRef.sample_size, dtype=int)
+
+        with_all_fixed = RowsOfPRef.all_from_pRef(self.pRef, normalised_fitnesses=self.normalised_fitnesses)
         except_one_fixed = []
 
         for var in ps.get_fixed_variable_positions():
@@ -143,20 +190,42 @@ def test_classic3(benchmark_problem: BenchmarkProblem,sample_size: int):
 
 
     def get_control_values(ps: PS) -> (float, float, float):
-        return tuple(metric.get_single_score(ps) for metric in metrics)
+        return np.array(tuple(metric.get_single_score(ps) for metric in metrics))
 
     def get_experimental_value(ps: PS) -> (float, float, float):
-        return classic3.get_S_MF_A(ps)
+        return np.array(classic3.get_S_MF_A(ps))
 
 
-    test_quantity = 30
+    test_quantity = 6
     for _ in range(test_quantity):
         ps = PS.random(benchmark_problem.search_space, True)
-        control = np.array(get_control_values(ps))
-        experimental = np.array(get_experimental_value(ps))
+        control = get_control_values(ps)
+        experimental = get_experimental_value(ps)
 
         error = control-experimental
         print(f"The PS is {ps}, error = {error}") # , control = {control}, experimental = {experimental}")
+
+
+    pss_to_evaluate = [PS.random(benchmark_problem.search_space, half_chance_star=True)
+                       for _ in range(10000)]
+
+    with announce(f"Calculating using the traditional metrics"):
+        control_results = [get_control_values(ps) for ps in pss_to_evaluate]
+
+    with announce(f"Calculating using the new metrics"):
+        experimental_results = [get_experimental_value(ps) for ps in pss_to_evaluate]
+
+    def significant_difference(cont, exper) -> bool:
+        error = abs(cont - exper)
+        if not all(np.isreal(error)):
+            return True
+        return sum(error) > 0.000001
+
+
+    for ps, c, e in zip(pss_to_evaluate, control_results, experimental_results):
+        if significant_difference(c, e):
+            print(f"The {ps} has a significant error: {c} vs {e}")
+
 
 
 
