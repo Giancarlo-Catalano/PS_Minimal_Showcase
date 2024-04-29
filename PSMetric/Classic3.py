@@ -9,6 +9,7 @@ and by calculating the PRefs together we can save a lot of time.
 from typing import TypeAlias, Optional
 
 import numpy as np
+from numba import njit
 
 from BenchmarkProblems.BenchmarkProblem import BenchmarkProblem
 from PRef import PRef
@@ -19,7 +20,20 @@ from PSMetric.Simplicity import Simplicity
 from custom_types import ArrayOfFloats
 from utils import announce
 
-
+@njit
+def filter_by_var_val(fsm: np.ndarray,
+                      fitnesses,
+                      normalised_fitnesses,
+                      var: int,
+                      val: int) -> (np.ndarray, np.ndarray, np.ndarray):
+    which = fsm[:, var] == val
+    new_fsm = fsm[which]
+    if fitnesses is None:
+        new_fitnesses = None
+    else:
+        new_fitnesses = fitnesses[which]
+    new_normalised_fitnesses = normalised_fitnesses[which]
+    return new_fsm, new_fitnesses, new_normalised_fitnesses
 
 class RowsOfPRef:
     fsm: np.ndarray
@@ -27,7 +41,7 @@ class RowsOfPRef:
     normalised_fitnesses: ArrayOfFloats
 
 
-    def __init__(self, fsm: np.ndarray, fitnesses: ArrayOfFloats, normalised_fitnesses: ArrayOfFloats):
+    def __init__(self, fsm: np.ndarray, fitnesses: Optional[ArrayOfFloats], normalised_fitnesses: ArrayOfFloats):
         self.fsm = fsm
         self.fitnesses = fitnesses
         self.normalised_fitnesses = normalised_fitnesses
@@ -45,11 +59,11 @@ class RowsOfPRef:
 
 
     def filter_by_var_val(self, var: int, val: int):
-        which = self.fsm[:, var] == val
-        self.fsm = self.fsm[which]
-        if self.fitnesses is not None:
-            self.fitnesses = self.fitnesses[which]
-        self.normalised_fitnesses = self.normalised_fitnesses[which]
+        self.fsm, self.fitnesses, self.normalised_fitnesses = filter_by_var_val(self.fsm,
+                                                                                self.fitnesses,
+                                                                                self.normalised_fitnesses,
+                                                                                var,
+                                                                                val)
 
 
     def get_mean_fitness(self) -> float:
@@ -66,6 +80,8 @@ class RowsOfPRef:
     def copy(self):
         return RowsOfPRef(self.fsm, self.fitnesses, self.normalised_fitnesses)
 
+    def copy_with_invalidated_fitnesses(self):
+        return RowsOfPRef(self.fsm, None, self.normalised_fitnesses)
 
 
 
@@ -136,7 +152,7 @@ class Classic3PSMetrics:
             value = ps[var]
             except_one_fixed = [subset_where_column_has_value(original, var, value)
                       for original in except_one_fixed]
-            except_one_fixed.append(with_all_fixed.copy())
+            except_one_fixed.append(with_all_fixed.copy_with_invalidated_fitnesses())
             with_all_fixed = subset_where_column_has_value(with_all_fixed, var, value)
 
         return with_all_fixed, except_one_fixed
@@ -194,16 +210,6 @@ def test_classic3(benchmark_problem: BenchmarkProblem,sample_size: int):
 
     def get_experimental_value(ps: PS) -> (float, float, float):
         return np.array(classic3.get_S_MF_A(ps))
-
-
-    test_quantity = 6
-    for _ in range(test_quantity):
-        ps = PS.random(benchmark_problem.search_space, True)
-        control = get_control_values(ps)
-        experimental = get_experimental_value(ps)
-
-        error = control-experimental
-        print(f"The PS is {ps}, error = {error}") # , control = {control}, experimental = {experimental}")
 
 
     pss_to_evaluate = [PS.random(benchmark_problem.search_space, half_chance_star=True)
