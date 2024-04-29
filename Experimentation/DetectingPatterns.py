@@ -2,6 +2,7 @@ import csv
 import functools
 import itertools
 import json
+import os
 import random
 from typing import TypeAlias, Iterable, Literal
 
@@ -13,7 +14,7 @@ from BenchmarkProblems.BT.Worker import Worker
 from BenchmarkProblems.BenchmarkProblem import BenchmarkProblem
 from BenchmarkProblems.EfficientBTProblem.EfficientBTProblem import EfficientBTProblem, ExtendedPattern, \
     rota_to_extended_pattern
-from DEAP.Testing import get_history_pRef, get_toolbox_for_problem, nsgaii, get_stats_object, \
+from DEAP.Testing import get_history_pRef, get_toolbox_for_problem, nsga, get_stats_object, \
     report_in_order_of_last_metric
 from EvaluatedPS import EvaluatedPS
 from PRef import plot_solutions_in_pRef
@@ -215,16 +216,20 @@ class BTProblemPatternDetector:
 
 
     def cohorts_into_csv(self, csv_file_name: str,
-                         cohorts: list[Cohort],
+                         real_cohorts: list[Cohort],
+                         control_cohorts: list[Cohort],
                          remove_trivial_ps = True,
-                         verbose = False,
-                         is_control=False):
+                         verbose = False):
         if remove_trivial_ps:
-            cohorts = [cohort for cohort in cohorts if len(cohort) > 1]
+            real_cohorts = [cohort for cohort in real_cohorts if len(cohort) > 1]
+            control_cohorts = [cohort for cohort in control_cohorts if len(cohort) > 1]
         with announce("Converting the cohorts into rows", verbose):
-            rows = self.get_rows_from_cohorts(cohorts, is_control)
+            rows = self.get_rows_from_cohorts(real_cohorts, False)
+            rows.extend(self.get_rows_from_cohorts(control_cohorts, True))
+
         headers = rows[0].keys()
         with open(csv_file_name, "w+", newline="") as file:
+            os.makedirs(os.path.dirname(csv_file_name), exist_ok=True)
             csv_writer = csv.DictWriter(file, fieldnames=headers)
             csv_writer.writeheader()
             csv_writer.writerows(rows)
@@ -245,18 +250,18 @@ def test_and_produce_patterns(benchmark_problem: BTProblem,
         print("Here is the pRef, in case you were curious")
         plot_solutions_in_pRef(pRef)
 
-    metrics = [Simplicity(), MeanFitness(), BivariateLocalPerturbation()]
+    metrics = [Simplicity(), MeanFitness(), Atomicity()]
     with announce("Running the PS_mining algorithm", verbose = verbose):
         toolbox = get_toolbox_for_problem(benchmark_problem,
                                           metrics, use_experimental_niching=True,
                                           pRef = pRef)
-        final_population, logbook = nsgaii(toolbox=toolbox,
-                                           mu =200,
-                                           cxpb=0.5,
-                                           mutpb=1/benchmark_problem.search_space.amount_of_parameters,
-                                           ngen=2,
-                                           stats=get_stats_object(),
-                                           verbose=verbose)
+        final_population, logbook = nsga(toolbox=toolbox,
+                                         mu =200,
+                                         cxpb=0.5,
+                                         mutpb=1/benchmark_problem.search_space.amount_of_parameters,
+                                         ngen=2,
+                                         stats=get_stats_object(),
+                                         verbose=verbose)
     if verbose:
         print("The last population is ")
         report_in_order_of_last_metric(final_population, benchmark_problem)
@@ -284,23 +289,26 @@ def mine_cohorts_from_problem(benchmark_problem: BTProblem,
     pRef = get_history_pRef(benchmark_problem=benchmark_problem,
                             which_algorithm = method,
                             sample_size = pRef_size,
-                            verbose=False)
+                            verbose=verbose)
 
     if verbose:
         plot_solutions_in_pRef(pRef)
 
-    metrics = [Simplicity(), MeanFitness(), BivariateLocalPerturbation()]
+    metrics = [Simplicity(), MeanFitness(), Atomicity()]
     with announce("Running the PS_mining algorithm", verbose = verbose):
         toolbox = get_toolbox_for_problem(benchmark_problem,
-                                          metrics, use_experimental_niching=True,
+                                          metrics,
+                                          algorithm="NSGAIII",
+                                          use_experimental_niching=True,
                                           pRef = pRef)
-        final_population, logbook = nsgaii(toolbox=toolbox,
-                                           mu =nsga_pop_size,
-                                           cxpb=0.5,
-                                           mutpb=1/benchmark_problem.search_space.amount_of_parameters,
-                                           ngen=600,
-                                           stats=get_stats_object(),
-                                           verbose=verbose)
+
+        final_population, logbook = nsga(toolbox=toolbox,
+                                         mu =nsga_pop_size,
+                                         cxpb=0.5,
+                                         mutpb=1/benchmark_problem.search_space.amount_of_parameters,
+                                         ngen=nsga_pop_size,
+                                         stats=get_stats_object(),
+                                         verbose=verbose)
 
     detector = BTProblemPatternDetector(benchmark_problem)
     return [detector.ps_to_cohort(ps) for ps in final_population]
@@ -316,38 +324,6 @@ def json_to_cohorts(json_file: str) -> list[Cohort]:
 
 def cohorts_to_json(cohorts: list[Cohort]) -> JSON:
     return [cohort_to_json(cohort) for cohort in cohorts]
-
-
-
-def plot_nicely_old(input_csv_file: str):
-
-
-    # Load your CSV file
-    df = pd.read_csv(input_csv_file)
-
-    # Define the plot
-    plt.figure(figsize=(12, 6))
-
-    # Create the violin plot
-    fig, ax = plt.subplots()
-
-    clique_sizes = sorted(pd.unique(df["clique_size"]))
-    for clique_size in clique_sizes:
-        where_clique_matches = df["clique_size"] == clique_size
-        control_data = df[where_clique_matches & df["is_control"] == True]["skills_diversity"]
-        real_data = df[where_clique_matches & df["is_control"] == False]["skills_diversity"]
-
-        violinplot([control_data], positions=[0], show_boxplot=False, side='left', ax=ax, plot_opts={'violin_fc': 'C0'})
-        violinplot([real_data], positions=[0], show_boxplot=False, side='right', ax=ax, plot_opts={'violin_fc':'C1'})
-
-    # Customize the plot
-    plt.title('Asymmetric Violin Plot: Skills Diversity by Clique Size and Control')
-    plt.xlabel('Clique Size')
-    plt.ylabel('Skills Diversity (%)')
-    plt.legend(title='Control Group', loc='upper left')
-
-    # Show the plot
-    plt.show()
 
 
 def plot_nicely(input_csv_file: str):
@@ -373,25 +349,22 @@ def plot_nicely(input_csv_file: str):
 
 def analyse_data_from_json_cohorts(
         problem: BTProblem,
-        json_file_name: str,
-        output_csv_file_name: str):
+        real_cohorts: list[Cohort],
+        control_cohorts: list[Cohort],
+        output_csv_file_name: str,
+        verbose = True):
     detector = BTProblemPatternDetector(problem)
-    with announce(f"Reading the file {json_file_name} to obtain the cohorts"):
-        cohorts = json_to_cohorts(json_file_name)
-
-    with announce(f"Writing the data about the {len(cohorts)} into the file {output_csv_file_name}"):
-        detector.cohorts_into_csv(cohorts=cohorts, csv_file_name=output_csv_file_name, is_control=False)
-
-    print("All finished")
+    with announce(f"Writing the data about the {len(real_cohorts)}+{len(control_cohorts)} into the file {output_csv_file_name}", verbose):
+        detector.cohorts_into_csv(real_cohorts=real_cohorts,
+                                  control_cohorts=control_cohorts,
+                                  csv_file_name=output_csv_file_name,
+                                  remove_trivial_ps=True)
 
 
 def generate_control_data_for_cohorts(problem: BTProblem,
-                                      json_file_name: str,
+                                      reference_cohorts: list[Cohort],
                                       output_csv_file_name: str):
     detector = BTProblemPatternDetector(problem)
-    with announce(f"Reading the file {json_file_name} to obtain the REFERENCE cohorts"):
-        reference_cohorts = json_to_cohorts(json_file_name)
-
     control_cohorts = detector.generate_matching_random_cohorts(reference_cohorts,
                                                                 amount_to_generate=10 * len(reference_cohorts))
 

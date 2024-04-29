@@ -18,6 +18,7 @@
 """
 import itertools
 import json
+import os
 
 import numpy as np
 
@@ -111,28 +112,57 @@ def show_overall_system(benchmark_problem: BenchmarkProblem):
     print("And that concludes the showcase")
 
 
-if __name__ == '__main__':
-    problem = EfficientBTProblem.from_default_files()
 
-    # cohorts = mine_cohorts_from_problem(benchmark_problem=problem,
-    #                           method="SA",
-    #                           pRef_size=100000,
-    #                           nsga_pop_size=600,
-    #                           verbose=True)
+def mine_cohorts_and_write_to_file(benchmark_problem: BenchmarkProblem,
+                                   output_file_name: str,
+                                   verbose=True):
 
-    cohorts_json = r"C:\Users\gac8\PycharmProjects\PS-PDF\Experimentation\long_run\cohorts_of_long_run.json"
-    non_control_csv = r"C:\Users\gac8\PycharmProjects\PS-PDF\Experimentation\long_run\real.csv"
-    control_csv = r"C:\Users\gac8\PycharmProjects\PS-PDF\Experimentation\long_run\control.csv"
-    merged_csv = r"C:\Users\gac8\PycharmProjects\PS-PDF\Experimentation\long_run\merged.csv"
+    if verbose:
+        print("Initialising mine_cohorts_and_write_to_file(")
+        print(f"\tbenchmark_problem={benchmark_problem},")
+        print(f"\toutput_file_name={output_file_name}")
+
+    cohorts = mine_cohorts_from_problem(benchmark_problem=problem,
+                              method="SA",
+                              pRef_size=1000,
+                              nsga_pop_size=60,
+                              verbose=verbose)
+
+    with announce(f"Writing the cohorts ({len(cohorts)} onto the file", verbose):
+        data = cohorts_to_json(cohorts)
+        os.makedirs(os.path.dirname(output_file_name), exist_ok=True)
+        with open(output_file_name, "w+") as file:
+            json.dump(data, file)
+
+    if verbose:
+        print(f"Finished writing onto {output_file_name}")
+
+def analyse_cohort_data(benchmark_problem: BTProblem,
+                        cohorts_json_file_name: str,
+                        csv_file_name: str,
+                        verbose=True):
+    with announce(f"Reading the file {cohorts_json_file_name} to obtain the cohorts", verbose):
+        cohorts = json_to_cohorts(cohorts_json_file_name)
+
+
+    detector = BTProblemPatternDetector(benchmark_problem)
+    control_cohorts = detector.generate_matching_random_cohorts(cohorts,
+                                                                amount_to_generate=10 * len(cohorts))
 
 
     analyse_data_from_json_cohorts(problem = problem,
-                                   json_file_name=cohorts_json,
-                                   output_csv_file_name = control_csv)
-
-    generate_control_data_for_cohorts(problem = problem,
-                                     json_file_name=cohorts_json,
-                                     output_csv_file_name = non_control_csv)
+                                   real_cohorts=cohorts,
+                                   control_cohorts=control_cohorts,
+                                   output_csv_file_name = csv_file_name,
+                                   verbose=verbose)
 
 
-    utils.merge_csv_files(control_csv, non_control_csv, merged_csv)
+if __name__ == '__main__':
+    experimental_directory = r"C:\Users\gac8\PycharmProjects\PS-PDF\Experimentation"
+    current_directory = os.path.join(experimental_directory, "cohorts_"+utils.get_formatted_timestamp())
+    cohort_file = os.path.join(current_directory, "cohort.json")
+    csv_file = os.path.join(current_directory, "analysis.csv")
+
+    problem = EfficientBTProblem.from_default_files()
+
+    mine_cohorts_and_write_to_file(problem, cohort_file, verbose=True)

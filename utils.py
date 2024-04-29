@@ -5,6 +5,7 @@ from typing import Iterable, Any
 import numpy as np
 import pandas as pd
 from matplotlib import pyplot as plt
+from datetime import datetime
 
 
 def unzip(zipped):
@@ -133,3 +134,16 @@ def plot_sequence_of_points(sequence):
 def merge_csv_files(first_file_name: str, second_file_name: str, output_file_name: str):
     concatenated_df = pd.concat([pd.read_csv(file) for file in [first_file_name, second_file_name]], ignore_index=True)
     concatenated_df.to_csv(output_file_name, index=False)
+
+
+
+
+
+def get_formatted_timestamp():
+    # Get the current time
+    now = datetime.now()
+
+    # Format the timestamp as minutes:hours_day-month
+    formatted_timestamp = now.strftime("%H'%M_%d-%m")
+
+    return formatted_timestamp

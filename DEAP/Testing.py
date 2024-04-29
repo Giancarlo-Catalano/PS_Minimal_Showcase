@@ -4,10 +4,10 @@ from typing import Literal
 import matplotlib.pyplot as plt
 import numpy as np
 from deap import algorithms, creator, base, tools
-from deap.tools import selNSGA2
+from deap.tools import selNSGA2, uniform_reference_points, selNSGA3, selNSGA3WithMemory
 
 from BenchmarkProblems.BenchmarkProblem import BenchmarkProblem
-from DEAP.CustomCrowdingMechanism import gc_selNSGA2
+from DEAP.CustomCrowdingMechanism import gc_selNSGA2, gc_selNSGA3, GC_selNSGA3WithMemory
 from EvaluatedPS import EvaluatedPS
 from GA.HistoryPRefs import uniformly_random_distribution_pRef, pRef_from_GA, pRef_from_SA
 from PS import PS
@@ -18,13 +18,13 @@ from PSMetric.Simplicity import Simplicity
 from utils import announce
 
 
-def nsgaii(toolbox,
-           stats,
-           mu,
-           ngen,
-           cxpb,
-           mutpb,
-           verbose=False):
+def nsga(toolbox,
+         stats,
+         mu,
+         ngen,
+         cxpb,
+         mutpb,
+         verbose=False):
     logbook = tools.Logbook()
     logbook.header = "gen", "evals", "min", "avg", "max"
 
@@ -83,7 +83,8 @@ def nsgaiii_pure_functionality(toolbox, mu, ngen, cxpb, mutpb):
 
 def get_toolbox_for_problem(benchmark_problem: BenchmarkProblem,
                             metrics: list[Metric],
-                            use_experimental_niching = False,
+                            algorithm = Literal["NSGAII", "NSGAIII"],
+                            use_experimental_niching = True,
                             pRef = None):
     if pRef is None:
         with announce("Generating the pRef"):
@@ -122,10 +123,17 @@ def get_toolbox_for_problem(benchmark_problem: BenchmarkProblem,
     toolbox.register("evaluate", evaluate)
     toolbox.register("population", tools.initRepeat, list, toolbox.make_random_ps)
 
-    if use_experimental_niching:
-        toolbox.register("select", gc_selNSGA2)
-    else:
-        toolbox.register("select", selNSGA2)
+    selection_method = None
+
+    if algorithm == "NSGAII":
+        selection_method = gc_selNSGA2 if use_experimental_niching else selNSGA2
+    elif algorithm == "NSGAIII":
+        ref_points = uniform_reference_points(nobj=len(metrics), p=12)
+        selection_method = GC_selNSGA3WithMemory(ref_points) if use_experimental_niching else selNSGA3WithMemory(ref_points)
+
+    if selection_method is None:
+        raise ValueError(f"The provided selection method '{algorithm}', experimental = {use_experimental_niching} is not valid")
+    toolbox.register("select", selection_method)
     return toolbox
 
 def get_stats_object():
@@ -194,13 +202,13 @@ def run_deap_for_benchmark_problem(benchmark_problem: BenchmarkProblem):
     with announce("Running the algorithm"):
         toolbox = get_toolbox_for_problem(benchmark_problem,
                                           metrics,
-                                          use_experimental_niching=True)
-        pop, logbook = nsgaii(toolbox=toolbox,
-                              mu = 300,
-                              cxpb=0.5,
-                              mutpb=1/benchmark_problem.search_space.amount_of_parameters,
-                              ngen=100,
-                              stats=get_stats_object())
+                                          selection_method=True)
+        pop, logbook = nsga(toolbox=toolbox,
+                            mu = 300,
+                            cxpb=0.5,
+                            mutpb=1/benchmark_problem.search_space.amount_of_parameters,
+                            ngen=100,
+                            stats=get_stats_object())
 
     print("The last population is ")
     report_in_order_of_last_metric(pop, benchmark_problem, limit_to=12)
@@ -268,13 +276,16 @@ def run_nsgaii_on_history_pRef(benchmark_problem: BenchmarkProblem,
     metrics = [Simplicity(), MeanFitness(), Atomicity()]
     with announce("Running the PS_mining algorithm"):
         toolbox = get_toolbox_for_problem(benchmark_problem,
-                                          metrics, use_experimental_niching=True)
-        final_population, logbook = nsgaii(toolbox=toolbox,
-                              mu = 300,
-                              cxpb=0.5,
-                              mutpb=1/benchmark_problem.search_space.amount_of_parameters,
-                              ngen=ps_miner_generations,
-                              stats=get_stats_object())
+                                          metrics, selection_method=True,
+                                          pRef = pRef)
+        final_population, logbook = nsga(toolbox=toolbox,
+                                         mu = 300,
+                                         cxpb=0.5,
+                                         mutpb=1/benchmark_problem.search_space.amount_of_parameters,
+                                         ngen=ps_miner_generations,
+                                         stats=get_stats_object())
+
+        tools.selNSGA3()
 
     print("The last population is ")
     report_in_order_of_last_metric(final_population,
