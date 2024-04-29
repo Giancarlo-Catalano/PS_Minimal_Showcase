@@ -1,6 +1,9 @@
 import itertools
 from typing import Optional, TypeAlias
 
+import numpy as np
+import pandas as pd
+
 import utils
 from BenchmarkProblems.BT.ReadFromFiles import get_dicts_from_RPD, make_roster_patterns_from_RPD, get_dicts_from_ED, \
     make_employees_from_ED, get_skills_dict
@@ -126,5 +129,27 @@ class BTProblem(BenchmarkProblem):
                                       if wv.which_rota is not None))
 
 
+
+    def details_of_solution(self, fs: FullSolution):
+        wvs = self.get_variables_from_fs(fs)
+
+        def get_relevant_rotas(skill):
+            """assumes that all of the wvs's are valid, ie that none of the attributes are None"""
+            return [wv.effective_rota(worker, consider_starting_week=False)
+                     for wv, worker in zip(wvs, self.workers)
+                     if skill in worker.available_skills]
+
+        def mins_and_maxs(input_rotas):
+            workers_per_weekday = get_workers_present_each_day_of_the_week(input_rotas, self.calendar_length)
+            maxs = np.max(workers_per_weekday, axis=0)
+            mins = np.min(workers_per_weekday, axis=0)
+            return list(zip(mins, maxs))
+
+
+        weekdays = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
+        ranges_for_skills = [[skill]+mins_and_maxs(get_relevant_rotas(skill))
+                             for skill in self.all_skills]
+        df = pd.DataFrame(ranges_for_skills, columns=["Skill"]+weekdays)
+        return df
 
 

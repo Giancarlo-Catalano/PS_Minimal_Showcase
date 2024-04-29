@@ -49,4 +49,7 @@ def pRef_from_SA(benchmark_problem: BenchmarkProblem,
         solutions.extend(algorithm.get_one_with_attempts(max_trace= max_trace))
 
     solutions = solutions[:sample_size]
+
+    best_solution = max(solutions)
+    # df = benchmark_problem.details_of_solution(best_solution.full_solution)   # Experimental
     return PRef.from_evaluated_full_solutions(solutions, benchmark_problem.search_space)

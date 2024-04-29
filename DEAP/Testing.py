@@ -12,6 +12,7 @@ from EvaluatedPS import EvaluatedPS
 from GA.HistoryPRefs import uniformly_random_distribution_pRef, pRef_from_GA, pRef_from_SA
 from PS import PS
 from PSMetric.Atomicity import Atomicity
+from PSMetric.Classic3 import Classic3PSMetrics
 from PSMetric.MeanFitness import MeanFitness
 from PSMetric.Metric import Metric
 from PSMetric.Simplicity import Simplicity
@@ -111,9 +112,10 @@ def get_toolbox_for_problem(benchmark_problem: BenchmarkProblem,
     toolbox.register("make_random_ps",
                      geometric_distribution_ps)
 
+    classic3_evaluator = Classic3PSMetrics(pRef)
 
     def evaluate(ps) -> tuple:
-        return tuple(metric.get_single_score(ps) for metric in metrics)
+        return classic3_evaluator.get_S_MF_A(ps)  # experimental
 
     toolbox.register("mate", tools.cxUniform, indpb=1/benchmark_problem.search_space.amount_of_parameters)
     lower_bounds = [-1 for _ in benchmark_problem.search_space.cardinalities]
