@@ -14,7 +14,7 @@ from BenchmarkProblems.BT.Worker import Worker
 from BenchmarkProblems.BenchmarkProblem import BenchmarkProblem
 from BenchmarkProblems.EfficientBTProblem.EfficientBTProblem import EfficientBTProblem, ExtendedPattern, \
     rota_to_extended_pattern
-from DEAP.Testing import get_history_pRef, get_toolbox_for_problem, nsga, get_stats_object, \
+from DEAP.NSGAMiner import get_history_pRef, get_toolbox_for_problem, nsga, get_stats_object, \
     report_in_order_of_last_metric
 from EvaluatedPS import EvaluatedPS
 from PRef import plot_solutions_in_pRef
