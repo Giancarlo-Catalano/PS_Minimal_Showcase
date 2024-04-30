@@ -36,7 +36,7 @@ from DEAP.Testing import run_deap_for_benchmark_problem, comprehensive_search, r
 from EvaluatedFS import EvaluatedFS
 from Experimentation.DetectingPatterns import test_and_produce_patterns, plot_nicely, json_to_cohorts, cohorts_to_json, \
     BTProblemPatternDetector, mine_cohorts_from_problem, analyse_data_from_json_cohorts, \
-    generate_control_data_for_cohorts
+    generate_control_data_for_cohorts, generate_coverage_stats
 from Explainer import Explainer
 from PS import STAR, PS
 from PSMetric.Atomicity import Atomicity
@@ -125,8 +125,9 @@ def mine_cohorts_and_write_to_file(benchmark_problem: BenchmarkProblem,
 
     cohorts = mine_cohorts_from_problem(benchmark_problem=problem,
                                         method="SA",
-                                        pRef_size=10000,
+                                        pRef_size=1000,
                                         nsga_pop_size=600,
+                                        nsga_ngens=600,
                                         verbose=verbose)
 
     with announce(f"Writing the cohorts ({len(cohorts)} onto the file", verbose):
@@ -148,7 +149,7 @@ def analyse_cohort_data(benchmark_problem: BTProblem,
 
     detector = BTProblemPatternDetector(benchmark_problem)
     control_cohorts = detector.generate_matching_random_cohorts(cohorts,
-                                                                amount_to_generate=10 * len(cohorts))
+                                                                amount_to_generate=len(cohorts))
 
 
     analyse_data_from_json_cohorts(problem = problem,
@@ -160,12 +161,19 @@ def analyse_cohort_data(benchmark_problem: BTProblem,
 
 if __name__ == '__main__':
     experimental_directory = r"C:\Users\gac8\PycharmProjects\PS-PDF\Experimentation"
-    current_directory = os.path.join(experimental_directory, "cohorts_"+utils.get_formatted_timestamp())
+    current_directory = r"C:\Users\gac8\PycharmProjects\PS-PDF\Experimentation\cohorts_17'02_29-04"
+    # current_directory = os.path.join(experimental_directory, "cohorts_"+utils.get_formatted_timestamp())
     cohort_file = os.path.join(current_directory, "cohort.json")
-    # csv_file = os.path.join(current_directory, "analysis.csv")
+    csv_file = os.path.join(current_directory, "analysis.csv")
 
     problem = EfficientBTProblem.from_default_files()
     #problem = Trapk(4, 4)
     mine_cohorts_and_write_to_file(problem, cohort_file, verbose=True)
 
-    #est_classic3(problem, 10000)
+    #analyse_cohort_data(problem, cohort_file, csv_file, True)
+
+    # cohorts = json_to_cohorts(cohort_file)
+    # coverage = generate_coverage_stats(problem, cohorts)
+    #
+    # for worker_id in coverage:
+    #     print(f"{worker_id}\t{coverage[worker_id]}")

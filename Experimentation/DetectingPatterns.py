@@ -285,6 +285,7 @@ def mine_cohorts_from_problem(benchmark_problem: BTProblem,
                               method: Literal["uniform", "GA", "SA"],
                               pRef_size: int,
                               nsga_pop_size: int,
+                              nsga_ngens: int,
                               verbose=True):
     pRef = get_history_pRef(benchmark_problem=benchmark_problem,
                             which_algorithm = method,
@@ -294,7 +295,7 @@ def mine_cohorts_from_problem(benchmark_problem: BTProblem,
     if verbose:
         plot_solutions_in_pRef(pRef)
 
-    metrics = [Simplicity(), MeanFitness(), Atomicity()]
+    metrics = [Simplicity(), MeanFitness(), Atomicity()]  # this is not actually used...
     with announce("Running the PS_mining algorithm", verbose = verbose):
         toolbox = get_toolbox_for_problem(benchmark_problem,
                                           metrics,
@@ -306,7 +307,7 @@ def mine_cohorts_from_problem(benchmark_problem: BTProblem,
                                          mu =nsga_pop_size,
                                          cxpb=0.5,
                                          mutpb=1/benchmark_problem.search_space.amount_of_parameters,
-                                         ngen=nsga_pop_size,
+                                         ngen=nsga_ngens,
                                          stats=get_stats_object(),
                                          verbose=verbose)
 
@@ -372,6 +373,22 @@ def generate_control_data_for_cohorts(problem: BTProblem,
         detector.cohorts_into_csv(cohorts=control_cohorts, csv_file_name=output_csv_file_name, is_control=True)
 
     print("All finished")
+
+
+
+
+
+def generate_coverage_stats(problem: BTProblem,
+                            cohorts: list[Cohort]) -> dict:
+    result = {worker.worker_id: 0 for worker in problem.workers}
+    def register_cohort(cohort: Cohort):
+        for member in cohort:
+            worker_id = member.worker.worker_id
+            result[worker_id] = result[worker_id] + 1
+
+    for cohort in cohorts:
+        register_cohort(cohort)
+    return result
 
 
 

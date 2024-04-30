@@ -105,8 +105,8 @@ def get_range_scores(workers_per_weekday: np.ndarray):
 
     def range_score(min_amount, max_amount):
         if max_amount == 0:
-            return 0
-        return (max_amount - min_amount) / max_amount
+            return 1
+        return ((max_amount - min_amount) / max_amount) ** 2
 
     return [range_score(min_amount, max_amount) for min_amount, max_amount in zip(mins, maxs)]
 

@@ -34,7 +34,7 @@ DayRange: TypeAlias = float
 WeekRanges: TypeAlias = np.ndarray
 
 class EfficientBTProblem(BTProblem):
-    extended_patterns: list[ExtendedPattern]
+    extended_patterns: list[FullPatternOptions]
     workers_by_skills: dict  # Skill -> set[worker index]
 
     def __init__(self,

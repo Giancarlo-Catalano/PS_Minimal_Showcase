@@ -1,3 +1,4 @@
+import os
 import time
 from contextlib import ContextDecorator
 from typing import Iterable, Any
@@ -147,3 +148,31 @@ def get_formatted_timestamp():
     formatted_timestamp = now.strftime("%H'%M_%d-%m")
 
     return formatted_timestamp
+
+
+def prepend_to_file_name(file_path: str, prefix: str) -> str:
+
+    directory, file_name = os.path.split(file_path)
+
+    # Define the new file name with "indexed_" prefix
+    new_file_name = prefix + file_name
+
+    # Combine the directory with the new file name to get the full path
+    return os.path.join(directory, new_file_name)
+
+def make_copy_of_CSV_file_with_rank_column(file_name: str):
+        # Read the CSV file into a DataFrame
+        df = pd.read_csv(file_name)
+
+        # Add a "Rank" column, starting from 1
+        df['Rank'] = df.index + 1
+
+        # Define the new file name
+        new_file_name = prepend_to_file_name(file_name, "indexed_")
+
+        # Save the DataFrame to a new CSV file
+        df.to_csv(new_file_name, index=False)
+
+        print("Saved the ranked file as {")
+
+        return new_file_name  # Return the name of the new CSV file

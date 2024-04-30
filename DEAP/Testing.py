@@ -112,7 +112,7 @@ def get_toolbox_for_problem(benchmark_problem: BenchmarkProblem,
     toolbox.register("make_random_ps",
                      geometric_distribution_ps)
 
-    classic3_evaluator = Classic3PSMetrics(pRef)
+    classic3_evaluator = Classic3PSMetrics(pRef)  # this replaces the 3 metrics
 
     def evaluate(ps) -> tuple:
         return classic3_evaluator.get_S_MF_A(ps)  # experimental
