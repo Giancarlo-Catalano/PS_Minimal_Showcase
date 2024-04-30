@@ -2,7 +2,7 @@ from typing import Optional
 
 import numpy as np
 
-from custom_types import JSON
+from Core.custom_types import JSON
 
 
 class WorkDay:

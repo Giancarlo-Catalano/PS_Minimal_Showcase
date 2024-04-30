@@ -1,5 +1,5 @@
 from BenchmarkProblems.UnitaryProblem import UnitaryProblem
-from FullSolution import FullSolution
+from Core.FullSolution import FullSolution
 
 
 class RoyalRoad(UnitaryProblem):

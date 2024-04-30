@@ -3,9 +3,9 @@ import random
 from typing import TypeAlias
 
 from BenchmarkProblems.BenchmarkProblem import BenchmarkProblem
-from FullSolution import FullSolution
-from PS import PS, STAR
-from SearchSpace import SearchSpace
+from Core.FullSolution import FullSolution
+from Core.PS import PS, STAR
+from Core.SearchSpace import SearchSpace
 
 Node: TypeAlias = int
 Connection: TypeAlias = (Node, Node)
@@ -25,7 +25,7 @@ class GraphColouring(BenchmarkProblem):
         self.amount_of_nodes = amount_of_nodes
         self.connections = connections
 
-        search_space = SearchSpace([amount_of_colours for node in range(self.amount_of_nodes)])
+        search_space = SearchSpace([amount_of_colours for _ in range(self.amount_of_nodes)])
         super().__init__(search_space)
 
     def __repr__(self):

@@ -1,18 +1,15 @@
-import itertools
-from typing import Optional, TypeAlias
-
 import numpy as np
 import pandas as pd
 
 import utils
 from BenchmarkProblems.BT.ReadFromFiles import get_dicts_from_RPD, make_roster_patterns_from_RPD, get_dicts_from_ED, \
     make_employees_from_ED, get_skills_dict
-from BenchmarkProblems.BT.RotaPattern import RotaPattern, get_workers_present_each_day_of_the_week, get_range_scores
+from BenchmarkProblems.BT.RotaPattern import get_workers_present_each_day_of_the_week, get_range_scores
 from BenchmarkProblems.BT.Worker import Worker, WorkerVariables, Skill
 from BenchmarkProblems.BenchmarkProblem import BenchmarkProblem
-from FullSolution import FullSolution
-from PS import PS, STAR
-from SearchSpace import SearchSpace
+from Core.FullSolution import FullSolution
+from Core.PS import PS, STAR
+from Core.SearchSpace import SearchSpace
 from resources.BT.names import names
 
 

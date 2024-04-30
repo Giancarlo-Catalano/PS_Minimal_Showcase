@@ -6,7 +6,7 @@ import numpy as np
 from BenchmarkProblems.BT.BTProblem import BTProblem
 from BenchmarkProblems.BT.RotaPattern import RotaPattern, get_range_scores
 from BenchmarkProblems.BT.Worker import Worker, Skill
-from FullSolution import FullSolution
+from Core.FullSolution import FullSolution
 
 ExtendedPattern: TypeAlias = np.ndarray
 

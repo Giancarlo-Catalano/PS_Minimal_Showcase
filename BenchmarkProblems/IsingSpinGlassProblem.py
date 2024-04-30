@@ -4,9 +4,9 @@ from typing import TypeAlias
 import numpy as np
 
 from BenchmarkProblems.BenchmarkProblem import BenchmarkProblem
-from FullSolution import FullSolution
-from PS import PS, STAR
-from SearchSpace import SearchSpace
+from Core.FullSolution import FullSolution
+from Core.PS import PS, STAR
+from Core.SearchSpace import SearchSpace
 
 LinkValue: TypeAlias = int
 

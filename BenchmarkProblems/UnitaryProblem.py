@@ -1,10 +1,10 @@
 import numpy as np
 
 from BenchmarkProblems.BenchmarkProblem import BenchmarkProblem
-from FullSolution import FullSolution
-from PS import PS, STAR
-from SearchSpace import SearchSpace
-from custom_types import ArrayOfInts
+from Core.FullSolution import FullSolution
+from Core.PS import PS, STAR
+from Core.SearchSpace import SearchSpace
+from Core.custom_types import ArrayOfInts
 
 
 class UnitaryProblem(BenchmarkProblem):

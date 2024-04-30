@@ -1,7 +1,7 @@
 import random
 
-from EvaluatedPS import EvaluatedPS
-from PS import PS
+from Core.EvaluatedPS import EvaluatedPS
+from Core.PS import PS
 
 
 class PSCrossoverOperator:

@@ -4,8 +4,8 @@ from typing import TypeAlias
 import numpy as np
 
 from BenchmarkProblems.BenchmarkProblem import BenchmarkProblem
-from FullSolution import FullSolution
-from SearchSpace import SearchSpace
+from Core.FullSolution import FullSolution
+from Core.SearchSpace import SearchSpace
 
 Clause: TypeAlias = np.ndarray
 
@@ -29,7 +29,7 @@ class SATProblem(BenchmarkProblem):
         self.clauses = clauses
 
         assert (amount_of_clauses == len(self.clauses))
-        search_space = SearchSpace([2 for var in range(self.amount_of_variables)])
+        search_space = SearchSpace([2 for _ in range(self.amount_of_variables)])
         super().__init__(search_space)
 
     def long_repr(self) -> str:

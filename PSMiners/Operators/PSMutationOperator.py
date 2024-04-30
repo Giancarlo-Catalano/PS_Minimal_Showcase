@@ -3,8 +3,8 @@ from typing import Optional
 
 import numpy as np
 
-from PS import PS, STAR
-from SearchSpace import SearchSpace
+from Core.PS import PS, STAR
+from Core.SearchSpace import SearchSpace
 
 
 class PSMutationOperator:

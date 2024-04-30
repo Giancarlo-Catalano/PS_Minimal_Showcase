@@ -3,15 +3,14 @@ import random
 from math import floor
 from typing import Callable, TypeAlias
 
-import TerminationCriteria
-import utils
+from Core import TerminationCriteria
 from BenchmarkProblems.BenchmarkProblem import BenchmarkProblem
-from EvaluatedFS import EvaluatedFS
-from FSEvaluator import FSEvaluator
-from FullSolution import FullSolution
-from GA.Operators import FSMutationOperator, FSCrossoverOperator, FSSelectionOperator, SinglePointFSMutation, \
-    TwoPointFSCrossover, TournamentSelection
-from SearchSpace import SearchSpace
+from Core.EvaluatedFS import EvaluatedFS
+from Core.FSEvaluator import FSEvaluator
+from Core.FullSolution import FullSolution
+from Core.SearchSpace import SearchSpace
+from GA.Operators import FSMutationOperator, FSCrossoverOperator, FSSelectionOperator, TournamentSelection, \
+    SinglePointFSMutation, TwoPointFSCrossover
 
 Population: TypeAlias = list[EvaluatedFS]
 
@@ -19,7 +18,7 @@ class GA:
     search_space: SearchSpace
     mutation_operator: FSMutationOperator
     crossover_operator: FSCrossoverOperator
-    selection_operator: FSSelectionOperator
+    selection_operator: TournamentSelection
     crossover_rate: float
 
     elite_proportion: float

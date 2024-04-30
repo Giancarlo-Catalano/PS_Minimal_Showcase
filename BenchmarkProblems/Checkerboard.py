@@ -1,16 +1,16 @@
 import numpy as np
 
 from BenchmarkProblems.BenchmarkProblem import BenchmarkProblem
-from FullSolution import FullSolution
-from PS import PS, STAR
-from SearchSpace import SearchSpace
+from Core.FullSolution import FullSolution
+from Core.PS import PS, STAR
+from Core.SearchSpace import SearchSpace
 
 
 class CheckerBoard(BenchmarkProblem):
     def __init__(self, rows: int, columns: int):
         self.rows = rows
         self.columns = columns
-        super().__init__(SearchSpace([2 for cell in range(rows * columns)]))
+        super().__init__(SearchSpace([2 for _ in range(rows * columns)]))
 
     def __repr__(self):
         return f"Checkerboard({self.rows}, {self.columns})"

@@ -16,50 +16,28 @@
         - The metrics used to search for PSs (find them in PSMiner.with_default_settings)
         - the sample sizes etc...
 """
-import itertools
 import json
 import os
 
-import numpy as np
-
-import TerminationCriteria
 import utils
+from Core import TerminationCriteria
 from BenchmarkProblems.BT.BTProblem import BTProblem
 from BenchmarkProblems.BenchmarkProblem import BenchmarkProblem
-from BenchmarkProblems.Checkerboard import CheckerBoard
 from BenchmarkProblems.EfficientBTProblem.EfficientBTProblem import EfficientBTProblem
-from BenchmarkProblems.GraphColouring import GraphColouring
-from BenchmarkProblems.RoyalRoad import RoyalRoad
-from BenchmarkProblems.Trapk import Trapk
-from BenchmarkProblems.UnitaryProblem import UnitaryProblem
-from DEAP.NSGAMiner import run_deap_for_benchmark_problem, comprehensive_search, run_nsgaii_on_history_pRef
-from EvaluatedFS import EvaluatedFS
-from Experimentation.DetectingPatterns import test_and_produce_patterns, plot_nicely, json_to_cohorts, cohorts_to_json, \
-    BTProblemPatternDetector, mine_cohorts_from_problem, analyse_data_from_json_cohorts, \
-    generate_control_data_for_cohorts, generate_coverage_stats
-from Explainer import Explainer
-from PS import STAR, PS
-from PSMetric.Atomicity import Atomicity
-from PSMetric.BivariateANOVALinkage import BivariateANOVALinkage
-from PSMetric.Classic3 import test_classic3
-from PSMetric.GlobalPerturbation import UnivariateGlobalPerturbation, BivariateGlobalPerturbation
-from PSMetric.Linkage import Linkage
-from PSMetric.LocalPerturbation import UnivariateLocalPerturbation, BivariateLocalPerturbation
-from PSMetric.Metric import test_different_metrics_for_ps
-from PSMiner import PSMiner, measure_T2_success_rate
-from PSMiners.MuPlusLambda.MPLLR import MPLLR
-from PickAndMerge import PickAndMergeSampler
-from pymootesting import test_run_with_pymoo
+from Core.EvaluatedFS import EvaluatedFS
+from Experimentation.DetectingPatterns import json_to_cohorts, cohorts_to_json, \
+    BTProblemPatternDetector, mine_cohorts_from_problem, analyse_data_from_json_cohorts
+from Core.Explainer import Explainer
+from Core.PSMiner import PSMiner
+from Core.PickAndMerge import PickAndMergeSampler
 from utils import announce, indent
-
-from pdf.testing import demo_hello_world
 
 
 def show_overall_system(benchmark_problem: BenchmarkProblem):
     """
     This function gives an overview of the system:
         1. Generate a reference population (a PRef)
-        2. Generate a PS Catalog using the PS Miner
+        2. Generate a Core Catalog using the Core Miner
         3. Sample new solutions from the catalog using Pick & Merge
         4. Explain those new solutions using the catalog
 
@@ -75,12 +53,12 @@ def show_overall_system(benchmark_problem: BenchmarkProblem):
         pRef = benchmark_problem.get_reference_population(pRef_size)
     pRef.describe_self()
 
-    # 2. Obtaining the PS catalog
+    # 2. Obtaining the Core catalog
     ps_miner = PSMiner.with_default_settings(pRef)
     ps_evaluation_budget = 10000
     termination_criterion = TerminationCriteria.PSEvaluationLimit(ps_evaluation_budget)
 
-    with announce("Running the PS Miner"):
+    with announce("Running the Core Miner"):
         ps_miner.run(termination_criterion)
 
     ps_catalog = ps_miner.get_results(20)
@@ -96,7 +74,7 @@ def show_overall_system(benchmark_problem: BenchmarkProblem):
     sampler = PickAndMergeSampler(search_space=benchmark_problem.search_space,
                                   individuals=ps_catalog)
 
-    with announce("Sampling from the PS Catalog using Pick & Merge"):
+    with announce("Sampling from the Core Catalog using Pick & Merge"):
         sampled_solutions = [sampler.sample() for _ in range(new_solutions_to_produce)]
 
     evaluated_sampled_solutions = [EvaluatedFS(fs, benchmark_problem.fitness_function(fs)) for fs in sampled_solutions]
@@ -161,13 +139,14 @@ def analyse_cohort_data(benchmark_problem: BTProblem,
 
 if __name__ == '__main__':
     experimental_directory = r"C:\Users\gac8\PycharmProjects\PS-PDF\Experimentation"
-    current_directory = r"C:\Users\gac8\PycharmProjects\PS-PDF\Experimentation\cohorts_17'02_29-04"
-    # current_directory = os.path.join(experimental_directory, "cohorts_"+utils.get_formatted_timestamp())
+    #current_directory = r"C:\Users\gac8\PycharmProjects\PS-PDF\Experimentation\cohorts_17'02_29-04"
+    current_directory = os.path.join(experimental_directory, "cohorts_"+utils.get_formatted_timestamp())
     cohort_file = os.path.join(current_directory, "cohort.json")
     csv_file = os.path.join(current_directory, "analysis.csv")
 
     problem = EfficientBTProblem.from_default_files()
-    #problem = Trapk(4, 4)
+    #problem = RoyalRoad(3, 4)
+    #show_overall_system(problem)
     mine_cohorts_and_write_to_file(problem, cohort_file, verbose=True)
 
     #analyse_cohort_data(problem, cohort_file, csv_file, True)

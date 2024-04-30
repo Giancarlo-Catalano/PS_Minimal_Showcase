@@ -4,17 +4,17 @@ from math import ceil
 from typing import Optional, TypeAlias
 
 from BenchmarkProblems.BenchmarkProblem import BenchmarkProblem
-from EvaluatedPS import EvaluatedPS
-from FSEvaluator import FSEvaluator
-from PRef import PRef
-from PS import PS, STAR
-from PSMetric.Metric import Metric
+from Core.EvaluatedPS import EvaluatedPS
+from Core.FSEvaluator import FSEvaluator
+from Core.PRef import PRef
+from Core.PS import PS, STAR
+from Core.PSMetric.Metric import Metric
 from PSMiners.Operators.PSCrossoverOperator import PSCrossoverOperator
 from PSMiners.Operators.PSMutationOperator import PSMutationOperator
 from PSMiners.Operators.PSSelectionOperator import PSSelectionOperator
-from SearchSpace import SearchSpace
-from TerminationCriteria import TerminationCriteria, PSEvaluationLimit
-from utils import execution_time, announce
+from Core.SearchSpace import SearchSpace
+from Core.TerminationCriteria import TerminationCriteria, PSEvaluationLimit
+from utils import announce
 
 Population: TypeAlias = list[EvaluatedPS]
 ResultsAsJSON: TypeAlias = dict
@@ -96,7 +96,7 @@ class AbstractPSMiner:
 
             vars_to_include = random.choices(list(range(total_var_count)), k=get_amount_of_fixed_vars())
 
-            result_values = [-1 for var in range(total_var_count)]
+            result_values = [-1 for _ in range(total_var_count)]
             for included_var in vars_to_include:
                 result_values[included_var] = random.randrange(search_space.cardinalities[included_var])
             return PS(result_values)

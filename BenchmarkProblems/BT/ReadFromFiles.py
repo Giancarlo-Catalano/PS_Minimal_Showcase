@@ -1,5 +1,4 @@
 import csv
-import random
 import re
 from builtins import str
 from collections import defaultdict
@@ -83,7 +82,7 @@ def get_dicts_from_ED(employee_data_file_name: str) -> list[dict]:
 
 
 def make_employees_from_ED(employee_rows: list[dict], skills_dict: dict, rotas: dict[str, RotaPattern], names: list[str]):
-    names_available = list(names)
+    # names_available = list(names)
 
     def decode_employee(employee_row: dict):
         employee_code: str = employee_row["ID"]

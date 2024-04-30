@@ -1,10 +1,8 @@
 import warnings
 from typing import Optional, TypeAlias
 
-import numpy as np
-
 from BenchmarkProblems.BT.RotaPattern import RotaPattern
-from custom_types import JSON
+from Core.custom_types import JSON
 
 Skill: TypeAlias = str
 

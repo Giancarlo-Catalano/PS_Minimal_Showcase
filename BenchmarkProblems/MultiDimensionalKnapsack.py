@@ -4,10 +4,10 @@ from typing import TypeAlias, Iterable
 import numpy as np
 
 from BenchmarkProblems.BenchmarkProblem import BenchmarkProblem
-from FullSolution import FullSolution
-from PS import PS, STAR
-from SearchSpace import SearchSpace
-from custom_types import ArrayOfInts
+from Core.FullSolution import FullSolution
+from Core.PS import PS, STAR
+from Core.SearchSpace import SearchSpace
+from Core.custom_types import ArrayOfInts
 
 Item: TypeAlias = ArrayOfInts
 
@@ -20,14 +20,14 @@ class MultiDimensionalKnapsack(BenchmarkProblem):
     penalty: int
 
     def __init__(self,
-                 items: Iterable[Iterable[int]],
+                 items: list[Iterable[int]],
                  targets: Iterable[int]):
         assert (len(items) > 0)
         amount_of_dimensions = len(items[0])
         self.amount_of_dimensions = amount_of_dimensions
         self.items = np.array([np.array(item) for item in items])
         self.targets = np.array(targets)
-        search_space = SearchSpace([2 for item in items])
+        search_space = SearchSpace([2 for _ in items])
         super().__init__(search_space)
         self.penalty = max(targets) * self.amount_of_dimensions
 

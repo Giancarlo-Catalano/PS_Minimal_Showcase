@@ -1,5 +1,4 @@
 import csv
-import functools
 import itertools
 import json
 import os
@@ -11,23 +10,20 @@ from matplotlib import pyplot as plt
 
 from BenchmarkProblems.BT.BTProblem import BTProblem
 from BenchmarkProblems.BT.Worker import Worker
-from BenchmarkProblems.BenchmarkProblem import BenchmarkProblem
-from BenchmarkProblems.EfficientBTProblem.EfficientBTProblem import EfficientBTProblem, ExtendedPattern, \
+from BenchmarkProblems.EfficientBTProblem.EfficientBTProblem import ExtendedPattern, \
     rota_to_extended_pattern
-from DEAP.NSGAMiner import get_history_pRef, get_toolbox_for_problem, nsga, get_stats_object, \
+from PSMiners.DEAP.NSGAMiner import get_history_pRef, get_toolbox_for_problem, nsga, get_stats_object, \
     report_in_order_of_last_metric
-from EvaluatedPS import EvaluatedPS
-from PRef import plot_solutions_in_pRef
-from PS import PS, STAR
-from PSMetric.Atomicity import Atomicity
-from PSMetric.LocalPerturbation import BivariateLocalPerturbation
-from PSMetric.MeanFitness import MeanFitness
-from PSMetric.Simplicity import Simplicity
-from custom_types import JSON
+from Core.PRef import plot_solutions_in_pRef
+from Core.PS import PS, STAR
+from Core.PSMetric.Atomicity import Atomicity
+from Core.PSMetric.MeanFitness import MeanFitness
+from Core.PSMetric.Simplicity import Simplicity
+from Core.custom_types import JSON
 from utils import announce
 import seaborn as sns
 import pandas as pd
-from statsmodels.graphics.boxplots import violinplot
+
 
 class CohortMember:
     worker: Worker
@@ -266,8 +262,6 @@ def test_and_produce_patterns(benchmark_problem: BTProblem,
         print("The last population is ")
         report_in_order_of_last_metric(final_population, benchmark_problem)
 
-    def get_table_for_individual(ps:PS):
-        return metrics[-1].get_local_linkage_table(ps)
 
     detector = BTProblemPatternDetector(benchmark_problem)
     cohorts = [detector.ps_to_cohort(ps) for ps in final_population]

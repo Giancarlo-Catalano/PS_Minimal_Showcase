@@ -1,11 +1,9 @@
-import TerminationCriteria
 from BenchmarkProblems.BenchmarkProblem import BenchmarkProblem
-from EvaluatedFS import EvaluatedFS
+from Core.EvaluatedFS import EvaluatedFS
 from GA.GA import GA
-from GA.Operators import SinglePointFSMutation, TwoPointFSCrossover, FSSelectionOperator, TournamentSelection
+from GA.Operators import SinglePointFSMutation, TwoPointFSCrossover, TournamentSelection
 from GA.SA import SA
-from PRef import PRef
-from utils import announce
+from Core.PRef import PRef
 
 
 def uniformly_random_distribution_pRef(benchmark_problem: BenchmarkProblem,
@@ -50,6 +48,6 @@ def pRef_from_SA(benchmark_problem: BenchmarkProblem,
 
     solutions = solutions[:sample_size]
 
-    best_solution = max(solutions)
-    df = benchmark_problem.details_of_solution(best_solution.full_solution)   # Experimental
+    # best_solution = max(solutions)
+    # df = benchmark_problem.details_of_solution(best_solution.full_solution)   # Experimental
     return PRef.from_evaluated_full_solutions(solutions, benchmark_problem.search_space)

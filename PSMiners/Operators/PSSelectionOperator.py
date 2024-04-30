@@ -2,8 +2,7 @@ import heapq
 import random
 from typing import Optional, Iterable
 
-import utils
-from EvaluatedPS import EvaluatedPS
+from Core.EvaluatedPS import EvaluatedPS
 
 
 class PSSelectionOperator:

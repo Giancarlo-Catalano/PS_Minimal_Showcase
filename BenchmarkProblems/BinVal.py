@@ -1,7 +1,7 @@
 from BenchmarkProblems.BenchmarkProblem import BenchmarkProblem
-from FullSolution import FullSolution
-from PS import PS
-from SearchSpace import SearchSpace
+from Core.FullSolution import FullSolution
+from Core.PS import PS
+from Core.SearchSpace import SearchSpace
 
 
 class BinVal(BenchmarkProblem):
