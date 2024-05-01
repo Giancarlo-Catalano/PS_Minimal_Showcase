@@ -176,3 +176,9 @@ def make_copy_of_CSV_file_with_rank_column(file_name: str):
         print("Saved the ranked file as {")
 
         return new_file_name  # Return the name of the new CSV file
+
+
+
+def as_float_tuple(items: Iterable) -> tuple:
+    """mainly to prevent json issues"""
+    return tuple(float(item) for item in items)

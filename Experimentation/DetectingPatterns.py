@@ -1,3 +1,4 @@
+import plotly.express as px
 import csv
 import itertools
 import json
@@ -6,8 +7,10 @@ import random
 from typing import TypeAlias, Iterable, Literal
 
 import numpy as np
+from deap.tools import Logbook
 from matplotlib import pyplot as plt
 
+import utils
 from BenchmarkProblems.BT.BTProblem import BTProblem
 from BenchmarkProblems.BT.Worker import Worker
 from BenchmarkProblems.EfficientBTProblem.EfficientBTProblem import ExtendedPattern, \
@@ -23,6 +26,7 @@ from Core.custom_types import JSON
 from utils import announce
 import seaborn as sns
 import pandas as pd
+
 
 
 class CohortMember:
@@ -280,7 +284,7 @@ def mine_cohorts_from_problem(benchmark_problem: BTProblem,
                               pRef_size: int,
                               nsga_pop_size: int,
                               nsga_ngens: int,
-                              verbose=True):
+                              verbose=True) -> (list[Cohort], list[tuple], Logbook):
     pRef = get_history_pRef(benchmark_problem=benchmark_problem,
                             which_algorithm = method,
                             sample_size = pRef_size,
@@ -306,7 +310,11 @@ def mine_cohorts_from_problem(benchmark_problem: BTProblem,
                                          verbose=verbose)
 
     detector = BTProblemPatternDetector(benchmark_problem)
-    return [detector.ps_to_cohort(ps) for ps in final_population]
+    cohorts = [detector.ps_to_cohort(ps) for ps in final_population]
+    scores = [utils.as_float_tuple(ps.fitness.values) for ps in final_population]
+
+    return cohorts, scores, logbook
+
 
 
 
@@ -384,6 +392,26 @@ def generate_coverage_stats(problem: BTProblem,
         register_cohort(cohort)
     return result
 
+
+
+def show_interactive_3d_plot_of_scores(file_name: str):
+    df = pd.read_csv(file_name)
+
+    # Create a 3D scatter plot with Plotly Express
+    fig = px.scatter_3d(
+        df,
+        x="Simplicity",
+        y="Mean Fitness",
+        z="Atomicity",
+        title="3D Scatter Plot of Simplicity, Mean Fitness, and Atomicity",
+        labels={
+            "Simplicity": "Simplicity",
+            "Mean Fitness": "Mean Fitness",
+            "Atomicity": "Atomicity"
+        }
+    )
+
+    fig.show()
 
 
 

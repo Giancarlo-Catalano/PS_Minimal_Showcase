@@ -167,11 +167,13 @@ def report_in_order_of_last_metric(population,
 
 
 def plot_stats_for_run(logbook,
-                       metrics: list[Metric],
+                       figure_name: str,
                        show_max = False,
-                       show_mean = True):
+                       show_mean = True,
+                       ):
     generations = logbook.select("gen")
-    num_variables = len(metrics)
+    metric_labels = ["Simplicity", "MeanFitness", "Atomicity"]
+    num_variables = len(metric_labels)
 
 
     avg_matrix = np.array([logbook[generation]["avg"] for generation in generations])
@@ -181,7 +183,7 @@ def plot_stats_for_run(logbook,
     fig, axs = plt.subplots(1, num_variables, figsize=(12, 6))  # 1 row, `num_variables` columns
 
     # Loop through each variable to create a subplot
-    for metric_index, metric in enumerate(metrics):
+    for metric_index, metric_label in enumerate(metric_labels):
 
         if show_mean:
             axs[metric_index].plot(generations, avg_matrix[:, metric_index], label='Average', linestyle='-', marker='o')
@@ -190,63 +192,14 @@ def plot_stats_for_run(logbook,
 
         axs[metric_index].set_xlabel('Generation')
         axs[metric_index].set_ylabel('Value')
-        axs[metric_index].set_title(f'{metric}')
+        axs[metric_index].set_title(metric_label)
         axs[metric_index].legend()  # Add legend to each subplot
 
     # Adjust layout to ensure plots don't overlap
     plt.tight_layout()
 
     # Display the plots
-    plt.show()
-def run_deap_for_benchmark_problem(benchmark_problem: BenchmarkProblem):
-    print("Starting run_deap_for_benchmark_problem")
-    metrics = [Simplicity(), MeanFitness(), Atomicity()]
-    with announce("Running the algorithm"):
-        toolbox = get_toolbox_for_problem(benchmark_problem,
-                                          metrics,
-                                          selection_method=True)
-        pop, logbook = nsga(toolbox=toolbox,
-                            mu = 300,
-                            cxpb=0.5,
-                            mutpb=1/benchmark_problem.search_space.amount_of_parameters,
-                            ngen=100,
-                            stats=get_stats_object())
-
-    print("The last population is ")
-    report_in_order_of_last_metric(pop, benchmark_problem, limit_to=12)
-
-    plot_stats_for_run(logbook, metrics)
-
-
-
-
-
-
-
-
-def comprehensive_search(benchmark_problem: BenchmarkProblem,
-                         metric: Metric,
-                         sample_size: int,
-                         amount = 12,
-                         reverse=True):
-    all_ps = PS.all_possible(benchmark_problem.search_space)
-
-    with announce("Generating the PRef"):
-        pRef = benchmark_problem.get_reference_population(sample_size)
-    metric.set_pRef(pRef)
-
-    evaluated_pss = [EvaluatedPS(ps) for ps in all_ps]
-    #evaluated_pss = [ps for ps in evaluated_pss if ps.ps.fixed_count() < 7]
-    with announce(f"Evaluating all the PSs, there are {len(evaluated_pss)} of them"):
-        for evaluated_ps in evaluated_pss:
-            evaluated_ps.aggregated_score = metric.get_single_normalised_score(evaluated_ps.ps)
-
-    evaluated_pss.sort(reverse=reverse)
-    print(f"The best in the search space, according to {metric} are")
-    to_show = evaluated_pss[:amount] if amount is not None else evaluated_pss
-    for e_ps in to_show:
-        print(e_ps)
-
+    plt.savefig(figure_name)
 
 
 def get_history_pRef(benchmark_problem: BenchmarkProblem,
@@ -266,34 +219,30 @@ def get_history_pRef(benchmark_problem: BenchmarkProblem,
             case _: raise ValueError
 
 
-def run_nsgaii_on_history_pRef(benchmark_problem: BenchmarkProblem,
-                               which_algorithm: Literal["uniform", "GA", "SA"],
-                               ps_miner_generations = 100,
-                               sample_size= 10000):
-    pRef = get_history_pRef(benchmark_problem = benchmark_problem,
-                            sample_size=sample_size,
-                            which_algorithm=which_algorithm)
+def comprehensive_search(benchmark_problem: BenchmarkProblem,
+                         metric: Metric,
+                         sample_size: int,
+                         amount = 12,
+                         reverse=True):
+    """This is a debug function, to check what the global optimum of an objective is"""
+    all_ps = PS.all_possible(benchmark_problem.search_space)
+
+    with announce("Generating the PRef"):
+        pRef = benchmark_problem.get_reference_population(sample_size)
+    metric.set_pRef(pRef)
+
+    evaluated_pss = [EvaluatedPS(ps) for ps in all_ps]
+    #evaluated_pss = [ps for ps in evaluated_pss if ps.ps.fixed_count() < 7]
+    with announce(f"Evaluating all the PSs, there are {len(evaluated_pss)} of them"):
+        for evaluated_ps in evaluated_pss:
+            evaluated_ps.aggregated_score = metric.get_single_normalised_score(evaluated_ps.ps)
+
+    evaluated_pss.sort(reverse=reverse)
+    print(f"The best in the search space, according to {metric} are")
+    to_show = evaluated_pss[:amount] if amount is not None else evaluated_pss
+    for e_ps in to_show:
+        print(e_ps)
 
 
-    metrics = [Simplicity(), MeanFitness(), Atomicity()]
-    with announce("Running the PS_mining algorithm"):
-        toolbox = get_toolbox_for_problem(benchmark_problem,
-                                          metrics, selection_method=True,
-                                          pRef = pRef)
-        final_population, logbook = nsga(toolbox=toolbox,
-                                         mu = 300,
-                                         cxpb=0.5,
-                                         mutpb=1/benchmark_problem.search_space.amount_of_parameters,
-                                         ngen=ps_miner_generations,
-                                         stats=get_stats_object())
-
-        tools.selNSGA3()
-
-    print("The last population is ")
-    report_in_order_of_last_metric(final_population,
-                                   benchmark_problem,
-                                   limit_to = 12)
-    print("And now plotting the stats!")
-    plot_stats_for_run(logbook, metrics)
 
 

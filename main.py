@@ -16,8 +16,10 @@
         - The metrics used to search for PSs (find them in PSMiner.with_default_settings)
         - the sample sizes etc...
 """
+import csv
 import json
 import os
+from typing import Optional
 
 import utils
 from Core import TerminationCriteria
@@ -26,10 +28,12 @@ from BenchmarkProblems.BenchmarkProblem import BenchmarkProblem
 from BenchmarkProblems.EfficientBTProblem.EfficientBTProblem import EfficientBTProblem
 from Core.EvaluatedFS import EvaluatedFS
 from Experimentation.DetectingPatterns import json_to_cohorts, cohorts_to_json, \
-    BTProblemPatternDetector, mine_cohorts_from_problem, analyse_data_from_json_cohorts
+    BTProblemPatternDetector, mine_cohorts_from_problem, analyse_data_from_json_cohorts, \
+    show_interactive_3d_plot_of_scores
 from Core.Explainer import Explainer
 from Core.PSMiner import PSMiner
 from Core.PickAndMerge import PickAndMergeSampler
+from PSMiners.DEAP.NSGAMiner import plot_stats_for_run
 from utils import announce, indent
 
 
@@ -93,29 +97,47 @@ def show_overall_system(benchmark_problem: BenchmarkProblem):
 
 
 def mine_cohorts_and_write_to_file(benchmark_problem: BenchmarkProblem,
-                                   output_file_name: str,
+                                   cohort_output_file_name: str,
+                                   scores_output_file_name: str,
+                                   plots_of_run_file_name: Optional[str],
+                                   nsga_pop_size: int,
+                                   nsga_ngens: int,
+                                   pRef_size: int,
                                    verbose=True):
 
     if verbose:
         print("Initialising mine_cohorts_and_write_to_file(")
         print(f"\tbenchmark_problem={benchmark_problem},")
-        print(f"\toutput_file_name={output_file_name}")
+        print(f"\toutput_file_name={cohort_output_file_name}")
 
-    cohorts = mine_cohorts_from_problem(benchmark_problem=problem,
+    cohorts, scores, logbook = mine_cohorts_from_problem(benchmark_problem=problem,
                                         method="SA",
-                                        pRef_size=1000,
-                                        nsga_pop_size=600,
-                                        nsga_ngens=600,
+                                        pRef_size=pRef_size,
+                                        nsga_pop_size=nsga_pop_size,
+                                        nsga_ngens=nsga_ngens,
                                         verbose=verbose)
 
     with announce(f"Writing the cohorts ({len(cohorts)} onto the file", verbose):
-        data = cohorts_to_json(cohorts)
-        os.makedirs(os.path.dirname(output_file_name), exist_ok=True)
-        with open(output_file_name, "w+") as file:
-            json.dump(data, file)
+        cohort_data = cohorts_to_json(cohorts)
+        os.makedirs(os.path.dirname(cohort_output_file_name), exist_ok=True)  # in case the directory does not exist
+        with open(cohort_output_file_name, "w+") as file:
+            json.dump(cohort_data, file)
+
+    with announce(f"Writing the scores onto the file", verbose):
+        headers = ["Simplicity", "Mean Fitness", "Atomicity"]
+        with open(scores_output_file_name, mode='w+', newline='', encoding='utf-8') as file:
+            writer = csv.writer(file)
+            writer.writerow(headers)
+            for row in scores:
+                writer.writerow(row)
+
+    if plots_of_run_file_name is not None:
+        plot_stats_for_run(logbook, plots_of_run_file_name, show_max=True, show_mean=True)
+        without_max_filename = utils.prepend_to_file_name(plots_of_run_file_name, "only_mean")
+        plot_stats_for_run(logbook, without_max_filename, show_max=False, show_mean=True)
 
     if verbose:
-        print(f"Finished writing onto {output_file_name}")
+        print(f"Finished writing onto {cohort_output_file_name}, {scores_output_file_name}")
 
 def analyse_cohort_data(benchmark_problem: BTProblem,
                         cohorts_json_file_name: str,
@@ -137,17 +159,30 @@ def analyse_cohort_data(benchmark_problem: BTProblem,
                                    verbose=verbose)
 
 
+
 if __name__ == '__main__':
     experimental_directory = r"C:\Users\gac8\PycharmProjects\PS-PDF\Experimentation"
     #current_directory = r"C:\Users\gac8\PycharmProjects\PS-PDF\Experimentation\cohorts_17'02_29-04"
     current_directory = os.path.join(experimental_directory, "cohorts_"+utils.get_formatted_timestamp())
     cohort_file = os.path.join(current_directory, "cohort.json")
+    scores_file = os.path.join(current_directory, "scores.csv")
+    run_plot_file = os.path.join(current_directory, "run_plot.png")
     csv_file = os.path.join(current_directory, "analysis.csv")
 
     problem = EfficientBTProblem.from_default_files()
     #problem = RoyalRoad(3, 4)
     #show_overall_system(problem)
-    mine_cohorts_and_write_to_file(problem, cohort_file, verbose=True)
+    mine_cohorts_and_write_to_file(problem,
+                                   cohort_output_file_name=cohort_file,
+                                   scores_output_file_name=scores_file,
+                                   plots_of_run_file_name=run_plot_file,
+                                   nsga_pop_size=100,
+                                   nsga_ngens=100,
+                                   pRef_size=1000,
+                                   verbose=True)
+
+
+    show_interactive_3d_plot_of_scores(scores_file)
 
     #analyse_cohort_data(problem, cohort_file, csv_file, True)
 
