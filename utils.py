@@ -145,7 +145,8 @@ def get_formatted_timestamp():
     now = datetime.now()
 
     # Format the timestamp as minutes:hours_day-month
-    formatted_timestamp = now.strftime("%H'%M_%d-%m")
+    formatted_timestamp = now.strftime("%m-%d-H%H'M'%m's%S")
+
 
     return formatted_timestamp
 

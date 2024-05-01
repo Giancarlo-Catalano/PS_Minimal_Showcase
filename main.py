@@ -22,6 +22,7 @@ import os
 from typing import Optional
 
 import utils
+from BenchmarkProblems.GraphColouring import GraphColouring
 from Core import TerminationCriteria
 from BenchmarkProblems.BT.BTProblem import BTProblem
 from BenchmarkProblems.BenchmarkProblem import BenchmarkProblem
@@ -29,11 +30,11 @@ from BenchmarkProblems.EfficientBTProblem.EfficientBTProblem import EfficientBTP
 from Core.EvaluatedFS import EvaluatedFS
 from Experimentation.DetectingPatterns import json_to_cohorts, cohorts_to_json, \
     BTProblemPatternDetector, mine_cohorts_from_problem, analyse_data_from_json_cohorts, \
-    show_interactive_3d_plot_of_scores
+    show_interactive_3d_plot_of_scores, mine_pss_from_problem
 from Core.Explainer import Explainer
 from Core.PSMiner import PSMiner
 from Core.PickAndMerge import PickAndMergeSampler
-from PSMiners.DEAP.NSGAMiner import plot_stats_for_run
+from PSMiners.DEAP.NSGAMiner import plot_stats_for_run, report_in_order_of_last_metric
 from utils import announce, indent
 
 
@@ -96,7 +97,7 @@ def show_overall_system(benchmark_problem: BenchmarkProblem):
 
 
 
-def mine_cohorts_and_write_to_file(benchmark_problem: BenchmarkProblem,
+def mine_cohorts_and_write_to_file(benchmark_problem: BTProblem,
                                    cohort_output_file_name: str,
                                    scores_output_file_name: str,
                                    plots_of_run_file_name: Optional[str],
@@ -110,12 +111,15 @@ def mine_cohorts_and_write_to_file(benchmark_problem: BenchmarkProblem,
         print(f"\tbenchmark_problem={benchmark_problem},")
         print(f"\toutput_file_name={cohort_output_file_name}")
 
-    cohorts, scores, logbook = mine_cohorts_from_problem(benchmark_problem=problem,
+    pss, scores, logbook = mine_pss_from_problem(benchmark_problem=problem,
                                         method="SA",
                                         pRef_size=pRef_size,
                                         nsga_pop_size=nsga_pop_size,
                                         nsga_ngens=nsga_ngens,
                                         verbose=verbose)
+
+    detector = BTProblemPatternDetector(benchmark_problem)
+    cohorts = [detector.ps_to_cohort(ps) for ps in pss]
 
     with announce(f"Writing the cohorts ({len(cohorts)} onto the file", verbose):
         cohort_data = cohorts_to_json(cohorts)
@@ -160,7 +164,7 @@ def analyse_cohort_data(benchmark_problem: BTProblem,
 
 
 
-if __name__ == '__main__':
+def run_for_bt_problem():
     experimental_directory = r"C:\Users\gac8\PycharmProjects\PS-PDF\Experimentation"
     #current_directory = r"C:\Users\gac8\PycharmProjects\PS-PDF\Experimentation\cohorts_17'02_29-04"
     current_directory = os.path.join(experimental_directory, "cohorts_"+utils.get_formatted_timestamp())
@@ -176,9 +180,9 @@ if __name__ == '__main__':
                                    cohort_output_file_name=cohort_file,
                                    scores_output_file_name=scores_file,
                                    plots_of_run_file_name=run_plot_file,
-                                   nsga_pop_size=100,
-                                   nsga_ngens=100,
-                                   pRef_size=1000,
+                                   nsga_pop_size=600,
+                                   nsga_ngens=600,
+                                   pRef_size=10000,
                                    verbose=True)
 
 
@@ -191,3 +195,17 @@ if __name__ == '__main__':
     #
     # for worker_id in coverage:
     #     print(f"{worker_id}\t{coverage[worker_id]}")
+
+
+if __name__ == '__main__':
+    problem = GraphColouring.random(amount_of_colours=3, amount_of_nodes=6, chance_of_connection=0.4)
+    print(f"Initialised the problem, which is {problem.long_repr()}")
+    problem.view()
+
+    ps_catalog, scores, logbook = mine_pss_from_problem(benchmark_problem=problem,
+                                                         method="SA",
+                                                         pRef_size=10000,
+                                                         nsga_pop_size=200,
+                                                         nsga_ngens=100,
+                                                         verbose=True)
+    report_in_order_of_last_metric(ps_catalog, problem, limit_to=12)

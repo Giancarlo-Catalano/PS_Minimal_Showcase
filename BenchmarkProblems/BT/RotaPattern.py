@@ -100,8 +100,8 @@ def get_workers_present_each_day_of_the_week(rotas: list[RotaPattern], calendar_
 
 
 def get_range_scores(workers_per_weekday: np.ndarray):
-    maxs = np.max(workers_per_weekday, axis=0)
     mins = np.min(workers_per_weekday, axis=0)
+    maxs = np.max(workers_per_weekday, axis=0)
 
     def range_score(min_amount, max_amount):
         if max_amount == 0:

@@ -6,9 +6,38 @@ from BenchmarkProblems.BenchmarkProblem import BenchmarkProblem
 from Core.FullSolution import FullSolution
 from Core.PS import PS, STAR
 from Core.SearchSpace import SearchSpace
+import graphviz
+import networkx as nx
+import matplotlib.pyplot as plt
 
 Node: TypeAlias = int
 Connection: TypeAlias = (Node, Node)
+
+
+# Function to visualize an undirected graph given a list of edges (node pairs)
+def visualize_undirected_graph(edges):
+    # Create a NetworkX graph
+    graph = nx.Graph()  # Create an undirected graph
+
+    # Add edges to the graph
+    graph.add_edges_from(edges)  # Add all edges at once
+
+    # Try using the planar layout to minimize edge overlaps
+    try:
+        pos = nx.planar_layout(graph)  # Use the planar layout for a non-overlapping arrangement
+    except nx.NetworkXException:
+        # If the graph is not planar, fall back to the spring layout
+        pos = nx.spring_layout(graph)  # Use the spring layout as an alternative
+
+    # Draw the graph with a specific layout
+    nx.draw(graph, pos, with_labels=True, node_size=700, node_color='skyblue', edge_color='gray', font_size=14)
+
+    # Display the plot
+    plt.title("Undirected Graph (Planar Layout)")
+    plt.show()
+
+    return graph  # Return the NetworkX graph object for further operations
+
 
 
 class GraphColouring(BenchmarkProblem):
@@ -61,3 +90,7 @@ class GraphColouring(BenchmarkProblem):
         return "\n".join([repr_node_and_colour(node, colour)
                           for node, colour in enumerate(ps.values)
                           if colour != STAR])
+
+
+    def view(self):
+        visualize_undirected_graph(self.connections)

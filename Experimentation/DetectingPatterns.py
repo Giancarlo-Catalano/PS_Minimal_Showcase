@@ -279,6 +279,40 @@ def test_and_produce_patterns(benchmark_problem: BTProblem,
     print(json.dumps(cohorts_as_json))
 
 
+def mine_pss_from_problem(benchmark_problem: BTProblem,
+                              method: Literal["uniform", "GA", "SA"],
+                              pRef_size: int,
+                              nsga_pop_size: int,
+                              nsga_ngens: int,
+                              verbose=True) -> (list[PS], list[tuple], Logbook):
+    pRef = get_history_pRef(benchmark_problem=benchmark_problem,
+                            which_algorithm = method,
+                            sample_size = pRef_size,
+                            verbose=verbose)
+
+    # if verbose:
+    #     plot_solutions_in_pRef(pRef)
+
+    metrics = [Simplicity(), MeanFitness(), Atomicity()]  # this is not actually used...
+    with announce("Running the PS_mining algorithm", verbose = verbose):
+        toolbox = get_toolbox_for_problem(benchmark_problem,
+                                          metrics,
+                                          algorithm="NSGAIII",
+                                          use_experimental_niching=True,
+                                          pRef = pRef)
+
+        final_population, logbook = nsga(toolbox=toolbox,
+                                         mu =nsga_pop_size,
+                                         cxpb=0.5,
+                                         mutpb=1/benchmark_problem.search_space.amount_of_parameters,
+                                         ngen=nsga_ngens,
+                                         stats=get_stats_object(),
+                                         verbose=verbose)
+
+    scores = [utils.as_float_tuple(ps.fitness.values) for ps in final_population]
+
+    return final_population, scores, logbook
+
 def mine_cohorts_from_problem(benchmark_problem: BTProblem,
                               method: Literal["uniform", "GA", "SA"],
                               pRef_size: int,
