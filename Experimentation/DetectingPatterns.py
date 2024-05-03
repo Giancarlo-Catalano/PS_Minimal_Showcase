@@ -7,8 +7,12 @@ import random
 from typing import TypeAlias, Iterable, Literal
 
 import numpy as np
+import shap
 from deap.tools import Logbook
 from matplotlib import pyplot as plt
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.metrics import accuracy_score
+from sklearn.model_selection import train_test_split
 
 import utils
 from BenchmarkProblems.BT.BTProblem import BTProblem
@@ -26,7 +30,7 @@ from Core.custom_types import JSON
 from utils import announce
 import seaborn as sns
 import pandas as pd
-
+from xgboost import XGBClassifier
 
 
 class CohortMember:
@@ -290,8 +294,8 @@ def mine_pss_from_problem(benchmark_problem: BTProblem,
                             sample_size = pRef_size,
                             verbose=verbose)
 
-    # if verbose:
-    #     plot_solutions_in_pRef(pRef)
+    if verbose:
+        plot_solutions_in_pRef(pRef)
 
     metrics = [Simplicity(), MeanFitness(), Atomicity()]  # this is not actually used...
     with announce("Running the PS_mining algorithm", verbose = verbose):
@@ -451,3 +455,41 @@ def show_interactive_3d_plot_of_scores(file_name: str):
 
 
 
+
+
+def get_shap_values_plot(csv_file: str, image_file_destination: str):
+    print(f"Obtaining SHAP values for file {csv_file}")
+    data = pd.read_csv(csv_file)  # Change to the path of your CSV file
+
+    # Define the features and target variable
+    target_column = "control"  # Change to your target column
+    features = data.columns.drop(target_column)
+
+    X = data[features]
+    y = data[target_column]
+
+    # Split the data into training and testing sets
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=6)
+
+    # Initialize and train the Random Forest model
+    model =  XGBClassifier(random_state=42)
+    model.fit(X_train, y_train)
+
+    # Make predictions and evaluate the model
+    y_pred = model.predict(X_test)
+    accuracy = accuracy_score(y_test, y_pred)
+    print(f"Accuracy: {accuracy}")
+
+    # Initialize SHAP explainer and compute SHAP values
+    explainer = shap.TreeExplainer(model)
+    shap_values = explainer.shap_values(X)
+
+    # Plot the SHAP summary plot
+    shap.summary_plot(shap_values, X)
+
+    # Save the SHAP summary plot as an image
+    plt.savefig(image_file_destination)
+    print(f"SHAP summary plot saved as {image_file_destination}")
+
+    # Optionally, display the image (if running in Jupyter or similar environments)
+    plt.show()

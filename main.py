@@ -30,7 +30,7 @@ from BenchmarkProblems.EfficientBTProblem.EfficientBTProblem import EfficientBTP
 from Core.EvaluatedFS import EvaluatedFS
 from Experimentation.DetectingPatterns import json_to_cohorts, cohorts_to_json, \
     BTProblemPatternDetector, mine_cohorts_from_problem, analyse_data_from_json_cohorts, \
-    show_interactive_3d_plot_of_scores, mine_pss_from_problem
+    show_interactive_3d_plot_of_scores, mine_pss_from_problem, get_shap_values_plot
 from Core.Explainer import Explainer
 from Core.PSMiner import PSMiner
 from Core.PickAndMerge import PickAndMergeSampler
@@ -111,12 +111,12 @@ def mine_cohorts_and_write_to_file(benchmark_problem: BTProblem,
         print(f"\tbenchmark_problem={benchmark_problem},")
         print(f"\toutput_file_name={cohort_output_file_name}")
 
-    pss, scores, logbook = mine_pss_from_problem(benchmark_problem=problem,
-                                        method="SA",
-                                        pRef_size=pRef_size,
-                                        nsga_pop_size=nsga_pop_size,
-                                        nsga_ngens=nsga_ngens,
-                                        verbose=verbose)
+    pss, scores, logbook = mine_pss_from_problem(benchmark_problem=benchmark_problem,
+                                                 method="SA",
+                                                 pRef_size=pRef_size,
+                                                 nsga_pop_size=nsga_pop_size,
+                                                 nsga_ngens=nsga_ngens,
+                                                 verbose=verbose)
 
     detector = BTProblemPatternDetector(benchmark_problem)
     cohorts = [detector.ps_to_cohort(ps) for ps in pss]
@@ -156,7 +156,7 @@ def analyse_cohort_data(benchmark_problem: BTProblem,
                                                                 amount_to_generate=len(cohorts))
 
 
-    analyse_data_from_json_cohorts(problem = problem,
+    analyse_data_from_json_cohorts(problem = benchmark_problem,
                                    real_cohorts=cohorts,
                                    control_cohorts=control_cohorts,
                                    output_csv_file_name = csv_file_name,
@@ -166,29 +166,30 @@ def analyse_cohort_data(benchmark_problem: BTProblem,
 
 def run_for_bt_problem():
     experimental_directory = r"C:\Users\gac8\PycharmProjects\PS-PDF\Experimentation"
-    #current_directory = r"C:\Users\gac8\PycharmProjects\PS-PDF\Experimentation\cohorts_17'02_29-04"
-    current_directory = os.path.join(experimental_directory, "cohorts_"+utils.get_formatted_timestamp())
+    current_directory = r"C:\Users\gac8\PycharmProjects\PS-PDF\Experimentation\Best"
+    # current_directory = os.path.join(experimental_directory, "cohorts_"+utils.get_formatted_timestamp())
     cohort_file = os.path.join(current_directory, "cohort.json")
     scores_file = os.path.join(current_directory, "scores.csv")
     run_plot_file = os.path.join(current_directory, "run_plot.png")
     csv_file = os.path.join(current_directory, "analysis.csv")
+    plot_file = os.path.join(current_directory, "shap.png")
 
     problem = EfficientBTProblem.from_default_files()
     #problem = RoyalRoad(3, 4)
     #show_overall_system(problem)
-    mine_cohorts_and_write_to_file(problem,
-                                   cohort_output_file_name=cohort_file,
-                                   scores_output_file_name=scores_file,
-                                   plots_of_run_file_name=run_plot_file,
-                                   nsga_pop_size=600,
-                                   nsga_ngens=600,
-                                   pRef_size=10000,
-                                   verbose=True)
+    # mine_cohorts_and_write_to_file(problem,
+    #                                cohort_output_file_name=cohort_file,
+    #                                scores_output_file_name=scores_file,
+    #                                plots_of_run_file_name=run_plot_file,
+    #                                nsga_pop_size=600,
+    #                                nsga_ngens=600,
+    #                                pRef_size=100000,
+    #                                verbose=True)
 
 
-    show_interactive_3d_plot_of_scores(scores_file)
+    # show_interactive_3d_plot_of_scores(scores_file)
 
-    #analyse_cohort_data(problem, cohort_file, csv_file, True)
+    # analyse_cohort_data(problem, cohort_file, csv_file, True)
 
     # cohorts = json_to_cohorts(cohort_file)
     # coverage = generate_coverage_stats(problem, cohorts)
@@ -196,16 +197,19 @@ def run_for_bt_problem():
     # for worker_id in coverage:
     #     print(f"{worker_id}\t{coverage[worker_id]}")
 
+    get_shap_values_plot(csv_file, plot_file)
+
 
 if __name__ == '__main__':
-    problem = GraphColouring.random(amount_of_colours=3, amount_of_nodes=6, chance_of_connection=0.4)
-    print(f"Initialised the problem, which is {problem.long_repr()}")
-    problem.view()
-
-    ps_catalog, scores, logbook = mine_pss_from_problem(benchmark_problem=problem,
-                                                         method="SA",
-                                                         pRef_size=10000,
-                                                         nsga_pop_size=200,
-                                                         nsga_ngens=100,
-                                                         verbose=True)
-    report_in_order_of_last_metric(ps_catalog, problem, limit_to=12)
+    # problem = GraphColouring.random(amount_of_colours=3, amount_of_nodes=6, chance_of_connection=0.4)
+    # print(f"Initialised the problem, which is {problem.long_repr()}")
+    # problem.view()
+    #
+    # ps_catalog, scores, logbook = mine_pss_from_problem(benchmark_problem=problem,
+    #                                                      method="SA",
+    #                                                      pRef_size=10000,
+    #                                                      nsga_pop_size=200,
+    #                                                      nsga_ngens=100,
+    #                                                      verbose=True)
+    # report_in_order_of_last_metric(ps_catalog, problem, limit_to=12)
+    run_for_bt_problem()

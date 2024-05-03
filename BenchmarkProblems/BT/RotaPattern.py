@@ -92,6 +92,27 @@ class RotaPattern:
         return cls(workweek_length=week_size, days=days)
 
 
+
+    def __eq__(self, other) -> bool:
+        def compare_when_same_length(a: RotaPattern, b: RotaPattern):
+            return all(day_a.working == day_b.working for day_a, day_b in zip(a.days, b.days))
+
+        if len(self) == len(other):
+            return compare_when_same_length(self, other)
+        else:
+            smaller, bigger = self, other
+            if len(self) > len(other):
+                smaller, bigger = bigger, smaller
+
+            new_days = []
+            while len(new_days) < len(bigger):
+                new_days.extend(smaller.days)
+
+            new_days = new_days[:len(bigger)]
+            new_smaller = RotaPattern(self.workweek_length, new_days)
+            return compare_when_same_length(new_smaller, bigger)
+
+
 def get_workers_present_each_day_of_the_week(rotas: list[RotaPattern], calendar_length: int) -> np.ndarray:
     all_rotas = np.array([rota.working_days_in_calendar(calendar_length) for rota in rotas])
     workers_per_day = np.sum(all_rotas, axis=0, dtype=int)
