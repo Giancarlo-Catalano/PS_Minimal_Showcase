@@ -183,14 +183,21 @@ class PRef:
         print(
             f"This PRef contains {self.sample_size} samples, where the minimum is {min_fitness}, the maximum = {max_fitness} and the average is {avg_fitness}")
 
-
-    def write_to_files(self, folder: str, verbose=False):
+    def save(self, file, verbose=False):
         # create the folder if it doesn't exist
-        fsm_file = os.path.join(folder, "fsm.numpydata")
-        # TODO
+
+        np.savez(file,
+                 fsm=self.full_solution_matrix,
+                 fitness_array=self.fitness_array,
+                 search_space=self.search_space.cardinalities)
 
 
-
+    @classmethod
+    def load(cls, file: str):
+        results = np.load(file)
+        return cls(full_solution_matrix=results["fsm"],
+                   fitness_array=results["fitness_array"],
+                   search_space=SearchSpace(results["search_space"]))
 
 def plot_solutions_in_pRef(pRef: PRef):
     utils.plot_sequence_of_points(pRef.fitness_array)
