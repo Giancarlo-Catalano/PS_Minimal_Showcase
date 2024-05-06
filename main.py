@@ -203,28 +203,6 @@ def run_for_bt_problem():
 
 
 
-def test_mining_works():
-    problem = GraphColouring.random(amount_of_colours=3, amount_of_nodes=6, chance_of_connection=0.4)
-    print(f"Initialised the problem, which is {problem.long_repr()}")
-    problem.view()
-    pRef = get_history_pRef(problem,sample_size=10000, which_algorithm="uniform")
-
-    classic = PSMiner.with_default_settings(pRef)
-    novel_interesting = NSGAPSMiner.with_default_settings(pRef)
-    novel_boring = NSGAPSMiner(population_size = 300,
-                               uses_custom_crowding = False,
-                               pRef = pRef)
-
-    ps_budget = 1000
-    termination_criteria = TerminationCriteria.PSEvaluationLimit(ps_budget)
-    for algorithm in [classic, novel_boring, novel_interesting]:
-        with announce(f"Running algorithm {algorithm}"):
-            algorithm.run(termination_criteria, verbose=True)
-        print(f"At the end, {algorithm.get_used_evaluations()} evaluations were used")
-
-
-
-
 
 
 def run_for_gc():

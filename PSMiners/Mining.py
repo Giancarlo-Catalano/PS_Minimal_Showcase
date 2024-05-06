@@ -1,9 +1,12 @@
 from typing import Literal
 
+import numpy as np
+
 from BenchmarkProblems.BenchmarkProblem import BenchmarkProblem
 from Core import TerminationCriteria
 from Core.EvaluatedPS import EvaluatedPS
 from Core.PRef import PRef
+from Core.PS import PS
 from Core.PSMiner import PSMiner
 from FSStochasticSearch.HistoryPRefs import uniformly_random_distribution_pRef, pRef_from_GA, pRef_from_SA, \
     pRef_from_GA_best, pRef_from_SA_best
@@ -34,6 +37,25 @@ def get_history_pRef(benchmark_problem: BenchmarkProblem,
                                                      sample_size=sample_size)
             case _: raise ValueError
 
+
+
+def write_evaluated_ps_to_file(e_pss: list[EvaluatedPS], file: str):
+    ps_matrix = np.array([e_ps.ps.values for e_ps in e_pss])
+    fitness_matrix = np.array([e_ps.metric_scores for e_ps in e_pss])
+
+    np.savez(file, ps_matrix = ps_matrix, fitness_matrix=fitness_matrix)
+
+
+def load_evaluated_ps(file: str) -> list[EvaluatedPS]:
+    results_dict = np.load(file)
+    ps_matrix = results_dict["ps_matrix"]
+    fitness_matrix = results_dict["fitness_matrix"]
+
+
+    e_pss = [EvaluatedPS(PS(row)) for row in ps_matrix]
+    for e_ps, fitness_values in zip(e_pss, fitness_matrix):
+        e_ps.metric_scores = list(fitness_values)
+    return e_pss
 
 
 
