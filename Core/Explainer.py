@@ -61,7 +61,7 @@ class Explainer:
 
         fs_as_ps = PS.from_FS(full_solution)
         print(f"The solution \n {indent(self.benchmark_problem.repr_ps(fs_as_ps))}\ncontains the following PSs:")
-        for ps in contained_pss:
+        for ps in contained_pss[:12]:
             print(indent(self.get_small_description_of_ps(ps)))
             print()
 

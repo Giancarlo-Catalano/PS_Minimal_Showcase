@@ -234,7 +234,8 @@ def run_for_gc():
 if __name__ == '__main__':
     #problem = GraphColouring.random(amount_of_colours=3, amount_of_nodes=6, chance_of_connection=0.4)
     #problem = CheckerBoard(5, 5)
-    problem = MultiDimensionalKnapsack(items = [(10, 20, 30), (50, 10, 10), (60, 60, 2), (20, 10, 24), (12, 2, 55)], targets=(80, 80, 80))
+    # problem = MultiDimensionalKnapsack(items = [(10, 20, 30), (50, 10, 10), (60, 60, 2), (20, 10, 24), (12, 2, 55)], targets=(80, 80, 80))
+    problem = EfficientBTProblem.from_default_files()
     if isinstance(problem, GraphColouring):
         problem.view()
 
