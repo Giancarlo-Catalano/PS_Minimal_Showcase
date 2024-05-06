@@ -21,44 +21,15 @@ ResultsAsJSON: TypeAlias = dict
 
 
 class AbstractPSMiner:
-    metric: Metric
     pRef: PRef
-    mutation_operator: Optional[PSMutationOperator]
-    selection_operator: Optional[PSSelectionOperator]
-    crossover_operator: Optional[PSCrossoverOperator]
-
-    current_population: Optional[Population]
 
     def __init__(self,
-                 metric: Metric,
-                 pRef: PRef,
-                 mutation_operator=None,
-                 selection_operator=None,
-                 crossover_operator=None,
-                 seed_population=None,
-                 set_pRef_in_metric= True):
-
-        self.metric = metric
+                 pRef: PRef):
         self.pRef = pRef
-        if set_pRef_in_metric:
-            self.metric.set_pRef(pRef)
-        self.metric.set_pRef(self.pRef)
-        self.mutation_operator = mutation_operator
-        self.selection_operator = selection_operator
-        self.crossover_operator = crossover_operator
 
-        if seed_population is not None and len(seed_population) > 0:
-            self.current_population = seed_population
-        else:
-            self.current_population = self.get_initial_population()
-
-        self.current_population = self.evaluate_individuals(self.current_population)
 
     def __repr__(self):
-        raise Exception("An implementation of PSMiner does not implement __repr__")
-
-    def get_initial_population(self):
-        raise Exception(f"An implementation of PSMiner({self.__repr__()}) does not implement get_initial_population")
+        raise Exception("An implementation of AbstractPSMiner does not implement __repr__")
 
     @property
     def search_space(self):
@@ -118,29 +89,21 @@ class AbstractPSMiner:
     def step(self):
         raise Exception(f"An implementation of PSMiner ({self.__repr__()}) does not implement get_initial_population")
 
-    def evaluate_individuals(self, newborns: Population) -> Population:
-        for individual in newborns:
-            individual.aggregated_score = self.metric.get_single_normalised_score(individual.ps)
-        return newborns
-
     def get_used_evaluations(self) -> int:
-        return self.metric.used_evaluations
+        raise Exception(f"An implementation of PSMiner ({self.__repr__()}) does not implement get_used_evaluations")
 
-    def run(self, termination_criteria: TerminationCriteria) -> dict:
+    def run(self, termination_criteria: TerminationCriteria):
         iterations = 0
 
         def should_terminate():
             return termination_criteria.met(iterations=iterations,
-                                            ps_evaluations=self.get_used_evaluations()) or len(self.current_population) == 0
+                                            ps_evaluations=self.get_used_evaluations())
 
         while not should_terminate():
             self.step()
             iterations +=1
 
-        return {"iterations": iterations,
-                "ps_evaluations": self.get_used_evaluations()}
-
-    def get_results(self, quantity_returned: int) -> list[EvaluatedPS]:
+    def get_results(self, amount: int) -> list[EvaluatedPS]:
         raise Exception(f"An implementation of PSMiner({self.__repr__()}) does not implement get_results")
 
     @staticmethod
@@ -173,6 +136,6 @@ class AbstractPSMiner:
             algorithm.run(PSEvaluationLimit(15000))
 
         print("The best results are")
-        best = algorithm.get_results(12)
+        best = algorithm.get_results()
         for item in best:
             print(item)

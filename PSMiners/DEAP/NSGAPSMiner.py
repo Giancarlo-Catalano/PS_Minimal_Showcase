@@ -1,0 +1,69 @@
+from typing import Any, Optional
+
+from deap.base import Toolbox
+from deap.tools import Logbook
+
+from Core.EvaluatedPS import EvaluatedPS
+from Core.PRef import PRef
+from Core.PS import PS
+from Core.PSMetric.Classic3 import Classic3PSMetrics
+from Core.TerminationCriteria import TerminationCriteria
+from PSMiners.AbstractPSMiner import AbstractPSMiner
+from PSMiners.DEAP.deap_utils import get_toolbox_for_problem, get_stats_object, nsga
+
+
+class NSGAPSMiner(AbstractPSMiner):
+    population_size: int
+
+    toolbox: Toolbox
+    stats: Any
+    classic3_evaluator: Classic3PSMetrics
+    uses_experimental_crowding: bool
+    last_logbook: Optional[Logbook]
+    last_population: Optional[list[EvaluatedPS]]
+
+    def __init__(self,
+                 pRef: PRef,
+                 population_size: int,
+                 uses_custom_crowding: bool):
+        super().__init__(pRef=pRef)
+        self.population_size = population_size
+        self.uses_experimental_crowding = uses_custom_crowding
+
+        self.classic3_evaluator = Classic3PSMetrics(self.pRef)  # replaces simplicity, mean fitness, atomicity
+        self.toolbox = get_toolbox_for_problem(pRef,
+                                               classic3_evaluator=self.classic3_evaluator,
+                                               uses_experimental_crowding=self.uses_experimental_crowding)
+        self.stats = get_stats_object()
+
+
+    @classmethod
+    def nsgaii_population_to_evaluated_ps_population(cls, nsga_population) -> list[EvaluatedPS]:
+        def convert_single(nsga_individual):
+            result = EvaluatedPS(nsga_individual)  # because nsgaindividal is a subclass of PS
+            result.metric_scores = result.fitness.values
+            return result
+
+        return [convert_single(individual) for individual in nsga_population]
+
+    def run(self, termination_criteria: TerminationCriteria, verbose=False):
+        final_population, self.last_logbook = nsga(toolbox=self.toolbox,
+                                         mu =self.population_size,
+                                         cxpb=0.5,
+                                         mutpb=1/self.search_space.amount_of_parameters,
+                                         termination_criteria = termination_criteria,
+                                         stats=self.stats,
+                                         verbose=verbose,
+                                         classic3_evaluator=self.classic3_evaluator)
+
+        self.last_population = NSGAPSMiner.nsgaii_population_to_evaluated_ps_population(final_population)
+
+    @classmethod
+    def with_default_settings(cls, pRef: PRef):
+        return cls(population_size = 300,
+                   uses_custom_crowding = True,
+                   pRef = pRef)
+
+
+    def get_results(self, amount: int) -> list[EvaluatedPS]:
+        return self.last_population[:amount]

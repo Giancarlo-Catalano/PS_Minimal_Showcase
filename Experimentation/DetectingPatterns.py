@@ -19,7 +19,7 @@ from BenchmarkProblems.BT.BTProblem import BTProblem
 from BenchmarkProblems.BT.Worker import Worker
 from BenchmarkProblems.EfficientBTProblem.EfficientBTProblem import ExtendedPattern, \
     rota_to_extended_pattern
-from PSMiners.DEAP.NSGAMiner import get_toolbox_for_problem, nsga, get_stats_object, \
+from PSMiners.DEAP.deap_utils import get_toolbox_for_problem, nsga, get_stats_object, \
     report_in_order_of_last_metric
 from Core.PRef import plot_solutions_in_pRef
 from Core.PS import PS, STAR
@@ -258,7 +258,7 @@ def test_and_produce_patterns(benchmark_problem: BTProblem,
     metrics = [Simplicity(), MeanFitness(), Atomicity()]
     with announce("Running the PS_mining algorithm", verbose = verbose):
         toolbox = get_toolbox_for_problem(benchmark_problem,
-                                          metrics, use_experimental_niching=True,
+                                          metrics, uses_experimental_crowding=True,
                                           pRef = pRef)
         final_population, logbook = nsga(toolbox=toolbox,
                                          mu =200,
@@ -303,7 +303,7 @@ def mine_pss_from_problem(benchmark_problem: BTProblem,
         toolbox = get_toolbox_for_problem(benchmark_problem,
                                           metrics,
                                           algorithm="NSGAIII",
-                                          use_experimental_niching=True,
+                                          uses_experimental_crowding=True,
                                           pRef = pRef)
 
         final_population, logbook = nsga(toolbox=toolbox,
@@ -337,7 +337,7 @@ def mine_cohorts_from_problem(benchmark_problem: BTProblem,
         toolbox = get_toolbox_for_problem(benchmark_problem,
                                           metrics,
                                           algorithm="NSGAIII",
-                                          use_experimental_niching=True,
+                                          uses_experimental_crowding=True,
                                           pRef = pRef)
 
         final_population, logbook = nsga(toolbox=toolbox,

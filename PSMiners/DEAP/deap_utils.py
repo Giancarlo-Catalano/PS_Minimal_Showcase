@@ -1,6 +1,7 @@
 import random
-from typing import Literal
+from typing import Literal, Any
 
+import deap.base
 import matplotlib.pyplot as plt
 import numpy as np
 from deap import algorithms, creator, base, tools
@@ -8,6 +9,10 @@ from deap.tools import selNSGA2, uniform_reference_points, selNSGA3WithMemory
 
 from BenchmarkProblems.BenchmarkProblem import BenchmarkProblem
 from Core.EvaluatedPS import EvaluatedPS
+from Core.PRef import PRef
+from Core.PSMiner import PSMiner
+from Core.TerminationCriteria import TerminationCriteria
+from PSMiners.AbstractPSMiner import AbstractPSMiner
 from PSMiners.DEAP.CustomCrowdingMechanism import gc_selNSGA2, GC_selNSGA3WithMemory
 from FSStochasticSearch.HistoryPRefs import uniformly_random_distribution_pRef, pRef_from_GA, pRef_from_SA
 from Core.PS import PS
@@ -22,9 +27,10 @@ from utils import announce
 def nsga(toolbox,
          stats,
          mu,
-         ngen,
+         termination_criteria: TerminationCriteria,
          cxpb,
          mutpb,
+         classic3_evaluator: Classic3PSMetrics,
          verbose=False):
     logbook = tools.Logbook()
     logbook.header = "gen", "evals", "min", "avg", "max"
@@ -43,7 +49,11 @@ def nsga(toolbox,
         print(logbook.stream)
 
     # Begin the generational process
-    for gen in range(1, ngen):
+    iterations = 0
+    def should_stop():
+        return termination_criteria.met(ps_evaluations = classic3_evaluator.used_evaluations, iterations=iterations)
+
+    while not should_stop():
         pop = list(set(pop))
         offspring = algorithms.varAnd(pop, toolbox, cxpb, mutpb)
 
@@ -58,9 +68,11 @@ def nsga(toolbox,
 
         # Compile statistics about the new population
         record = stats.compile(pop)
-        logbook.record(gen=gen, evals=len(invalid_ind), **record)
+        logbook.record(gen=iterations, evals=len(invalid_ind), **record)
         if verbose:
             print(logbook.stream)
+
+        iterations +=1
 
     return pop, logbook
 
@@ -82,28 +94,21 @@ def nsgaiii_pure_functionality(toolbox, mu, ngen, cxpb, mutpb):
         pop = toolbox.select(pop + offspring, mu)
     return pop
 
-def get_toolbox_for_problem(benchmark_problem: BenchmarkProblem,
-                            metrics: list[Metric],
-                            algorithm = Literal["NSGAII", "NSGAIII"],
-                            use_experimental_niching = True,
-                            pRef = None):
-    if pRef is None:
-        with announce("Generating the pRef"):
-            pRef = benchmark_problem.get_reference_population(sample_size=10000)
-    for metric in metrics:
-        metric.set_pRef(pRef)
-
-    creator.create("FitnessMax", base.Fitness, weights=[1.0 for _ in metrics])
+def get_toolbox_for_problem(pRef: PRef,
+                            classic3_evaluator: Classic3PSMetrics,
+                            uses_experimental_crowding = True):
+    creator.create("FitnessMax", base.Fitness, weights=[1.0, 1.0, 1.0])
     creator.create("DEAPPSIndividual", PS,
                    fitness=creator.FitnessMax)
     toolbox = base.Toolbox()
 
+    search_space = pRef.search_space
     def geometric_distribution_ps():
-        result = PS.empty(benchmark_problem.search_space)
+        result = PS.empty(search_space)
         chance_of_success = 0.79
         while random.random() < chance_of_success:
-            var_index = random.randrange(benchmark_problem.search_space.amount_of_parameters)
-            value = random.randrange(benchmark_problem.search_space.cardinalities[var_index])
+            var_index = random.randrange(search_space.amount_of_parameters)
+            value = random.randrange(search_space.cardinalities[var_index])
             result = result.with_fixed_value(var_index, value)
         return creator.DEAPPSIndividual(result)
 
@@ -111,30 +116,22 @@ def get_toolbox_for_problem(benchmark_problem: BenchmarkProblem,
 
     toolbox.register("make_random_ps",
                      geometric_distribution_ps)
-
-    classic3_evaluator = Classic3PSMetrics(pRef)  # this replaces the 3 metrics
-
     def evaluate(ps) -> tuple:
         return classic3_evaluator.get_S_MF_A(ps)  # experimental
 
-    toolbox.register("mate", tools.cxUniform, indpb=1/benchmark_problem.search_space.amount_of_parameters)
-    lower_bounds = [-1 for _ in benchmark_problem.search_space.cardinalities]
-    upper_bounds = [card-1 for card in benchmark_problem.search_space.cardinalities]
-    toolbox.register("mutate", tools.mutUniformInt, low=lower_bounds, up=upper_bounds, indpb=1/benchmark_problem.search_space.amount_of_parameters)
+    toolbox.register("mate", tools.cxUniform, indpb=1/search_space.amount_of_parameters)
+    lower_bounds = [-1 for _ in search_space.cardinalities]
+    upper_bounds = [card-1 for card in search_space.cardinalities]
+    toolbox.register("mutate", tools.mutUniformInt, low=lower_bounds, up=upper_bounds, indpb=1/search_space.amount_of_parameters)
 
     toolbox.register("evaluate", evaluate)
     toolbox.register("population", tools.initRepeat, list, toolbox.make_random_ps)
 
     selection_method = None
 
-    if algorithm == "NSGAII":
-        selection_method = gc_selNSGA2 if use_experimental_niching else selNSGA2
-    elif algorithm == "NSGAIII":
-        ref_points = uniform_reference_points(nobj=len(metrics), p=12)
-        selection_method = GC_selNSGA3WithMemory(ref_points) if use_experimental_niching else selNSGA3WithMemory(ref_points)
 
-    if selection_method is None:
-        raise ValueError(f"The provided selection method '{algorithm}', experimental = {use_experimental_niching} is not valid")
+    ref_points = uniform_reference_points(nobj=3, p=12)
+    selection_method = GC_selNSGA3WithMemory(ref_points) if uses_experimental_crowding else selNSGA3WithMemory(ref_points)
     toolbox.register("select", selection_method)
     return toolbox
 
@@ -225,6 +222,10 @@ def comprehensive_search(benchmark_problem: BenchmarkProblem,
     to_show = evaluated_pss[:amount] if amount is not None else evaluated_pss
     for e_ps in to_show:
         print(e_ps)
+
+
+
+
 
 
 

@@ -34,7 +34,7 @@ from Experimentation.DetectingPatterns import json_to_cohorts, cohorts_to_json, 
 from Core.Explainer import Explainer
 from Core.PSMiner import PSMiner
 from Core.PickAndMerge import PickAndMergeSampler
-from PSMiners.DEAP.NSGAMiner import plot_stats_for_run, report_in_order_of_last_metric
+from PSMiners.DEAP.deap_utils import plot_stats_for_run, report_in_order_of_last_metric
 from PSMiners.Mining import get_history_pRef
 from utils import announce, indent
 

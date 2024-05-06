@@ -91,11 +91,13 @@ class Classic3PSMetrics:
     pRef: PRef
     normalised_fitnesses: ArrayOfFloats
     cached_isolated_benefits: list[list[float]]
+    used_evaluations: int
 
     def __init__(self, pRef: PRef):
         self.pRef = pRef
         self.normalised_fitnesses = self.get_normalised_fitness_array(self.pRef.fitness_array)
         self.cached_isolated_benefits = self.calculate_isolated_benefits()
+        self.used_evaluations = 0
 
     @classmethod
     def get_normalised_fitness_array(cls, fitness_array: ArrayOfFloats) -> ArrayOfFloats:
@@ -182,6 +184,7 @@ class Classic3PSMetrics:
 
 
     def get_S_MF_A(self, ps: PS) -> (float, float, float):
+        self.used_evaluations += 1
         rows_all_fixed, excluding_one = self.get_relevant_rows_for_ps(ps)
 
         simplicity = self.get_simplicity_of_PS(ps)

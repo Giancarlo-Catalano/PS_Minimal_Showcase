@@ -21,6 +21,7 @@ from Core.TerminationCriteria import TerminationCriteria, PSEvaluationLimit, Ite
 from Core.get_init import just_empty
 from Core.get_local import specialisations
 from Core.selection import truncation_selection
+from PSMiners.AbstractPSMiner import AbstractPSMiner
 from utils import announce
 
 Population: TypeAlias = list[EvaluatedPS]
@@ -29,7 +30,7 @@ GetLocalType: TypeAlias = [[PS, SearchSpace], list[PS]]
 SelectionType: TypeAlias = [[list[EvaluatedPS], int], list[EvaluatedPS]]
 
 
-class PSMiner:
+class PSMiner(AbstractPSMiner):
     """This class is the Core miner, which outputs a Core catalog when used right"""
     """There are many parts that can be modified, and these were tested in the paper, 
     but you should probably just use with_default_settings as a constructor"""
@@ -39,7 +40,6 @@ class PSMiner:
     get_init: GetInitType  # generates the initial population
     get_local: GetLocalType  # generates the offspring of a selected ps
 
-    pRef: PRef  # the PRef which remains constant throughout the process
     selection: SelectionType  # the selection operator
 
     current_population: list[EvaluatedPS]
@@ -54,6 +54,7 @@ class PSMiner:
                  get_local: GetLocalType,
                  population_size: int,
                  selection: SelectionType):
+        super().__init__(pRef)
         self.used_evaluations = 0
 
         self.pRef = pRef
@@ -187,23 +188,6 @@ class PSMiner:
                    get_init=just_empty,
                    get_local=specialisations,
                    selection=truncation_selection)
-
-    @classmethod
-    def test_with_problem(cls, benchmark_problem: BenchmarkProblem):
-        """ This method is mainly for debug, but you might find it useful too"""
-        evaluator = FSEvaluator(benchmark_problem.fitness_function)
-
-        with announce("Gathering pRef"):
-            pRef = evaluator.generate_pRef_from_search_space(search_space=benchmark_problem.search_space,
-                                                             amount_of_samples=10000)
-        with announce("Running the algorithm"):
-            algorithm: PSMiner = cls.with_default_settings(pRef)
-            algorithm.run(PSEvaluationLimit(15000))
-
-        print("The best results are")
-        best = algorithm.get_results(12)
-        for item in best:
-            print(item)
 
 
 
