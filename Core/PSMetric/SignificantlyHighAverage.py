@@ -31,7 +31,7 @@ class SignificantlyHighAverage(Metric):
         sample_stdev = np.std(observations)
 
         if n < 1 or sample_stdev == 0:
-            return 0
+            return -1, -1
 
         t_score = (sample_mean - self.pRef_mean) / (sample_stdev / np.sqrt(n))
         p_value = 1 - t.cdf(abs(t_score), df=n - 1)

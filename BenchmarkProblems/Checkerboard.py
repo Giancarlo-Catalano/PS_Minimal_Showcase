@@ -37,7 +37,7 @@ class CheckerBoard(BenchmarkProblem):
 
         vertical_diffs = np.sum(grid_without_last_row != grid_shifted_up)
         horizontal_diffs = np.sum(grid_without_last_column != grid_shifted_left)
-        return horizontal_diffs + vertical_diffs
+        return float(horizontal_diffs + vertical_diffs)
 
         # could have been np.sum(grid[1:] != grid[:-1]) + np.sum(grid[:, 1:] != grid[:, :-1])
 

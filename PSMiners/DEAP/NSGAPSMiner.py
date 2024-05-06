@@ -46,7 +46,7 @@ class NSGAPSMiner(AbstractPSMiner):
     @classmethod
     def nsgaii_population_to_evaluated_ps_population(cls, nsga_population) -> list[EvaluatedPS]:
         def convert_single(nsga_individual):
-            result = EvaluatedPS(nsga_individual)  # because nsgaindividal is a subclass of PS
+            result = EvaluatedPS(nsga_individual)  # because nsgaindividual is a subclass of PS
             result.metric_scores = nsga_individual.fitness.values
             return result
 

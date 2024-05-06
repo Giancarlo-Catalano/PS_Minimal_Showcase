@@ -22,18 +22,24 @@ import os
 from typing import Optional
 
 import utils
+from BenchmarkProblems.Checkerboard import CheckerBoard
 from BenchmarkProblems.GraphColouring import GraphColouring
+from BenchmarkProblems.MultiDimensionalKnapsack import MultiDimensionalKnapsack
 from Core import TerminationCriteria
 from BenchmarkProblems.BT.BTProblem import BTProblem
 from BenchmarkProblems.BenchmarkProblem import BenchmarkProblem
 from BenchmarkProblems.EfficientBTProblem.EfficientBTProblem import EfficientBTProblem
 from Core.EvaluatedFS import EvaluatedFS
+from Core.EvaluatedPS import EvaluatedPS
+from Core.PS import PS
 from Experimentation.DetectingPatterns import json_to_cohorts, cohorts_to_json, \
     BTProblemPatternDetector, mine_cohorts_from_problem, analyse_data_from_json_cohorts, \
     mine_pss_from_problem, get_shap_values_plot
 from Core.Explainer import Explainer
 from Core.PSMiner import PSMiner
 from Core.PickAndMerge import PickAndMergeSampler
+from FSStochasticSearch.Operators import SinglePointFSMutation
+from FSStochasticSearch.SA import SA
 from PSMiners.DEAP.NSGAPSMiner import NSGAPSMiner
 from PSMiners.DEAP.deap_utils import plot_stats_for_run, report_in_order_of_last_metric
 from PSMiners.Mining import get_history_pRef, obtain_pss
@@ -57,43 +63,46 @@ def show_overall_system(benchmark_problem: BenchmarkProblem):
     # 1. Generating the reference population
     pRef_size = 10000
     with announce("Generating Reference Population"):
-        pRef = benchmark_problem.get_reference_population(pRef_size)
+        pRef = get_history_pRef(benchmark_problem, sample_size=pRef_size, which_algorithm="SA")
     pRef.describe_self()
 
     # 2. Obtaining the Core catalog
-    ps_miner = PSMiner.with_default_settings(pRef)
+    ps_miner = NSGAPSMiner.with_default_settings(pRef)
     ps_evaluation_budget = 10000
     termination_criterion = TerminationCriteria.PSEvaluationLimit(ps_evaluation_budget)
 
-    with announce("Running the Core Miner"):
-        ps_miner.run(termination_criterion)
+    with announce("Running the PS Miner"):
+        ps_miner.run(termination_criterion, verbose=True)
 
-    ps_catalog = ps_miner.get_results(20)
+    ps_catalog = ps_miner.get_results(None)
+    ps_catalog = list(set(ps_catalog))
+    ps_catalog = [item for item in ps_catalog if not item.ps.is_empty()]
 
     print("The catalog consists of:")
     for item in ps_catalog:
         print("\n")
-        print(indent(f"{benchmark_problem.repr_ps(item.ps)}, weight = {item.aggregated_score:.3f}"))
+        print(indent(f"{benchmark_problem.repr_ps(item.ps)}"))
 
     # 3. Sampling new solutions
     print("\nFrom the catalog we can sample new solutions")
     new_solutions_to_produce = 12
-    sampler = PickAndMergeSampler(search_space=benchmark_problem.search_space,
-                                  individuals=ps_catalog)
+    sampler = SA(fitness_function=benchmark_problem.fitness_function,
+                   search_space=benchmark_problem.search_space,
+                   mutation_operator=SinglePointFSMutation(benchmark_problem.search_space),
+                   cooling_coefficient=0.9995)
 
-    with announce("Sampling from the Core Catalog using Pick & Merge"):
-        sampled_solutions = [sampler.sample() for _ in range(new_solutions_to_produce)]
+    solutions = pRef.get_evaluated_FSs()
+    solutions = list(set(solutions))
+    solutions.sort(reverse=True)
 
-    evaluated_sampled_solutions = [EvaluatedFS(fs, benchmark_problem.fitness_function(fs)) for fs in sampled_solutions]
-    evaluated_sampled_solutions.sort(reverse=True)
 
-    for index, sample in enumerate(evaluated_sampled_solutions):
+    for index, sample in enumerate(solutions[:6]):
         print(f"[{index}]")
         print(indent(indent(f"{benchmark_problem.repr_fs(sample.full_solution)}, has fitness {sample.fitness:.2f}")))
 
     # 4. Explainability, at least locally.
     explainer = Explainer(benchmark_problem, ps_catalog, pRef)
-    explainer.explanation_loop(evaluated_sampled_solutions)
+    explainer.explanation_loop(solutions)
 
     print("And that concludes the showcase")
 
@@ -223,12 +232,10 @@ def run_for_gc():
 
 
 if __name__ == '__main__':
-    problem = GraphColouring.random(amount_of_colours=3, amount_of_nodes=9, chance_of_connection=0.4)
-    experimental_directory = r"C:\Users\gac8\PycharmProjects\PS-PDF\Experimentation\mess"
-    current_directory = os.path.join(experimental_directory, "cohorts_"+utils.get_formatted_timestamp())
+    #problem = GraphColouring.random(amount_of_colours=3, amount_of_nodes=6, chance_of_connection=0.4)
+    #problem = CheckerBoard(5, 5)
+    problem = MultiDimensionalKnapsack(items = [(10, 20, 30), (50, 10, 10), (60, 60, 2), (20, 10, 24), (12, 2, 55)], targets=(80, 80, 80))
+    if isinstance(problem, GraphColouring):
+        problem.view()
 
-    print(f"Initialised the problem, which is {problem.long_repr()}")
-    problem.view()
-    obtain_pss(benchmark_problem = problem,
-               folder = current_directory,
-               verbose=True)
+    show_overall_system(problem)
