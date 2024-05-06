@@ -44,8 +44,7 @@ class Atomicity(Metric):
 
         normalised_fitnesses /= sum_fitness
 
-        return PRef(full_solutions=pRef.full_solutions,
-                    fitness_array=normalised_fitnesses,  # this is the only thing that changes
+        return PRef(fitness_array=normalised_fitnesses,  # this is the only thing that changes
                     full_solution_matrix=pRef.full_solution_matrix,
                     search_space=pRef.search_space)
 

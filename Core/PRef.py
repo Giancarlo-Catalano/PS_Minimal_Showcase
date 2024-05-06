@@ -75,30 +75,29 @@ class PRef:
     This class represents the referenece population, and you should think of it as a list of solutions,
     and a list of their fitnesses. Everything else is just to make the calculations faster / easier to implement.
     """
-    full_solutions: list[FullSolution]
     fitness_array: ArrayOfFloats
     full_solution_matrix: np.ndarray
     search_space: SearchSpace
 
-    def __init__(self, full_solutions: Iterable[FullSolution],
+    def __init__(self,
                  fitness_array: Iterable[Fitness],
                  full_solution_matrix: np.ndarray,
                  search_space: SearchSpace):
-        self.full_solutions = list(full_solutions)
         self.fitness_array = np.array(fitness_array)
         self.full_solution_matrix = full_solution_matrix
         self.search_space = search_space
 
     def __repr__(self):
         mean_fitness = np.average(self.fitness_array)
-        return f"PRef with {len(self.full_solutions)} samples, mean = {mean_fitness:.2f}"
+
+        return f"PRef with {self.sample_size} samples, mean = {mean_fitness:.2f}"
 
     @classmethod
     def from_full_solutions(cls, full_solutions: Iterable[FullSolution],
                             fitness_values: Iterable[Fitness],
                             search_space: SearchSpace):
         matrix = np.array([fs.values for fs in full_solutions])
-        return cls(full_solutions, fitness_values, matrix, search_space)
+        return cls(fitness_values, matrix, search_space)
 
 
     @classmethod
@@ -159,8 +158,7 @@ class PRef:
 
     def get_with_normalised_fitnesses(self):
         normalised_fitnesses = utils.remap_array_in_zero_one(self.fitness_array)
-        return PRef(full_solutions=self.full_solutions,
-                    fitness_array=normalised_fitnesses,  # this is the only thing that changes
+        return PRef(fitness_array=normalised_fitnesses,  # this is the only thing that changes
                     full_solution_matrix=self.full_solution_matrix,
                     search_space=self.search_space)
 
@@ -174,8 +172,8 @@ class PRef:
         return self.fitness_array[where]
 
     def get_evaluated_FSs(self) -> list[EvaluatedFS]:
-        return [EvaluatedFS(full_solution=fs, fitness=fitness) for fs, fitness in
-                zip(self.full_solutions, self.fitness_array)]
+        return [EvaluatedFS(full_solution=FullSolution(row), fitness=fitness) for row, fitness in
+                zip(self.full_solution_matrix, self.fitness_array)]
 
     def describe_self(self):
         min_fitness = np.min(self.fitness_array)

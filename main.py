@@ -166,8 +166,8 @@ def analyse_cohort_data(benchmark_problem: BTProblem,
 
 def run_for_bt_problem():
     experimental_directory = r"C:\Users\gac8\PycharmProjects\PS-PDF\Experimentation"
-    current_directory = r"C:\Users\gac8\PycharmProjects\PS-PDF\Experimentation\Best"
-    # current_directory = os.path.join(experimental_directory, "cohorts_"+utils.get_formatted_timestamp())
+    # current_directory = r"C:\Users\gac8\PycharmProjects\PS-PDF\Experimentation\Best"
+    current_directory = os.path.join(experimental_directory, "cohorts_"+utils.get_formatted_timestamp())
     cohort_file = os.path.join(current_directory, "cohort.json")
     scores_file = os.path.join(current_directory, "scores.csv")
     run_plot_file = os.path.join(current_directory, "run_plot.png")
@@ -200,16 +200,20 @@ def run_for_bt_problem():
     get_shap_values_plot(csv_file, plot_file)
 
 
+
+def run_for_gc():
+    problem = GraphColouring.random(amount_of_colours=3, amount_of_nodes=6, chance_of_connection=0.4)
+    print(f"Initialised the problem, which is {problem.long_repr()}")
+    problem.view()
+
+    ps_catalog, scores, logbook = mine_pss_from_problem(benchmark_problem=problem,
+                                                         method="SA",
+                                                         pRef_size=10000,
+                                                         nsga_pop_size=200,
+                                                         nsga_ngens=100,
+                                                         verbose=True)
+    report_in_order_of_last_metric(ps_catalog, problem, limit_to=12)
+
+
 if __name__ == '__main__':
-    # problem = GraphColouring.random(amount_of_colours=3, amount_of_nodes=6, chance_of_connection=0.4)
-    # print(f"Initialised the problem, which is {problem.long_repr()}")
-    # problem.view()
-    #
-    # ps_catalog, scores, logbook = mine_pss_from_problem(benchmark_problem=problem,
-    #                                                      method="SA",
-    #                                                      pRef_size=10000,
-    #                                                      nsga_pop_size=200,
-    #                                                      nsga_ngens=100,
-    #                                                      verbose=True)
-    # report_in_order_of_last_metric(ps_catalog, problem, limit_to=12)
-    run_for_bt_problem()
+    run_for_gc()
