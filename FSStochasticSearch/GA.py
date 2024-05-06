@@ -9,7 +9,7 @@ from Core.EvaluatedFS import EvaluatedFS
 from Core.FSEvaluator import FSEvaluator
 from Core.FullSolution import FullSolution
 from Core.SearchSpace import SearchSpace
-from GA.Operators import FSMutationOperator, FSCrossoverOperator, FSSelectionOperator, TournamentSelection, \
+from FSStochasticSearch.Operators import FSMutationOperator, FSCrossoverOperator, FSSelectionOperator, TournamentSelection, \
     SinglePointFSMutation, TwoPointFSCrossover
 
 Population: TypeAlias = list[EvaluatedFS]
@@ -116,12 +116,12 @@ class GA:
         print(f"The current best fitness is {self.get_current_best()}.")
 
 
-    def get_results(self, quantity_returned: int):
+    def get_results(self, quantity_returned: int) -> list[EvaluatedFS]:
         return heapq.nlargest(quantity_returned, self.current_population)
 
 
 def test_FSGA(benchmark_problem: BenchmarkProblem):
-    print("Testing the full solution GA")
+    print("Testing the full solution FSStochasticSearch")
     algorithm = GA(search_space=benchmark_problem.search_space,
                    mutation_operator=SinglePointFSMutation(benchmark_problem.search_space),
                    crossover_operator=TwoPointFSCrossover(),

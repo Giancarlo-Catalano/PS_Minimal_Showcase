@@ -10,8 +10,8 @@ from BenchmarkProblems.BenchmarkProblem import BenchmarkProblem
 from Core.EvaluatedPS import EvaluatedPS
 from Core.FSEvaluator import FSEvaluator
 from Core.PRef import PRef
-from GA.GA import GA
-from GA.Operators import SinglePointFSMutation, TwoPointFSCrossover, TournamentSelection
+from FSStochasticSearch.GA import GA
+from FSStochasticSearch.Operators import SinglePointFSMutation, TwoPointFSCrossover, TournamentSelection
 from Core.PS import PS
 from Core.PSMetric.Atomicity import Atomicity
 from Core.PSMetric.MeanFitness import MeanFitness

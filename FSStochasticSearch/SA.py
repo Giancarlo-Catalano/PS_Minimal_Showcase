@@ -8,7 +8,7 @@ from Core.EvaluatedFS import EvaluatedFS
 from Core.FSEvaluator import FSEvaluator
 from Core.FullSolution import FullSolution
 
-from GA.Operators import FSMutationOperator
+from FSStochasticSearch.Operators import FSMutationOperator
 from Core.SearchSpace import SearchSpace
 
 

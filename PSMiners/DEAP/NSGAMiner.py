@@ -9,7 +9,7 @@ from deap.tools import selNSGA2, uniform_reference_points, selNSGA3WithMemory
 from BenchmarkProblems.BenchmarkProblem import BenchmarkProblem
 from Core.EvaluatedPS import EvaluatedPS
 from PSMiners.DEAP.CustomCrowdingMechanism import gc_selNSGA2, GC_selNSGA3WithMemory
-from GA.HistoryPRefs import uniformly_random_distribution_pRef, pRef_from_GA, pRef_from_SA
+from FSStochasticSearch.HistoryPRefs import uniformly_random_distribution_pRef, pRef_from_GA, pRef_from_SA
 from Core.PS import PS
 from Core.PSMetric.Atomicity import Atomicity
 from Core.PSMetric.Classic3 import Classic3PSMetrics
@@ -200,23 +200,6 @@ def plot_stats_for_run(logbook,
 
     # Display the plots
     plt.savefig(figure_name)
-
-
-def get_history_pRef(benchmark_problem: BenchmarkProblem,
-                     sample_size: int,
-                     which_algorithm: Literal["uniform", "GA", "SA"],
-                     verbose=True):
-    with announce(f"Running the algorithm to generate the PRef using {which_algorithm}", verbose=verbose):
-        match which_algorithm:
-            case "uniform": return uniformly_random_distribution_pRef(sample_size=sample_size,
-                                                                      benchmark_problem=benchmark_problem)
-            case "GA": return pRef_from_GA(benchmark_problem=benchmark_problem,
-                                           sample_size=sample_size,
-                                           ga_population_size=300)
-            case "SA": return pRef_from_SA(benchmark_problem=benchmark_problem,
-                                           sample_size=sample_size,
-                                           max_trace = sample_size)
-            case _: raise ValueError
 
 
 def comprehensive_search(benchmark_problem: BenchmarkProblem,

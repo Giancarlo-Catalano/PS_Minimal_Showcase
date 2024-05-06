@@ -19,7 +19,7 @@ from BenchmarkProblems.BT.BTProblem import BTProblem
 from BenchmarkProblems.BT.Worker import Worker
 from BenchmarkProblems.EfficientBTProblem.EfficientBTProblem import ExtendedPattern, \
     rota_to_extended_pattern
-from PSMiners.DEAP.NSGAMiner import get_history_pRef, get_toolbox_for_problem, nsga, get_stats_object, \
+from PSMiners.DEAP.NSGAMiner import get_toolbox_for_problem, nsga, get_stats_object, \
     report_in_order_of_last_metric
 from Core.PRef import plot_solutions_in_pRef
 from Core.PS import PS, STAR
@@ -27,6 +27,7 @@ from Core.PSMetric.Atomicity import Atomicity
 from Core.PSMetric.MeanFitness import MeanFitness
 from Core.PSMetric.Simplicity import Simplicity
 from Core.custom_types import JSON
+from PSMiners.Mining import get_history_pRef
 from utils import announce
 import seaborn as sns
 import pandas as pd
@@ -243,7 +244,7 @@ class BTProblemPatternDetector:
 def test_and_produce_patterns(benchmark_problem: BTProblem,
                               csv_file_name: str,
                               pRef_size: int,
-                              method: Literal["uniform", "GA", "SA"],
+                              method: Literal["uniform", "FSStochasticSearch", "SA"],
                               verbose = False):
     pRef = get_history_pRef(benchmark_problem=benchmark_problem,
                             which_algorithm = method,
@@ -284,7 +285,7 @@ def test_and_produce_patterns(benchmark_problem: BTProblem,
 
 
 def mine_pss_from_problem(benchmark_problem: BTProblem,
-                              method: Literal["uniform", "GA", "SA"],
+                              method: Literal["uniform", "FSStochasticSearch", "SA"],
                               pRef_size: int,
                               nsga_pop_size: int,
                               nsga_ngens: int,
@@ -318,7 +319,7 @@ def mine_pss_from_problem(benchmark_problem: BTProblem,
     return final_population, scores, logbook
 
 def mine_cohorts_from_problem(benchmark_problem: BTProblem,
-                              method: Literal["uniform", "GA", "SA"],
+                              method: Literal["uniform", "FSStochasticSearch", "SA"],
                               pRef_size: int,
                               nsga_pop_size: int,
                               nsga_ngens: int,
