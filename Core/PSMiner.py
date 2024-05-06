@@ -10,6 +10,7 @@ from BenchmarkProblems.BenchmarkProblem import BenchmarkProblem
 from Core.EvaluatedPS import EvaluatedPS
 from Core.FSEvaluator import FSEvaluator
 from Core.PRef import PRef
+from Core.PSMetric.Simplicity import Simplicity
 from FSStochasticSearch.GA import GA
 from FSStochasticSearch.Operators import SinglePointFSMutation, TwoPointFSCrossover, TournamentSelection
 from Core.PS import PS
@@ -140,29 +141,35 @@ class PSMiner(AbstractPSMiner):
                 self.used_evaluations += 1
         return newborns
 
-    def run(self, termination_criteria: TerminationCriteria):
+    def get_used_evaluations(self) -> int:
+        return self.used_evaluations
+
+    def run(self, termination_criteria: TerminationCriteria, verbose=False):
         """ Executes the main loop, with the termination criterion usually being an evaluation budget"""
         iterations = 0
 
         def should_terminate():
             return termination_criteria.met(iterations=iterations,
-                                            ps_evaluations=self.used_evaluations) or len(self.current_population) == 0
+                                            ps_evaluations=self.get_used_evaluations()) or len(self.current_population) == 0
 
         while not should_terminate():
             self.step()
-            print(f"Current used budget is {self.used_evaluations}")
+            if verbose:
+                print(f"Current used budget is {self.used_evaluations}")
             iterations += 1
 
-    def get_results(self, quantity_returned: int) -> list[EvaluatedPS]:
+    def get_results(self, amount: Optional[int]) -> list[EvaluatedPS]:
         """
         This is the only way you should get the result out of this!!
         This method will evaluate the archive and return the top n
         Note that the evaluation is relative to the archive, so the aggregated scores are recalculated
-        :param quantity_returned:
+        :param amount:
         :return: The best PSs in the archive, of the quantity specified
         """
+        if amount is None:
+            amount = len(self.archive)
         evaluated_archive = self.with_aggregated_scores(list(self.archive))
-        return self.top(n=quantity_returned, population=evaluated_archive)
+        return self.top(n=amount, population=evaluated_archive)
 
     @staticmethod
     def top(n: int, population: Population) -> Population:
@@ -184,10 +191,13 @@ class PSMiner(AbstractPSMiner):
         """
         return cls(population_size=300,
                    pRef=pRef,
-                   metrics=[Atomicity()],
+                   metrics=[Simplicity(), MeanFitness(), Atomicity()],
                    get_init=just_empty,
                    get_local=specialisations,
                    selection=truncation_selection)
+
+
+
 
 
 

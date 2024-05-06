@@ -7,6 +7,7 @@ from Core.PRef import PRef
 from Core.PSMiner import PSMiner
 from FSStochasticSearch.HistoryPRefs import uniformly_random_distribution_pRef, pRef_from_GA, pRef_from_SA, \
     pRef_from_GA_best, pRef_from_SA_best
+from PSMiners.AbstractPSMiner import AbstractPSMiner
 from PSMiners.DEAP.NSGAPSMiner import NSGAPSMiner
 from utils import announce
 
@@ -36,28 +37,7 @@ def get_history_pRef(benchmark_problem: BenchmarkProblem,
 
 
 
-
-
-def mine_with_old_method(pRef: PRef,
-                         ps_budget: int) -> list[EvaluatedPS]:
-    ps_miner = PSMiner.with_default_settings(pRef)
-    termination_criterion = TerminationCriteria.PSEvaluationLimit(ps_budget)
-
-    with announce("Running the Core Miner"):
-        ps_miner.run(termination_criterion)
-
-    return ps_miner.get_results(ps_miner.population_size)
-
-
-def mine_with_new_method(pRef: PRef,
-                         ps_budget: int) -> list[EvaluatedPS]:
-    ps_miner = NSGAPSMiner.with_default_settings(pRef)
-    termination_criterion = TerminationCriteria.PSEvaluationLimit(ps_budget)
-
-    with announce("Running the Core Miner"):
-        ps_miner.run(termination_criterion)
-
-    return ps_miner.get_results(ps_miner.population_size)
-
+def test_mining_works():
+    pRef = get_history_pRef()
 
 

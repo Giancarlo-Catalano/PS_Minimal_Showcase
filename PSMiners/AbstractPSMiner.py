@@ -103,7 +103,7 @@ class AbstractPSMiner:
             self.step()
             iterations +=1
 
-    def get_results(self, amount: int) -> list[EvaluatedPS]:
+    def get_results(self, amount: Optional[int]) -> list[EvaluatedPS]:
         raise Exception(f"An implementation of PSMiner({self.__repr__()}) does not implement get_results")
 
     @staticmethod

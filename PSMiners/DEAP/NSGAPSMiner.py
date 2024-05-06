@@ -36,12 +36,18 @@ class NSGAPSMiner(AbstractPSMiner):
                                                uses_experimental_crowding=self.uses_experimental_crowding)
         self.stats = get_stats_object()
 
+    def __repr__(self):
+        return f"NSGAPSMiner(uses_experimental_crowding = {self.uses_experimental_crowding})"
+
+
+    def get_used_evaluations(self) -> int:
+        return self.classic3_evaluator.used_evaluations
 
     @classmethod
     def nsgaii_population_to_evaluated_ps_population(cls, nsga_population) -> list[EvaluatedPS]:
         def convert_single(nsga_individual):
             result = EvaluatedPS(nsga_individual)  # because nsgaindividal is a subclass of PS
-            result.metric_scores = result.fitness.values
+            result.metric_scores = nsga_individual.fitness.values
             return result
 
         return [convert_single(individual) for individual in nsga_population]
@@ -65,5 +71,9 @@ class NSGAPSMiner(AbstractPSMiner):
                    pRef = pRef)
 
 
-    def get_results(self, amount: int) -> list[EvaluatedPS]:
+
+
+    def get_results(self, amount: Optional[int]) -> list[EvaluatedPS]:
+        if amount is None:
+            amount = len(self.last_population)
         return self.last_population[:amount]
