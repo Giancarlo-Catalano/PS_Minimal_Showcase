@@ -233,7 +233,7 @@ class BTProblemPatternDetector:
 
         headers = rows[0].keys()
         with open(csv_file_name, "w+", newline="") as file:
-            os.makedirs(os.path.dirname(csv_file_name), exist_ok=True)
+            utils.make_folder_if_not_present(csv_file_name)
             csv_writer = csv.DictWriter(file, fieldnames=headers)
             csv_writer.writeheader()
             csv_writer.writerows(rows)

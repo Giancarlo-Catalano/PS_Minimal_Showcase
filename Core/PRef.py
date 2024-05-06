@@ -1,3 +1,4 @@
+import os
 from typing import Iterable, Callable
 
 import numba
@@ -181,6 +182,12 @@ class PRef:
         avg_fitness = np.average(self.fitness_array)
         print(
             f"This PRef contains {self.sample_size} samples, where the minimum is {min_fitness}, the maximum = {max_fitness} and the average is {avg_fitness}")
+
+
+    def write_to_files(self, folder: str, verbose=False):
+        # create the folder if it doesn't exist
+        fsm_file = os.path.join(folder, "fsm.numpydata")
+        # TODO
 
 
 

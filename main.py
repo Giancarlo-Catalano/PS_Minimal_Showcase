@@ -122,8 +122,8 @@ def mine_cohorts_and_write_to_file(benchmark_problem: BTProblem,
     cohorts = [detector.ps_to_cohort(ps) for ps in pss]
 
     with announce(f"Writing the cohorts ({len(cohorts)} onto the file", verbose):
+        utils.make_folder_if_not_present(cohort_output_file_name)
         cohort_data = cohorts_to_json(cohorts)
-        os.makedirs(os.path.dirname(cohort_output_file_name), exist_ok=True)  # in case the directory does not exist
         with open(cohort_output_file_name, "w+") as file:
             json.dump(cohort_data, file)
 

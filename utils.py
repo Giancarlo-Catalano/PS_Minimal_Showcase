@@ -183,3 +183,7 @@ def make_copy_of_CSV_file_with_rank_column(file_name: str):
 def as_float_tuple(items: Iterable) -> tuple:
     """mainly to prevent json issues"""
     return tuple(float(item) for item in items)
+
+
+def make_folder_if_not_present(file_path: str):
+    os.makedirs(os.path.dirname(file_path), exist_ok=True)
