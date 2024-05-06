@@ -30,13 +30,13 @@ from BenchmarkProblems.EfficientBTProblem.EfficientBTProblem import EfficientBTP
 from Core.EvaluatedFS import EvaluatedFS
 from Experimentation.DetectingPatterns import json_to_cohorts, cohorts_to_json, \
     BTProblemPatternDetector, mine_cohorts_from_problem, analyse_data_from_json_cohorts, \
-    show_interactive_3d_plot_of_scores, mine_pss_from_problem, get_shap_values_plot
+    mine_pss_from_problem, get_shap_values_plot
 from Core.Explainer import Explainer
 from Core.PSMiner import PSMiner
 from Core.PickAndMerge import PickAndMergeSampler
 from PSMiners.DEAP.NSGAPSMiner import NSGAPSMiner
 from PSMiners.DEAP.deap_utils import plot_stats_for_run, report_in_order_of_last_metric
-from PSMiners.Mining import get_history_pRef
+from PSMiners.Mining import get_history_pRef, obtain_pss
 from utils import announce, indent
 
 
@@ -179,14 +179,14 @@ def run_for_bt_problem():
     problem = EfficientBTProblem.from_default_files()
     #problem = RoyalRoad(3, 4)
     #show_overall_system(problem)
-    # mine_cohorts_and_write_to_file(problem,
-    #                                cohort_output_file_name=cohort_file,
-    #                                scores_output_file_name=scores_file,
-    #                                plots_of_run_file_name=run_plot_file,
-    #                                nsga_pop_size=600,
-    #                                nsga_ngens=600,
-    #                                pRef_size=100000,
-    #                                verbose=True)
+    mine_cohorts_and_write_to_file(problem,
+                                   cohort_output_file_name=cohort_file,
+                                   scores_output_file_name=scores_file,
+                                   plots_of_run_file_name=run_plot_file,
+                                   nsga_pop_size=600,
+                                   nsga_ngens=600,
+                                   pRef_size=100000,
+                                   verbose=True)
 
 
     # show_interactive_3d_plot_of_scores(scores_file)
@@ -207,6 +207,7 @@ def run_for_bt_problem():
 
 def run_for_gc():
     problem = GraphColouring.random(amount_of_colours=3, amount_of_nodes=6, chance_of_connection=0.4)
+
     print(f"Initialised the problem, which is {problem.long_repr()}")
     problem.view()
 
@@ -222,4 +223,12 @@ def run_for_gc():
 
 
 if __name__ == '__main__':
-    test_mining_works()
+    problem = GraphColouring.random(amount_of_colours=3, amount_of_nodes=9, chance_of_connection=0.4)
+    experimental_directory = r"C:\Users\gac8\PycharmProjects\PS-PDF\Experimentation\mess"
+    current_directory = os.path.join(experimental_directory, "cohorts_"+utils.get_formatted_timestamp())
+
+    print(f"Initialised the problem, which is {problem.long_repr()}")
+    problem.view()
+    obtain_pss(benchmark_problem = problem,
+               folder = current_directory,
+               verbose=True)

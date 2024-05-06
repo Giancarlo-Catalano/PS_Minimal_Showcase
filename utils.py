@@ -128,8 +128,8 @@ def join_lists(many_lists: Iterable[list]) -> list:
 
 def plot_sequence_of_points(sequence):
     x_points, y_points = unzip(list(enumerate(sequence)))
-    plt.plot(x_points, y_points)
-    plt.show()
+    plot = plt.plot(x_points, y_points)
+    return plot
 
 
 def merge_csv_files(first_file_name: str, second_file_name: str, output_file_name: str):

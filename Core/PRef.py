@@ -3,6 +3,7 @@ from typing import Iterable, Callable
 
 import numba
 import numpy as np
+from matplotlib import pyplot as plt
 from numba import jit
 
 import utils
@@ -185,7 +186,7 @@ class PRef:
 
     def save(self, file, verbose=False):
         # create the folder if it doesn't exist
-
+        utils.make_folder_if_not_present(file)
         np.savez(file,
                  fsm=self.full_solution_matrix,
                  fitness_array=self.fitness_array,
@@ -199,5 +200,10 @@ class PRef:
                    fitness_array=results["fitness_array"],
                    search_space=SearchSpace(results["search_space"]))
 
-def plot_solutions_in_pRef(pRef: PRef):
-    utils.plot_sequence_of_points(pRef.fitness_array)
+def plot_solutions_in_pRef(pRef: PRef, filename: str):
+    x_points, y_points = utils.unzip(list(enumerate(pRef.fitness_array)))
+    fig = plt.figure()
+    plt.plot(x_points, y_points)
+    plt.savefig(filename)
+    plt.close(fig)
+

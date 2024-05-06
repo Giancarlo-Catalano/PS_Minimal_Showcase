@@ -146,19 +146,12 @@ def get_stats_object():
 def report_in_order_of_last_metric(population,
                                    benchmark_problem: BenchmarkProblem,
                                    limit_to = None):
-    new_pop = []
-    for ind in population:
-        new_e_ps = EvaluatedPS(PS(ind))
-        new_e_ps.metric_scores = ind.fitness.values
-        new_pop.append(new_e_ps)
+    population.sort(key=lambda x: x.metric_scores[-1], reverse=True)
 
-    pop = list(set(new_pop))
-    pop.sort(key=lambda x: x.metric_scores[-1], reverse=True)
-
-    amount_to_show = len(pop)
+    amount_to_show = len(population)
     if limit_to is not None:
         amount_to_show = limit_to
-    for ind in pop[:amount_to_show]:
+    for ind in population[:amount_to_show]:
         print(benchmark_problem.repr_ps(ind.ps))
         print(f"Has score {ind.metric_scores}\n")
 
@@ -197,6 +190,7 @@ def plot_stats_for_run(logbook,
 
     # Display the plots
     plt.savefig(figure_name)
+    plt.close(fig)
 
 
 def comprehensive_search(benchmark_problem: BenchmarkProblem,

@@ -27,7 +27,7 @@ from Core.PSMetric.Atomicity import Atomicity
 from Core.PSMetric.MeanFitness import MeanFitness
 from Core.PSMetric.Simplicity import Simplicity
 from Core.custom_types import JSON
-from PSMiners.Mining import get_history_pRef
+from PSMiners.Mining import get_history_pRef, load_evaluated_ps
 from utils import announce
 import seaborn as sns
 import pandas as pd
@@ -168,6 +168,16 @@ class BTProblemPatternDetector:
         return [fixed_var_to_cohort_member(var, val)
                 for var, val in enumerate(ps.values)
                 if val != STAR]
+
+
+    def ps_file_to_cohort_file(self, ps_file: str, cohort_file: str, verbose: bool):
+        pss = load_evaluated_ps(ps_file)
+        cohorts = [self.ps_to_cohort(ps.ps) for ps in pss]
+        with announce(f"Writing the cohorts ({len(cohorts)} onto the file", verbose):
+            utils.make_folder_if_not_present(cohort_file)
+            cohort_data = cohorts_to_json(cohorts)
+            with open(cohort_file, "w+") as file:
+                json.dump(cohort_data, file)
 
 
     def get_distribution_of_skills(self) -> dict:
@@ -368,26 +378,6 @@ def cohorts_to_json(cohorts: list[Cohort]) -> JSON:
     return [cohort_to_json(cohort) for cohort in cohorts]
 
 
-def plot_nicely(input_csv_file: str):
-    # Load your CSV file
-    df = pd.read_csv(input_csv_file)
-
-    sns.set(style="whitegrid", palette="pastel", color_codes=True)
-
-    f, ax = plt.subplots(figsize=(8, 8))
-
-    sns.violinplot(x="size", y="skill_variation", hue="control", data=df,
-                   palette={True: "b", False: "y"})
-    sns.despine(left=True)
-
-    f.suptitle('Skill diversity analysis', fontsize=18, fontweight='bold')
-    ax.set_xlabel("clique size",size = 16,alpha=0.7)
-    ax.set_ylabel("Skill diversity",size = 16,alpha=0.7)
-    plt.legend(loc='upper left')
-
-    plt.show()
-
-
 
 def analyse_data_from_json_cohorts(
         problem: BTProblem,
@@ -416,9 +406,6 @@ def generate_control_data_for_cohorts(problem: BTProblem,
     print("All finished")
 
 
-
-
-
 def generate_coverage_stats(problem: BTProblem,
                             cohorts: list[Cohort]) -> dict:
     result = {worker.worker_id: 0 for worker in problem.workers}
@@ -433,34 +420,9 @@ def generate_coverage_stats(problem: BTProblem,
 
 
 
-def show_interactive_3d_plot_of_scores(file_name: str):
-    df = pd.read_csv(file_name)
-
-    # Create a 3D scatter plot with Plotly Express
-    fig = px.scatter_3d(
-        df,
-        x="Simplicity",
-        y="Mean Fitness",
-        z="Atomicity",
-        title="3D Scatter Plot of Simplicity, Mean Fitness, and Atomicity",
-        labels={
-            "Simplicity": "Simplicity",
-            "Mean Fitness": "Mean Fitness",
-            "Atomicity": "Atomicity"
-        }
-    )
-
-    fig.show()
-
-
-
-
-
-
-
 def get_shap_values_plot(csv_file: str, image_file_destination: str):
     print(f"Obtaining SHAP values for file {csv_file}")
-    data = pd.read_csv(csv_file)  # Change to the path of your CSV file
+    data = pd.read_csv(csv_file)
 
     # Define the features and target variable
     target_column = "control"  # Change to your target column
@@ -473,7 +435,7 @@ def get_shap_values_plot(csv_file: str, image_file_destination: str):
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=6)
 
     # Initialize and train the Random Forest model
-    model =  XGBClassifier(random_state=42)
+    model = XGBClassifier(random_state=42)
     model.fit(X_train, y_train)
 
     # Make predictions and evaluate the model

@@ -1,18 +1,23 @@
+import os
 from typing import Literal
 
 import numpy as np
+import pandas as pd
 
+import utils
 from BenchmarkProblems.BenchmarkProblem import BenchmarkProblem
 from Core import TerminationCriteria
 from Core.EvaluatedPS import EvaluatedPS
-from Core.PRef import PRef
+from Core.PRef import PRef, plot_solutions_in_pRef
 from Core.PS import PS
 from Core.PSMiner import PSMiner
 from FSStochasticSearch.HistoryPRefs import uniformly_random_distribution_pRef, pRef_from_GA, pRef_from_SA, \
     pRef_from_GA_best, pRef_from_SA_best
 from PSMiners.AbstractPSMiner import AbstractPSMiner
 from PSMiners.DEAP.NSGAPSMiner import NSGAPSMiner
+from PSMiners.DEAP.deap_utils import report_in_order_of_last_metric, plot_stats_for_run
 from utils import announce
+import plotly.express as px
 
 
 def get_history_pRef(benchmark_problem: BenchmarkProblem,
@@ -39,6 +44,20 @@ def get_history_pRef(benchmark_problem: BenchmarkProblem,
 
 
 
+def get_ps_miner(pRef: PRef,
+                 which: Literal["classic", "NSGA_experimental_crowding", "NSGA"]):
+    match which:
+        case "classic": return PSMiner.with_default_settings(pRef)
+        case "NSGA": return NSGAPSMiner(population_size = 300,
+                                        uses_custom_crowding = False,
+                                        pRef = pRef)
+        case "NSGA_experimental_crowding":  return NSGAPSMiner(population_size = 300,
+                                            uses_custom_crowding = True,
+                                            pRef = pRef)
+        case _: raise ValueError
+
+
+
 def write_evaluated_ps_to_file(e_pss: list[EvaluatedPS], file: str):
     ps_matrix = np.array([e_ps.ps.values for e_ps in e_pss])
     fitness_matrix = np.array([e_ps.metric_scores for e_ps in e_pss])
@@ -59,7 +78,78 @@ def load_evaluated_ps(file: str) -> list[EvaluatedPS]:
 
 
 
-def test_mining_works():
-    pRef = get_history_pRef()
 
+
+
+def obtain_pss(benchmark_problem: BenchmarkProblem,
+            folder: str,
+            pRef_obtainment_method: Literal["uniform", "GA", "SA", "GA_best", "SA_best"] = "SA",
+            ps_miner_method : Literal["classic", "NSGA", "NSGA_experimental_crowding"] = "NSGA_experimental_crowding",
+            pRef_size: int = 10000,
+            ps_budget: int = 10000,
+            verbose=False):
+
+    history_pRef_file = os.path.join(folder, "history_pRef.npz")
+    result_ps_file = os.path.join(folder, "ps_file.npz")
+
+
+    pRef = get_history_pRef(benchmark_problem=benchmark_problem,
+                            sample_size=pRef_size,
+                            which_algorithm=pRef_obtainment_method)
+
+    pRef.save(history_pRef_file, verbose)
+
+
+    algorithm = get_ps_miner(pRef, which=ps_miner_method)
+
+    with announce(f"Running {algorithm} on {pRef} with {ps_budget =}"):
+        termination_criterion = TerminationCriteria.PSEvaluationLimit(ps_limit=ps_budget)
+        algorithm.run(termination_criterion, verbose=verbose)
+
+    result_ps = algorithm.get_results(None)
+    result_ps = AbstractPSMiner.without_duplicates(result_ps)
+
+
+
+    write_evaluated_ps_to_file(result_ps, result_ps_file)
+
+    if verbose:
+        report_in_order_of_last_metric(result_ps, benchmark_problem, limit_to=12)
+
+    if verbose and isinstance(algorithm, NSGAPSMiner):
+        logbook = algorithm.last_logbook
+        nsga_run_plot_name_max = os.path.join(folder, "nsga_plot_max.png")
+        nsga_run_plot_name_avg = os.path.join(folder, "nsga_plot_avg.png")
+        print(f"Plotting the NSGA run in {nsga_run_plot_name_max}, {nsga_run_plot_name_avg}")
+        plot_stats_for_run(logbook, nsga_run_plot_name_max, show_max=True, show_mean=False)
+        plot_stats_for_run(logbook, nsga_run_plot_name_avg, show_max=False, show_mean=True)
+
+
+
+    if verbose:
+        pRef_plot_name = os.path.join(folder, "pRef_plot.png")
+        print(f"Plotting the pRef in {pRef_plot_name}")
+        plot_solutions_in_pRef(pRef, pRef_plot_name)
+
+
+def view_3d_plot_of_pss(ps_file: str):
+
+    e_pss = load_evaluated_ps(ps_file)
+    metric_matrix = np.array([e_ps.metric_scores for e_ps in e_pss])
+    df = pd.DataFrame(metric_matrix, columns=["Simplicity", "Mean Fitness", "Atomicity"])
+    # Create a 3D scatter plot with Plotly Express
+    fig = px.scatter_3d(
+        df,
+        x="Simplicity",
+        y="Mean Fitness",
+        z="Atomicity",
+        title="3D Scatter Plot of Simplicity, Mean Fitness, and Atomicity",
+        labels={
+            "Simplicity": "Simplicity",
+            "Mean Fitness": "Mean Fitness",
+            "Atomicity": "Atomicity"
+        }
+    )
+
+    fig.show()
 
