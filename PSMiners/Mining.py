@@ -66,7 +66,7 @@ def write_evaluated_pss_to_file(e_pss: list[EvaluatedPS], file: str):
 
     np.savez(file, ps_matrix = ps_matrix, fitness_matrix=fitness_matrix)
 
-def load_ps(file: str) -> list[[EvaluatedPS | PS]]:
+def load_pss(file: str) -> list[[EvaluatedPS | PS]]:
     results_dict = np.load(file)
     ps_matrix = results_dict["ps_matrix"]
 
@@ -137,7 +137,7 @@ def obtain_pss(benchmark_problem: BenchmarkProblem,
 
 def view_3d_plot_of_pss(ps_file: str):
 
-    e_pss = load_ps(ps_file)
+    e_pss = load_pss(ps_file)
     metric_matrix = np.array([e_ps.metric_scores for e_ps in e_pss])
     df = pd.DataFrame(metric_matrix, columns=["Simplicity", "Mean Fitness", "Atomicity"])
     # Create a 3D scatter plot with Plotly Express
