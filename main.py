@@ -209,10 +209,6 @@ def show_overall_system(benchmark_problem: BenchmarkProblem):
 #
 #
 
-
-
-
-
 if __name__ == '__main__':
     problem = GraphColouring.random(amount_of_colours=3, amount_of_nodes=6, chance_of_connection=0.4)
     #problem = CheckerBoard(5, 5)
