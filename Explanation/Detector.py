@@ -9,12 +9,21 @@ from scipy.stats import t
 import utils
 from BenchmarkProblems.BenchmarkProblem import BenchmarkProblem
 from Core import TerminationCriteria
+from Core.EvaluatedFS import EvaluatedFS
+from Core.EvaluatedPS import EvaluatedPS
 from Core.PRef import PRef
-from Core.PS import PS
+from Core.PS import PS, contains
 from Explanation.detection_utils import generate_control_PSs
 from PSMiners.AbstractPSMiner import AbstractPSMiner
 from PSMiners.Mining import get_history_pRef, get_ps_miner, write_evaluated_pss_to_file, load_pss, write_pss_to_file
 from utils import announce
+
+class PSWithProperties(EvaluatedPS):
+    properties: dict
+
+    def __init__(self, ps: EvaluatedPS, properties: dict):
+        super().__init__(ps.values, metric_scores=ps.metric_scores)
+        self.properties = properties
 
 
 class Detector:
@@ -232,6 +241,75 @@ class Detector:
         properties_str = "\n".join(repr_property(kvr) for kvr in significant_properties)
 
         return utils.indent(avg_with_and_without_str + "\n"+properties_str)
+
+
+
+    def get_best_n_full_solutions(self, n: int) -> list[EvaluatedFS]:
+        solutions = self.pRef.get_evaluated_FSs()
+        solutions.sort(reverse=True)
+        return solutions[:n]
+
+    @staticmethod
+    def only_non_obscured_pss(pss: list[PS]) -> list[PS]:
+        def obscures(ps_a: PS, ps_b: PS):
+            a_fixed_pos = set(ps_a.get_fixed_variable_positions())
+            b_fixed_pos = set(ps_b.get_fixed_variable_positions())
+            if a_fixed_pos == b_fixed_pos:
+                return False
+            return b_fixed_pos.issubset(a_fixed_pos)
+
+        def get_those_that_are_not_obscured_by(ps_list: PS, candidates: set[PS]) -> set[PS]:
+            return {candidate for candidate in candidates if not obscures(ps_list, candidate)}
+
+        current_candidates = set(pss)
+
+        for ps in pss:
+            current_candidates = get_those_that_are_not_obscured_by(ps, current_candidates)
+
+        return list(current_candidates)
+
+    def explain_solution(self, solution: EvaluatedFS, shown_ps_max: int):
+        contained_pss = [PSWithProperties(ps, properties)
+                         for (ps, properties) in zip(self.pss, self.properties)
+                         if contains(solution.full_solution, ps)
+                         if not ps.is_empty()]
+
+        #contained_pss = Explainer.only_non_obscured_pss(contained_pss)
+        contained_pss.sort(reverse=True, key = lambda x: x.metric_scores[-1])  # sort by atomicity
+
+        fs_as_ps = PS.from_FS(solution.full_solution)
+        print(f"The solution \n {utils.indent(self.problem.repr_ps(fs_as_ps))}\ncontains the following PSs:")
+        for ps in contained_pss[:shown_ps_max]:
+            print(utils.indent(self.get_ps_description(ps, ps.properties)))
+            print()
+
+
+
+    def explanation_loop(self,
+                         amount_of_fs_to_propose: int,
+                         ps_show_limit: int):
+        solutions = self.get_best_n_full_solutions(amount_of_fs_to_propose)
+        first_round = True
+
+        while True:
+            if first_round:
+                print("Would you like to see some explanations of the solutions? Write an index, or n to exit")
+            else:
+                print("Type another index, or n to exit")
+            answer = input()
+            if answer.upper() == "N":
+                break
+            else:
+                try:
+                    index = int(answer)
+                except ValueError:
+                    print("That didn't work, please retry")
+                    continue
+                solution_to_explain = solutions[index]
+                self.explain_solution(solution_to_explain, shown_ps_max=ps_show_limit)
+
+
+
 
 
 
