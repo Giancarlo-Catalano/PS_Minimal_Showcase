@@ -35,6 +35,7 @@ from Core.PS import PS
 from Core.Explainer import Explainer
 from Core.ArchivePSMiner import ArchivePSMiner
 from Core.PickAndMerge import PickAndMergeSampler
+from Explanation.BT.BTDetector import BTDetector
 from FSStochasticSearch.Operators import SinglePointFSMutation
 from FSStochasticSearch.SA import SA
 from PSMiners.DEAP.NSGAPSMiner import NSGAPSMiner
@@ -210,11 +211,21 @@ def show_overall_system(benchmark_problem: BenchmarkProblem):
 #
 
 if __name__ == '__main__':
-    problem = GraphColouring.random(amount_of_colours=3, amount_of_nodes=6, chance_of_connection=0.4)
+    #problem = GraphColouring.random(amount_of_colours=3, amount_of_nodes=6, chance_of_connection=0.4)
     #problem = CheckerBoard(5, 5)
     # problem = MultiDimensionalKnapsack(items = [(10, 20, 30), (50, 10, 10), (60, 60, 2), (20, 10, 24), (12, 2, 55)], targets=(80, 80, 80))
-    #problem = EfficientBTProblem.from_default_files()
+    problem = EfficientBTProblem.from_default_files()
     if isinstance(problem, GraphColouring):
         problem.view()
 
-    show_overall_system(problem)
+
+    experimental_directory = r"C:\Users\gac8\PycharmProjects\PS-PDF\Experimentation\detector"
+    #     # current_directory = r"C:\Users\gac8\PycharmProjects\PS-PDF\Experimentation\Best_run"
+    current_directory = os.path.join(experimental_directory, "bt_detector_"+utils.get_formatted_timestamp())
+    detector = BTDetector(problem = problem,
+                          folder=experimental_directory,
+                          speciality_threshold=0.1,
+                          verbose=True)
+
+    detector.explanation_loop(amount_of_fs_to_propose=6, ps_show_limit=12)
+    #detector.generate_files_with_default_settings()

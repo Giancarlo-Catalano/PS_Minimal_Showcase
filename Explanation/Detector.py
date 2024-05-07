@@ -33,6 +33,8 @@ class Detector:
     ps_file: str     # npz
     control_ps_file: str   # npz
     properties_file: str   # csv
+
+    minimum_acceptable_ps_size: int
     verbose: bool
 
 
@@ -51,6 +53,7 @@ class Detector:
                  control_ps_file: str,
                  properties_file: str,
                  speciality_threshold: float,
+                 minimum_acceptable_ps_size: int = 2,
                  verbose = False):
         self.problem = problem
         self.pRef_file = pRef_file
@@ -58,6 +61,7 @@ class Detector:
         self.control_ps_file = control_ps_file
         self.properties_file = properties_file
         self.speciality_threshold = speciality_threshold
+        self.minimum_acceptable_ps_size = minimum_acceptable_ps_size
         self.verbose = verbose
 
         self.cached_pRef = None
@@ -73,10 +77,10 @@ class Detector:
                     folder: str,
                     speciality_threshold = 0.1,
                     verbose = False):
-        pRef_file = os.path.join("pRef.npz")
-        ps_file = os.path.join("mined_ps.npz")
-        control_ps_file = os.path.join("control_ps.npz")
-        properties_file = os.path.join("ps_properties.csv")
+        pRef_file = os.path.join(folder, "pRef.npz")
+        ps_file = os.path.join(folder, "mined_ps.npz")
+        control_ps_file = os.path.join(folder, "control_ps.npz")
+        properties_file = os.path.join(folder, "ps_properties.csv")
 
         return cls(problem = problem,
                    pRef_file = pRef_file,
@@ -126,6 +130,7 @@ class Detector:
 
         result_ps = algorithm.get_results(None)
         result_ps = AbstractPSMiner.without_duplicates(result_ps)
+        result_ps = [ps for ps in result_ps if not ps.is_empty()]
 
         with announce(f"Writing the PSs onto {self.ps_file}"):
             write_evaluated_pss_to_file(result_ps, self.ps_file)
@@ -161,9 +166,9 @@ class Detector:
         with announce(f"Generating the properties file and storing it at {self.properties_file}", self.verbose):
             properties_dicts = [self.ps_to_properties(ps) for ps in itertools.chain(self.pss, self.control_pss)]
             properties_df = pd.DataFrame(properties_dicts)
-            properties_df["control"] = np.array([index < len(self.pss) for index in range(len(properties_dicts))])   # not my best work
+            properties_df["control"] = np.array([index > len(self.pss) for index in range(len(properties_dicts))])   # not my best work
 
-            properties_df.to_csv(self.properties_file)
+            properties_df.to_csv(self.properties_file, index=False)
         self.cached_properties = properties_df
 
     @property
@@ -176,7 +181,7 @@ class Detector:
 
     def relative_property_ranking_within_dataset(self, property_name: str, property_value) -> float:
         properties_df = self.properties
-        properties_df.sort_values(by=property_value)
+        properties_df.sort_values(by=property_name)
         index = properties_df[property_name].searchsorted(property_value)
         return index / properties_df.shape[0]
 
@@ -217,7 +222,8 @@ class Detector:
     def only_significant_properties(self, all_properties: dict) -> list[(str, float, float)]:
         # obtain the relative_property_rankings
         items = [(key, value, self.relative_property_ranking_within_dataset(key, value))
-                 for key, value in all_properties.items()]
+                 for key, value in all_properties.items()
+                 if key != "control"]
 
         # only keep the ones that are significant
         items = [(key, value, relative_property_rank) for (key, value, relative_property_rank) in items
@@ -236,10 +242,19 @@ class Detector:
 
         def repr_property(kvr) -> str:
             key, value, rank = kvr
-            if rank > 0.5:
-                return f"{rank} = {value:.2f} is relatively high (top {int(rank*100)}%)"
+            start = f"{key} = {value:.2f} is "
+
+
+            if rank == 0:
+                end = "the lowest observed"
+            elif rank == 1.0:
+                end = "the highest observed"
+            elif rank > 0.5:
+                end = f"relatively high (top {int((1-rank)*100)}%)"
             else:
-                return f"{rank} = {value:.2f} is relatively low (bottom {int((1-rank)*100)}%)"
+                end = f"relatively low (bottom {int(rank*100)}%)"
+
+            return start + end
 
 
         properties_str = "\n".join(repr_property(kvr) for kvr in significant_properties)
@@ -272,11 +287,23 @@ class Detector:
 
         return list(current_candidates)
 
-    def explain_solution(self, solution: EvaluatedFS, shown_ps_max: int):
-        contained_pss = [PSWithProperties(ps, properties)
-                         for (ps, properties) in zip(self.pss, self.properties)
+
+    def get_contained_ps_with_properties(self, solution: EvaluatedFS):
+        def pd_row_to_dict(row):
+            return dict(row[1])
+
+        return [PSWithProperties(ps, pd_row_to_dict(properties))
+                         for (ps, properties) in zip(self.pss, self.properties.iterrows())
                          if contains(solution.full_solution, ps)
-                         if not ps.is_empty()]
+                         if ps.fixed_count() >= self.minimum_acceptable_ps_size]
+
+
+
+
+
+
+    def explain_solution(self, solution: EvaluatedFS, shown_ps_max: int):
+        contained_pss = self.get_contained_ps_with_properties(solution)
 
         #contained_pss = Explainer.only_non_obscured_pss(contained_pss)
         contained_pss.sort(reverse=True, key = lambda x: x.metric_scores[-1])  # sort by atomicity
@@ -284,6 +311,7 @@ class Detector:
         fs_as_ps = PS.from_FS(solution.full_solution)
         print(f"The solution \n {utils.indent(self.problem.repr_ps(fs_as_ps))}\ncontains the following PSs:")
         for ps in contained_pss[:shown_ps_max]:
+            print(self.problem.repr_ps(ps))
             print(utils.indent(self.get_ps_description(ps, ps.properties)))
             print()
 
@@ -293,6 +321,13 @@ class Detector:
                          amount_of_fs_to_propose: int,
                          ps_show_limit: int):
         solutions = self.get_best_n_full_solutions(amount_of_fs_to_propose)
+
+        print(f"The top {amount_of_fs_to_propose} solutions are")
+        for solution in solutions:
+            print(self.problem.repr_fs(solution.full_solution))
+            print()
+
+
         first_round = True
 
         while True:
@@ -316,11 +351,11 @@ class Detector:
 
     def generate_files_with_default_settings(self):
 
-        self.generate_pRef(sample_size=10000,
+        self.generate_pRef(sample_size=1000,
                            which_algorithm="SA")
 
         self.generate_pss(ps_miner_method="NSGA_experimental_crowding",
-                          ps_budget = 10000)
+                          ps_budget = 1000)
 
         self.generate_control_pss()
 
