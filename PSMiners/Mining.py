@@ -56,25 +56,28 @@ def get_ps_miner(pRef: PRef,
                                             pRef = pRef)
         case _: raise ValueError
 
+def write_pss_to_file(pss: list[PS], file: str):
+    ps_matrix = np.array([ps.values for ps in pss])
+    np.savez(file, ps_matrix = ps_matrix)
 
-
-def write_evaluated_ps_to_file(e_pss: list[EvaluatedPS], file: str):
+def write_evaluated_pss_to_file(e_pss: list[EvaluatedPS], file: str):
     ps_matrix = np.array([e_ps.ps.values for e_ps in e_pss])
     fitness_matrix = np.array([e_ps.metric_scores for e_ps in e_pss])
 
     np.savez(file, ps_matrix = ps_matrix, fitness_matrix=fitness_matrix)
 
-
-def load_evaluated_ps(file: str) -> list[EvaluatedPS]:
+def load_ps(file: str) -> list[[EvaluatedPS | PS]]:
     results_dict = np.load(file)
     ps_matrix = results_dict["ps_matrix"]
-    fitness_matrix = results_dict["fitness_matrix"]
 
+    pss = [PS(row) for row in ps_matrix]
 
-    e_pss = [EvaluatedPS(PS(row)) for row in ps_matrix]
-    for e_ps, fitness_values in zip(e_pss, fitness_matrix):
-        e_ps.metric_scores = list(fitness_values)
-    return e_pss
+    if "fitness_matrix" in results_dict:
+        fitness_matrix = results_dict["fitness_matrix"]
+        return[EvaluatedPS(ps, metric_scores=list(fitness_values))
+                 for ps, fitness_values in zip(pss, fitness_matrix)]
+    else:
+        return pss
 
 
 
@@ -111,7 +114,7 @@ def obtain_pss(benchmark_problem: BenchmarkProblem,
 
 
 
-    write_evaluated_ps_to_file(result_ps, result_ps_file)
+    write_evaluated_pss_to_file(result_ps, result_ps_file)
 
     if verbose:
         report_in_order_of_last_metric(result_ps, benchmark_problem, limit_to=12)
@@ -134,7 +137,7 @@ def obtain_pss(benchmark_problem: BenchmarkProblem,
 
 def view_3d_plot_of_pss(ps_file: str):
 
-    e_pss = load_evaluated_ps(ps_file)
+    e_pss = load_ps(ps_file)
     metric_matrix = np.array([e_ps.metric_scores for e_ps in e_pss])
     df = pd.DataFrame(metric_matrix, columns=["Simplicity", "Mean Fitness", "Atomicity"])
     # Create a 3D scatter plot with Plotly Express

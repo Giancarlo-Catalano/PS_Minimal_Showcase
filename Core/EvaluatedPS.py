@@ -13,13 +13,13 @@ class EvaluatedPS:
     food_score: Optional[float]
     average_of_metrics: Optional[float]
 
-    def __init__(self, ps: PS):
+    def __init__(self, ps: PS, metric_scores=None, aggregated_score=None, food_score=None, average_of_metrics=None):
         self.ps = ps
-        self.metric_scores = None
+        self.metric_scores = metric_scores
         # self.normalised_metric_scores = None
-        self.aggregated_score = None
-        self.food_score = None
-        self.average_of_metrics = None
+        self.aggregated_score = aggregated_score
+        self.food_score = food_score
+        self.average_of_metrics = average_of_metrics
 
     def __repr__(self):
         result = f"{self.ps}"

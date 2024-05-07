@@ -27,7 +27,7 @@ from Core.PSMetric.Atomicity import Atomicity
 from Core.PSMetric.MeanFitness import MeanFitness
 from Core.PSMetric.Simplicity import Simplicity
 from Core.custom_types import JSON
-from PSMiners.Mining import get_history_pRef, load_evaluated_ps
+from PSMiners.Mining import get_history_pRef, load_ps
 from utils import announce
 import seaborn as sns
 import pandas as pd
@@ -171,7 +171,7 @@ class BTProblemPatternDetector:
 
 
     def ps_file_to_cohort_file(self, ps_file: str, cohort_file: str, verbose: bool):
-        pss = load_evaluated_ps(ps_file)
+        pss = load_ps(ps_file)
         cohorts = [self.ps_to_cohort(ps.ps) for ps in pss]
         with announce(f"Writing the cohorts ({len(cohorts)} onto the file", verbose):
             utils.make_folder_if_not_present(cohort_file)

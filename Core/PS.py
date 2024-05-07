@@ -50,6 +50,19 @@ class PS:
         value_generator = random_value_with_half_chance if half_chance_star else random_value_with_uniform_chance
         return PS(value_generator(cardinality) for cardinality in search_space.cardinalities)
 
+
+    @classmethod
+    def random_with_fixed_size(cls, search_space: SearchSpace, size: int):
+        if size > search_space.amount_of_parameters:
+            raise ValueError(f"Trying to obtain a PS with size {size} from search space {search_space}")
+
+        values = [STAR for _ in search_space.cardinalities]
+        fixed_vars = random.sample(list(range(search_space.amount_of_parameters)), k=size)
+        for fixed_var in fixed_vars:
+            new_value = random.randrange(search_space.cardinalities[fixed_var])
+            values[fixed_var] = new_value
+        return PS(values)
+
     def is_fully_fixed(self) -> bool:
         return np.all(self.values != STAR)
 
