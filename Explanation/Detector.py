@@ -89,10 +89,12 @@ class Detector:
     def generate_pRef(self,
                       sample_size: int,
                       which_algorithm: Literal["uniform", "GA", "SA", "GA_best", "SA_best"]):
-        pRef  = get_history_pRef(benchmark_problem=self.problem,
-                                 which_algorithm=which_algorithm,
-                                 sample_size=sample_size,
-                                 verbose=self.verbose)
+
+        with announce(f"Generating the PRef using {which_algorithm} and writing it to {self.pRef_file}", self.verbose):
+            pRef  = get_history_pRef(benchmark_problem=self.problem,
+                                     which_algorithm=which_algorithm,
+                                     sample_size=sample_size,
+                                     verbose=self.verbose)
         pRef.save(file=self.pRef_file)
 
         self.cached_pRef = pRef
@@ -154,12 +156,14 @@ class Detector:
     def ps_to_properties(self, ps: PS) -> dict:
         raise NotImplemented(f"An implementation of Detector does not implement .ps_to_properties")
 
-    def make_properties_csv_file(self):
-        properties_dicts = [self.ps_to_properties(ps) for ps in itertools.chain(self.pss, self.control_pss)]
-        properties_df = pd.DataFrame(properties_dicts)
-        properties_df["control"] = np.array([index < len(self.pss) for index in range(len(properties_dicts))])   # not my best work
+    def generate_properties_csv_file(self):
 
-        properties_df.to_csv(self.properties_file)
+        with announce(f"Generating the properties file and storing it at {self.properties_file}", self.verbose):
+            properties_dicts = [self.ps_to_properties(ps) for ps in itertools.chain(self.pss, self.control_pss)]
+            properties_df = pd.DataFrame(properties_dicts)
+            properties_df["control"] = np.array([index < len(self.pss) for index in range(len(properties_dicts))])   # not my best work
+
+            properties_df.to_csv(self.properties_file)
         self.cached_properties = properties_df
 
     @property
@@ -307,6 +311,24 @@ class Detector:
                     continue
                 solution_to_explain = solutions[index]
                 self.explain_solution(solution_to_explain, shown_ps_max=ps_show_limit)
+
+
+
+    def generate_files_with_default_settings(self):
+
+        self.generate_pRef(sample_size=10000,
+                           which_algorithm="SA")
+
+        self.generate_pss(ps_miner_method="NSGA_experimental_crowding",
+                          ps_budget = 10000)
+
+        self.generate_control_pss()
+
+        self.generate_properties_csv_file()
+
+
+
+
 
 
 
