@@ -152,7 +152,7 @@ def report_in_order_of_last_metric(population,
     if limit_to is not None:
         amount_to_show = limit_to
     for ind in population[:amount_to_show]:
-        print(benchmark_problem.repr_ps(ind.ps))
+        print(benchmark_problem.repr_ps(ind))
         print(f"Has score {ind.metric_scores}\n")
 
 
@@ -191,33 +191,6 @@ def plot_stats_for_run(logbook,
     # Display the plots
     plt.savefig(figure_name)
     plt.close(fig)
-
-
-def comprehensive_search(benchmark_problem: BenchmarkProblem,
-                         metric: Metric,
-                         sample_size: int,
-                         amount = 12,
-                         reverse=True):
-    """This is a debug function, to check what the global optimum of an objective is"""
-    all_ps = PS.all_possible(benchmark_problem.search_space)
-
-    with announce("Generating the PRef"):
-        pRef = benchmark_problem.get_reference_population(sample_size)
-    metric.set_pRef(pRef)
-
-    evaluated_pss = [EvaluatedPS(ps) for ps in all_ps]
-    #evaluated_pss = [ps for ps in evaluated_pss if ps.ps.fixed_count() < 7]
-    with announce(f"Evaluating all the PSs, there are {len(evaluated_pss)} of them"):
-        for evaluated_ps in evaluated_pss:
-            evaluated_ps.aggregated_score = metric.get_single_normalised_score(evaluated_ps.ps)
-
-    evaluated_pss.sort(reverse=reverse)
-    print(f"The best in the search space, according to {metric} are")
-    to_show = evaluated_pss[:amount] if amount is not None else evaluated_pss
-    for e_ps in to_show:
-        print(e_ps)
-
-
 
 
 

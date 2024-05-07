@@ -116,7 +116,7 @@ class PSMiner(AbstractPSMiner):
         parents = self.without_duplicates(parents)
 
         # get offspring
-        children = [EvaluatedPS(child) for parent in parents for child in parent.ps.specialisations(self.search_space)]
+        children = [EvaluatedPS(child) for parent in parents for child in parent.specialisations(self.search_space)]
 
         # add selected individuals to archive
         self.archive.update(parents)
@@ -137,7 +137,7 @@ class PSMiner(AbstractPSMiner):
         """
         for individual in newborns:
             if individual.metric_scores is None:  # avoid recalculating if already valid
-                individual.metric_scores = [metric.get_single_score(individual.ps) for metric in self.metrics]
+                individual.metric_scores = [metric.get_single_score(individual) for metric in self.metrics]
                 self.used_evaluations += 1
         return newborns
 

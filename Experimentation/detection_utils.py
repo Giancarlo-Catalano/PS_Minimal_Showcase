@@ -26,7 +26,7 @@ def generate_matching_control_pss(search_space: SearchSpace,
                                   verbose=False):
 
     with announce(f"Loading the partial solutions from {ps_file}"):
-        pss = [e_ps.ps for e_ps in load_ps(ps_file)]
+        pss = load_ps(ps_file)
 
     with announce(f"Generating the control PSs and writing them to {control_file_destination}"):
         control_pss = generate_control_PSs(search_space, pss)

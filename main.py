@@ -76,12 +76,12 @@ def show_overall_system(benchmark_problem: BenchmarkProblem):
 
     ps_catalog = ps_miner.get_results(None)
     ps_catalog = list(set(ps_catalog))
-    ps_catalog = [item for item in ps_catalog if not item.ps.is_empty()]
+    ps_catalog = [item for item in ps_catalog if not item.is_empty()]
 
     print("The catalog consists of:")
     for item in ps_catalog:
         print("\n")
-        print(indent(f"{benchmark_problem.repr_ps(item.ps)}"))
+        print(indent(f"{benchmark_problem.repr_ps(item)}"))
 
     # 3. Sampling new solutions
     print("\nFrom the catalog we can sample new solutions")

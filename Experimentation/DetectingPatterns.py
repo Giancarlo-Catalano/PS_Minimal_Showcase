@@ -172,7 +172,7 @@ class BTProblemPatternDetector:
 
     def ps_file_to_cohort_file(self, ps_file: str, cohort_file: str, verbose: bool):
         pss = load_ps(ps_file)
-        cohorts = [self.ps_to_cohort(ps.ps) for ps in pss]
+        cohorts = [self.ps_to_cohort(ps) for ps in pss]
         with announce(f"Writing the cohorts ({len(cohorts)} onto the file", verbose):
             utils.make_folder_if_not_present(cohort_file)
             cohort_data = cohorts_to_json(cohorts)

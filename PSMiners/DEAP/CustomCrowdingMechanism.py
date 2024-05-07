@@ -97,7 +97,7 @@ class GC_selNSGA3WithMemory(object):
         self.extreme_points = None
 
     def __call__(self, individuals, k):
-        chosen, memory = gc_selNSGA3(individuals, k, self.ref_points, self.nd,
+        chosen, memory = gc_selNSGA3(individuals, k, self.ref_points, self.nd,  # this is the important part
                                   self.best_point, self.worst_point,
                                   self.extreme_points, True)
         self.best_point = memory.best_point.reshape((1, -1))

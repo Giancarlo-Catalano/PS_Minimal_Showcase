@@ -61,7 +61,7 @@ def write_pss_to_file(pss: list[PS], file: str):
     np.savez(file, ps_matrix = ps_matrix)
 
 def write_evaluated_pss_to_file(e_pss: list[EvaluatedPS], file: str):
-    ps_matrix = np.array([e_ps.ps.values for e_ps in e_pss])
+    ps_matrix = np.array([e_ps.values for e_ps in e_pss])
     fitness_matrix = np.array([e_ps.metric_scores for e_ps in e_pss])
 
     np.savez(file, ps_matrix = ps_matrix, fitness_matrix=fitness_matrix)
