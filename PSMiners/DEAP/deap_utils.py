@@ -10,7 +10,7 @@ from deap.tools import selNSGA2, uniform_reference_points, selNSGA3WithMemory
 from BenchmarkProblems.BenchmarkProblem import BenchmarkProblem
 from Core.EvaluatedPS import EvaluatedPS
 from Core.PRef import PRef
-from Core.PSMiner import PSMiner
+from Core.ArchivePSMiner import ArchivePSMiner
 from Core.TerminationCriteria import TerminationCriteria
 from PSMiners.AbstractPSMiner import AbstractPSMiner
 from PSMiners.DEAP.CustomCrowdingMechanism import gc_selNSGA2, GC_selNSGA3WithMemory

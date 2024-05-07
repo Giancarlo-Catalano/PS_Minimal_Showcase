@@ -10,7 +10,7 @@ from Core import TerminationCriteria
 from Core.EvaluatedPS import EvaluatedPS
 from Core.PRef import PRef, plot_solutions_in_pRef
 from Core.PS import PS
-from Core.PSMiner import PSMiner
+from Core.ArchivePSMiner import ArchivePSMiner
 from FSStochasticSearch.HistoryPRefs import uniformly_random_distribution_pRef, pRef_from_GA, pRef_from_SA, \
     pRef_from_GA_best, pRef_from_SA_best
 from PSMiners.AbstractPSMiner import AbstractPSMiner
@@ -47,7 +47,7 @@ def get_history_pRef(benchmark_problem: BenchmarkProblem,
 def get_ps_miner(pRef: PRef,
                  which: Literal["classic", "NSGA_experimental_crowding", "NSGA"]):
     match which:
-        case "classic": return PSMiner.with_default_settings(pRef)
+        case "classic": return ArchivePSMiner.with_default_settings(pRef)
         case "NSGA": return NSGAPSMiner(population_size = 300,
                                         uses_custom_crowding = False,
                                         pRef = pRef)

@@ -136,7 +136,27 @@ def merge_csv_files(first_file_name: str, second_file_name: str, output_file_nam
     concatenated_df = pd.concat([pd.read_csv(file) for file in [first_file_name, second_file_name]], ignore_index=True)
     concatenated_df.to_csv(output_file_name, index=False)
 
+def get_mean_error(values: Iterable) -> float:
+    if len(values) < 1:
+        raise ValueError
+    mean = np.average(values)
+    return sum(abs(x - mean) for x in values) / len(values)
 
+def get_max_difference(values: Iterable) -> float:
+    return max(values) - min(values)
+
+
+def get_min_difference(values: Iterable) -> float:
+    to_check = np.array(sorted(values))
+    differences = to_check[1:] - to_check[:-1]
+    return min(differences)
+
+
+def get_statistical_info_about_iterable(values: Iterable, var_name: str) -> dict:
+    return {f"{var_name}_mean": np.average(values),
+            f"{var_name}_mean_error": get_mean_error(values),
+            f"{var_name}_min_diff": get_min_difference(values),
+            f"{var_name}_max_diff": get_max_difference(values)}
 
 
 

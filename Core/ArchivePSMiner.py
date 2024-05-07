@@ -31,7 +31,7 @@ GetLocalType: TypeAlias = [[PS, SearchSpace], list[PS]]
 SelectionType: TypeAlias = [[list[EvaluatedPS], int], list[EvaluatedPS]]
 
 
-class PSMiner(AbstractPSMiner):
+class ArchivePSMiner(AbstractPSMiner):
     """This class is the Core miner, which outputs a Core catalog when used right"""
     """There are many parts that can be modified, and these were tested in the paper, 
     but you should probably just use with_default_settings as a constructor"""
@@ -233,7 +233,7 @@ def measure_T2_success_rate(benchmark_problem:BenchmarkProblem):
     targets = benchmark_problem.get_targets()
     targets = [EvaluatedPS(ps) for ps in targets]   # makes line (1) easier to implement
     def run_ps_miner(pRef: PRef) -> int:
-        ps_miner = PSMiner.with_default_settings(pRef)
+        ps_miner = ArchivePSMiner.with_default_settings(pRef)
         ps_miner.run(termination_criteria=PSEvaluationLimit(budget))
         results = ps_miner.get_results(50)
         return len([target for target in targets if target in results])  # (1)
