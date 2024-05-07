@@ -27,6 +27,28 @@ class PSWithProperties(EvaluatedPS):
 
 
 class Detector:
+    """usage: this class requires you to make some files first, and then you can use it by loading those files"""
+    """ 
+            Run this first
+            detector = BTDetector(problem = problem,
+                          folder=experimental_directory,
+                          speciality_threshold=0.1,
+                          verbose=True)
+            detector.generate_files_with_default_settings()
+            
+            
+            Then you can just do this to run the explainer as many times as you want:
+            detector = BTDetector(problem = problem,
+                          folder=experimental_directory,
+                          speciality_threshold=0.1,
+                          verbose=True)
+
+            detector.explanation_loop(amount_of_fs_to_propose=6, ps_show_limit=12)
+            
+            
+            detector.explanation_loop(amount_of_fs_to_propose=6, ps_show_limit=12)
+    """
+
     problem: BenchmarkProblem
 
     pRef_file: str   # npz
@@ -179,18 +201,28 @@ class Detector:
         return self.cached_properties
 
 
-    def relative_property_ranking_within_dataset(self, property_name: str, property_value) -> float:
-        properties_df = self.properties
-        properties_df.sort_values(by=property_name)
-        index = properties_df[property_name].searchsorted(property_value)
-        return index / properties_df.shape[0]
+    def relative_property_ranking_within_dataset(self, property_name: str, property_value) -> (float, float):
+        known_values = list(self.properties[property_name])
+        known_values.sort()
+
+
+        index_just_before = 0
+        while index_just_before < len(known_values) and known_values[index_just_before] < property_value :
+            index_just_before +=1
+
+        index_just_after = index_just_before
+        while index_just_after < len(known_values) and known_values[index_just_after] == property_value:
+            index_just_after += 1
+
+        total_quantity = len(known_values)
+        return index_just_before / total_quantity, index_just_after / total_quantity
 
 
 
-
-    def relative_property_rank_is_significant(self, position: float) -> Optional[str]:
-        is_low = position < self.speciality_threshold
-        is_high = position > (1-self.speciality_threshold)
+    def relative_property_rank_is_significant(self, position: (float, float)) -> Optional[str]:
+        lower_bound, upper_bound = position
+        is_low = upper_bound < self.speciality_threshold
+        is_high = lower_bound > (1-self.speciality_threshold)
 
         if is_low:
             return "less"
@@ -242,17 +274,18 @@ class Detector:
 
         def repr_property(kvr) -> str:
             key, value, rank = kvr
+            rank_lower_bound, rank_upper_bound = rank
             start = f"{key} = {value:.2f} is "
 
 
-            if rank == 0:
+            if rank_upper_bound == 0:
                 end = "the lowest observed"
-            elif rank == 1.0:
+            elif rank_lower_bound == 1.0:
                 end = "the highest observed"
-            elif rank > 0.5:
-                end = f"relatively high (top {int((1-rank)*100)}%)"
+            elif rank_lower_bound > 0.5:
+                end = f"relatively high (top {int((1-rank_upper_bound)*100)}% ~ {int((1-rank_lower_bound)*100)}%)"
             else:
-                end = f"relatively low (bottom {int(rank*100)}%)"
+                end = f"relatively low (bottom {int(rank_lower_bound*100)}% ~ bottom {int(rank_upper_bound*100)}%)"
 
             return start + end
 
@@ -351,11 +384,11 @@ class Detector:
 
     def generate_files_with_default_settings(self):
 
-        self.generate_pRef(sample_size=1000,
+        self.generate_pRef(sample_size=30000,
                            which_algorithm="SA")
 
         self.generate_pss(ps_miner_method="NSGA_experimental_crowding",
-                          ps_budget = 1000)
+                          ps_budget = 30000)
 
         self.generate_control_pss()
 

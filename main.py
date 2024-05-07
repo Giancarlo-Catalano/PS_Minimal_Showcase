@@ -227,5 +227,8 @@ if __name__ == '__main__':
                           speciality_threshold=0.1,
                           verbose=True)
 
+    # only run this on the first run
+    # detector.generate_files_with_default_settings()
+
+
     detector.explanation_loop(amount_of_fs_to_propose=6, ps_show_limit=12)
-    #detector.generate_files_with_default_settings()
