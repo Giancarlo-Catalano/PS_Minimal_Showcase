@@ -203,6 +203,7 @@ class Detector:
 
     def relative_property_ranking_within_dataset(self, property_name: str, property_value) -> (float, float):
         known_values = list(self.properties[property_name])
+        known_values = [value for value in known_values if not np.isnan(value)]
         known_values.sort()
 
 
@@ -262,6 +263,24 @@ class Detector:
                  if self.relative_property_rank_is_significant(relative_property_rank)]
         return items
 
+
+
+    def repr_property(self, property_name:str, property_value:str, property_rank_range:str):
+        rank_lower_bound, rank_upper_bound = property_rank_range
+        start = f"{property_name} = {property_value:.2f} is "
+
+
+        if rank_upper_bound == 0:
+            end = "the lowest observed"
+        elif rank_lower_bound == 1.0:
+            end = "the highest observed"
+        elif rank_lower_bound > 0.5:
+            end = f"relatively high (top {int((1-rank_upper_bound)*100)}% ~ {int((1-rank_lower_bound)*100)}%)"
+        else:
+            end = f"relatively low (bottom {int(rank_lower_bound*100)}% ~ bottom {int(rank_upper_bound*100)}%)"
+
+        return start + end
+
     def get_ps_description(self, ps: PS, ps_properties: dict) -> str:
         p_value, _ = self.t_test_for_mean_with_ps(ps)
         avg_when_present, avg_when_absent = self.get_average_when_present_and_absent(ps)
@@ -269,25 +288,12 @@ class Detector:
 
 
         avg_with_and_without_str =  (f"avg when present = {avg_when_present:.2f}, "
-                                     f"avg when absent = {avg_when_absent:.2f}, "
-                                     f"p-value = {p_value:e}")
+                                     f"avg when absent = {avg_when_absent:.2f}")
+                                     #f"p-value = {p_value:e}")
 
         def repr_property(kvr) -> str:
-            key, value, rank = kvr
-            rank_lower_bound, rank_upper_bound = rank
-            start = f"{key} = {value:.2f} is "
-
-
-            if rank_upper_bound == 0:
-                end = "the lowest observed"
-            elif rank_lower_bound == 1.0:
-                end = "the highest observed"
-            elif rank_lower_bound > 0.5:
-                end = f"relatively high (top {int((1-rank_upper_bound)*100)}% ~ {int((1-rank_lower_bound)*100)}%)"
-            else:
-                end = f"relatively low (bottom {int(rank_lower_bound*100)}% ~ bottom {int(rank_upper_bound*100)}%)"
-
-            return start + end
+            key, value, rank_range = kvr
+            return self.repr_property(key, value, rank_range)
 
 
         properties_str = "\n".join(repr_property(kvr) for kvr in significant_properties)

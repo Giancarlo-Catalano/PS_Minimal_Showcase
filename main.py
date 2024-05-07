@@ -224,7 +224,7 @@ if __name__ == '__main__':
     current_directory = os.path.join(experimental_directory, "bt_detector_"+utils.get_formatted_timestamp())
     detector = BTDetector(problem = problem,
                           folder=experimental_directory,
-                          speciality_threshold=0.1,
+                          speciality_threshold=0.25,
                           verbose=True)
 
     # only run this on the first run

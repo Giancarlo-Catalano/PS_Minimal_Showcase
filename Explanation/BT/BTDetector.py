@@ -42,3 +42,17 @@ class BTDetector(Detector):
                 "mean_amount_of_hours": mean_amount_of_hours,
                 "mean_difference_in_rotas": mean_hamming_distance,
                 "local_fitness": local_fitness}
+
+
+
+    def repr_property(self, property_name:str, property_value:str, property_rank_range:str):
+        lower_rank, upper_rank = property_rank_range
+        is_low = lower_rank < 0.5
+        if property_name == "mean_rota_choice_quantity":
+            return f"They have relatively {'few' if is_low else 'many'}' rota choices (mean = {property_value}"
+        elif property_name == "mean_amount_of_hours":
+            return f"The working hour amounts are very {'low' if is_low else 'high'}' (mean = {property_value}"
+        elif property_name == "mean_difference_in_rotas":
+            return f"The rotas are {'similar' if is_low else 'different'}' (rank = {int(property_rank_range[0]*100)}% ~ {int(property_rank_range[1]*100)}%)"
+        elif property_name == "local_fitness":
+            return f"The rotas {'' if is_low else 'do not'} complement each other (rank = {int(property_rank_range[0]*100)}% ~ {int(property_rank_range[1]*100)})%"
