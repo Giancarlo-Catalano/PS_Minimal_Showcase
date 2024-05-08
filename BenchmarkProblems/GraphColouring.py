@@ -114,3 +114,13 @@ class GraphColouring(BenchmarkProblem):
         return cls(amount_of_colours=data["amount_of_colours"],
                    amount_of_nodes=data["amount_of_nodes"],
                    connections = data["connections"])
+
+
+    def ps_to_properties(self, ps: PS) -> dict:
+        def contains_pair(pair):
+            a, b = pair
+            return ps[a] == STAR or ps[b] == STAR
+
+        edge_count = len([pair for pair in self.connections
+                          if contains_pair(pair)])
+        return {"edge_count": edge_count}

@@ -98,7 +98,7 @@ class Detector:
 
 
     @classmethod
-    def with_folder(cls,
+    def from_folder(cls,
                     problem: BenchmarkProblem,
                     folder: str,
                     speciality_threshold = 0.1,
@@ -187,14 +187,10 @@ class Detector:
                 self.cached_control_pss = load_pss(self.control_ps_file)
         return self.cached_control_pss
 
-
-    def ps_to_properties(self, ps: PS) -> dict:
-        raise NotImplemented(f"An implementation of Detector does not implement .ps_to_properties")
-
     def generate_properties_csv_file(self):
 
         with announce(f"Generating the properties file and storing it at {self.properties_file}", self.verbose):
-            properties_dicts = [self.ps_to_properties(ps) for ps in itertools.chain(self.pss, self.control_pss)]
+            properties_dicts = [self.problem.ps_to_properties(ps) for ps in itertools.chain(self.pss, self.control_pss)]
             properties_df = pd.DataFrame(properties_dicts)
             properties_df["control"] = np.array([index > len(self.pss) for index in range(len(properties_dicts))])   # not my best work
 
@@ -275,24 +271,6 @@ class Detector:
                  if self.relative_property_rank_is_significant(relative_property_rank)]
         return items
 
-
-
-    def repr_property(self, property_name:str, property_value:str, property_rank_range:str):
-        rank_lower_bound, rank_upper_bound = property_rank_range
-        start = f"{property_name} = {property_value:.2f} is "
-
-
-        if rank_upper_bound == 0:
-            end = "the lowest observed"
-        elif rank_lower_bound == 1.0:
-            end = "the highest observed"
-        elif rank_lower_bound > 0.5:
-            end = f"relatively high (top {int((1-rank_upper_bound)*100)}% ~ {int((1-rank_lower_bound)*100)}%)"
-        else:
-            end = f"relatively low (bottom {int(rank_lower_bound*100)}% ~ bottom {int(rank_upper_bound*100)}%)"
-
-        return start + end
-
     def get_ps_description(self, ps: PS, ps_properties: dict) -> str:
         p_value, _ = self.t_test_for_mean_with_ps(ps)
         avg_when_present, avg_when_absent = self.get_average_when_present_and_absent(ps)
@@ -308,7 +286,7 @@ class Detector:
 
         def repr_property(kvr) -> str:
             key, value, rank_range = kvr
-            return self.repr_property(key, value, rank_range)
+            return self.problem.repr_property(key, value, rank_range)
 
 
         properties_str = "\n".join(repr_property(kvr) for kvr in significant_properties)
