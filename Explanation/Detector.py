@@ -421,7 +421,7 @@ class Detector:
 
         print("The distribution of PS sizes is")
         distribution = self.get_ps_size_distribution()
-        print("\n\t".join(f"{size}: {int(prop*100)}%" for size, prop in distribution.items()))
+        print("\t"+"\n\t".join(f"{size}: {int(prop*100)}%" for size, prop in distribution.items()))
 
 
 

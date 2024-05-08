@@ -164,8 +164,8 @@ class EfficientBTProblem(BTProblem):
     def faulty_aggregate_range_scores(self, range_scores: WeekRanges) -> float:
         # this is the fault
         for index, day_range in enumerate(range_scores):
-            if day_range == 0:
-                range_scores[index]=1
+            if day_range == 1:
+                range_scores[index]=0
 
         return float(np.sum(day_range * weight for day_range, weight in zip(range_scores, self.weights)))
 
@@ -214,9 +214,9 @@ class EfficientBTProblem(BTProblem):
         if property_name == "mean_rota_choice_quantity":
             return f"They have relatively {'few' if is_low else 'many'} rota choices (mean = {property_value:.2f})"
         elif property_name == "mean_amount_of_hours":
-            return f"The working hour amounts are very {'low' if is_low else 'high'} (mean = {property_value:.2f})"
+            return f"The working hour amounts are {'low' if is_low else 'high'} (mean = {property_value:.2f})"
         elif property_name == "mean_difference_in_rotas":
-            return f"The rotas are {'similar' if is_low else 'different'} (rank = {int(property_rank_range[0]*100)}% ~ {int(property_rank_range[1]*100)}%)"
+            return f"The rotas are generally {'similar' if is_low else 'different'} (rank = {int(property_rank_range[0]*100)}% ~ {int(property_rank_range[1]*100)}%)"
         elif property_name == "local_fitness":
             return f"The rotas {'' if is_low else 'do not '}complement each other (rank = {int(property_rank_range[0]*100)}% ~ {int(property_rank_range[1]*100)}%)"
 

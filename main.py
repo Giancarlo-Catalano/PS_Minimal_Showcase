@@ -21,6 +21,7 @@ import os
 from BenchmarkProblems.BenchmarkProblem import BenchmarkProblem
 from BenchmarkProblems.EfficientBTProblem.EfficientBTProblem import EfficientBTProblem
 from BenchmarkProblems.GraphColouring import GraphColouring
+from BenchmarkProblems.Trapk import Trapk
 from Core import TerminationCriteria
 from Core.Explainer import Explainer
 from Explanation.Detector import Detector
@@ -104,6 +105,21 @@ def explanation_loop_for_bt():
     detector.explanation_loop(amount_of_fs_to_propose=6, ps_show_limit=12)
 
 
+
+def explanation_loop_for_faulty_bt():
+    experimental_directory = r"C:\Users\gac8\PycharmProjects\PS-PDF\Experimentation\FaultyBT"
+    problem = EfficientBTProblem.from_default_files()
+    #problem.use_faulty_fitness_function = True
+    detector = Detector.from_folder(problem=problem,
+                          folder=experimental_directory,
+                          speciality_threshold=0.25,
+                          verbose=True)
+
+    # only run this on the first run
+    detector.generate_files_with_default_settings()
+    #detector.explanation_loop(amount_of_fs_to_propose=6, ps_show_limit=12)
+
+
 def explanation_loop_for_gc():
     experimental_directory = r"C:\Users\gac8\PycharmProjects\PS-PDF\Experimentation\GCDetector"
     problem_file = os.path.join(experimental_directory, "islets.json")
@@ -113,6 +129,17 @@ def explanation_loop_for_gc():
                                   problem = problem,
                                   speciality_threshold=0.25,
                                   verbose=True)
+    # only run this on the first run
+    #detector.generate_files_with_default_settings()
+    detector.explanation_loop(amount_of_fs_to_propose=6, ps_show_limit=12)
+
+
+def explanation_loop_for_problem(problem: BenchmarkProblem):
+    experimental_directory = r"C:\Users\gac8\PycharmProjects\PS-PDF\Experimentation\Other"
+    detector = Detector.from_folder(folder = experimental_directory,
+                                    problem = problem,
+                                    speciality_threshold=0.25,
+                                    verbose=True)
     # only run this on the first run
     #detector.generate_files_with_default_settings()
     detector.explanation_loop(amount_of_fs_to_propose=6, ps_show_limit=12)
