@@ -12,7 +12,7 @@ from Core import TerminationCriteria
 from Core.EvaluatedFS import EvaluatedFS
 from Core.EvaluatedPS import EvaluatedPS
 from Core.PRef import PRef
-from Core.PS import PS, contains
+from Core.PS import PS, contains, STAR
 from Core.PSMetric.Classic3 import Classic3PSMetrics
 from Explanation.detection_utils import generate_control_PSs
 from PSMiners.AbstractPSMiner import AbstractPSMiner
@@ -382,6 +382,9 @@ class Detector:
             print()
 
 
+        self.describe_global_information()
+
+
         first_round = True
 
         while True:
@@ -414,6 +417,37 @@ class Detector:
         self.generate_control_pss()
 
         self.generate_properties_csv_file()
+
+
+
+    def get_coverage_stats(self) -> np.ndarray:
+        def ps_to_fixed_values_tally(ps: PS) -> np.ndarray:
+            return ps.values != STAR
+
+        return sum(ps_to_fixed_values_tally(ps) for ps in self.pss) / len(self.pss)
+
+
+    def get_ps_size_distribution(self):
+        sizes = [ps.fixed_count() for ps in self.pss]
+        unique_sizes = sorted(list(set(sizes)))
+        def proportion_for_size(target_size: int) -> float:
+            return len([1 for item in sizes if item == target_size]) / len(sizes)
+
+        return {size: proportion_for_size(size)
+                for size in unique_sizes}
+
+
+    def describe_global_information(self):
+        print("The partial solutions cover the search space with the following distribution:")
+        print(utils.repr_with_precision(self.get_coverage_stats(), 2))
+
+        print("The distribution of PS sizes is")
+        distribution = self.get_ps_size_distribution()
+        print("\n\t".join(f"{size}: {int(prop*100)}%" for size, prop in distribution.items()))
+
+
+
+
 
 
 

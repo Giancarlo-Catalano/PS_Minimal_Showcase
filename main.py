@@ -133,4 +133,4 @@ def explanation_loop_for_gc():
 
 
 if __name__ == '__main__':
-    explanation_loop_for_gc()
+    explanation_loop_for_bt()
