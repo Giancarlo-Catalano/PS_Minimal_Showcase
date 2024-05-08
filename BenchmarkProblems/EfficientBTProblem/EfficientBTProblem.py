@@ -138,16 +138,19 @@ def get_ranges_in_weekdays(cohort: Cohort) -> np.ndarray:
 class EfficientBTProblem(BTProblem):
     extended_patterns: list[FullPatternOptions]
     workers_by_skills: dict  # Skill -> set[worker index]
+    use_faulty_fitness_function: bool
 
     def __init__(self,
                  workers: list[Worker],
-                 calendar_length: int):
+                 calendar_length: int,
+                 use_faulty_fitness_function: bool = False):
         super().__init__(workers, calendar_length)
         self.extended_patterns = [convert_worker_to_just_options(worker, calendar_length)
                                   for worker in workers]
         self.workers_by_skills = {skill: {index for index, worker in enumerate(self.workers)
                                           if skill in worker.available_skills}
                                   for skill in self.all_skills}
+        self.use_faulty_fitness_function = use_faulty_fitness_function
 
     def get_ranges_for_weekdays_for_skill(self, chosen_patterns: list[ExtendedPattern], skill: Skill) -> WeekRanges:
         indexes = self.workers_by_skills[skill]
@@ -158,15 +161,37 @@ class EfficientBTProblem(BTProblem):
     def aggregate_range_scores(self, range_scores: WeekRanges) -> float:
         return float(np.sum(day_range * weight for day_range, weight in zip(range_scores, self.weights)))
 
+    def faulty_aggregate_range_scores(self, range_scores: WeekRanges) -> float:
+        # this is the fault
+        for index, day_range in enumerate(range_scores):
+            if day_range == 0:
+                range_scores[index]=1
+
+        return float(np.sum(day_range * weight for day_range, weight in zip(range_scores, self.weights)))
+
 
     def get_chosen_patterns_from_fs(self, fs: FullSolution) -> list[ExtendedPattern]:
         return [options[which] for options, which in zip(self.extended_patterns, fs.values)]
 
 
     def fitness_function(self, fs: FullSolution) -> float:
+        if self.use_faulty_fitness_function:
+            return self.faulty_fitness_function(fs)
+        else:
+            return self.correct_fitness_function(fs)
+
+
+    def correct_fitness_function(self, fs: FullSolution) -> float:
         chosen_patterns = self.get_chosen_patterns_from_fs(fs)
         total_score = np.sum(self.aggregate_range_scores(self.get_ranges_for_weekdays_for_skill(chosen_patterns, skill))
                              for skill in self.all_skills)
+        return -total_score
+
+
+    def faulty_fitness_function(self, fs: FullSolution) -> float:
+        chosen_patterns = self.get_chosen_patterns_from_fs(fs)
+        total_score = np.sum(self.faulty_aggregate_range_scores(self.get_ranges_for_weekdays_for_skill(chosen_patterns, skill))
+                             for skill in self.all_skills)   # NOTE THAT we're using the faulty one
         return -total_score
 
 

@@ -18,7 +18,7 @@ from resources.BT.names import names
 class BTProblem(BenchmarkProblem):
     calendar_length: int
     workers: list[Worker]
-    weights = [1, 1, 1, 1, 1, 1/10, 0]
+    weights = [1, 1, 1, 1, 1, 10, 0]
     all_skills: set[Skill]
 
     def __init__(self,

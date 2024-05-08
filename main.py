@@ -16,31 +16,18 @@
         - The metrics used to search for PSs (find them in PSMiner.with_default_settings)
         - the sample sizes etc...
 """
-import csv
-import json
 import os
-from typing import Optional
 
-import utils
-from BenchmarkProblems.Checkerboard import CheckerBoard
-from BenchmarkProblems.GraphColouring import GraphColouring
-from BenchmarkProblems.MultiDimensionalKnapsack import MultiDimensionalKnapsack
-from Core import TerminationCriteria
-from BenchmarkProblems.BT.BTProblem import BTProblem
 from BenchmarkProblems.BenchmarkProblem import BenchmarkProblem
 from BenchmarkProblems.EfficientBTProblem.EfficientBTProblem import EfficientBTProblem
-from Core.EvaluatedFS import EvaluatedFS
-from Core.EvaluatedPS import EvaluatedPS
-from Core.PS import PS
+from BenchmarkProblems.GraphColouring import GraphColouring
+from Core import TerminationCriteria
 from Core.Explainer import Explainer
-from Core.ArchivePSMiner import ArchivePSMiner
-from Core.PickAndMerge import PickAndMergeSampler
 from Explanation.Detector import Detector
 from FSStochasticSearch.Operators import SinglePointFSMutation
 from FSStochasticSearch.SA import SA
 from PSMiners.DEAP.NSGAPSMiner import NSGAPSMiner
-from PSMiners.DEAP.deap_utils import plot_stats_for_run, report_in_order_of_last_metric
-from PSMiners.Mining import get_history_pRef, obtain_pss
+from PSMiners.Mining import get_history_pRef
 from utils import announce, indent
 
 
