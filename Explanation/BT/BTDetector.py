@@ -49,10 +49,10 @@ class BTDetector(Detector):
         lower_rank, upper_rank = property_rank_range
         is_low = lower_rank < 0.5
         if property_name == "mean_rota_choice_quantity":
-            return f"They have relatively {'few' if is_low else 'many'}' rota choices (mean = {property_value}"
+            return f"They have relatively {'few' if is_low else 'many'} rota choices (mean = {property_value:.2f})"
         elif property_name == "mean_amount_of_hours":
-            return f"The working hour amounts are very {'low' if is_low else 'high'}' (mean = {property_value}"
+            return f"The working hour amounts are very {'low' if is_low else 'high'} (mean = {property_value:.2f})"
         elif property_name == "mean_difference_in_rotas":
-            return f"The rotas are {'similar' if is_low else 'different'}' (rank = {int(property_rank_range[0]*100)}% ~ {int(property_rank_range[1]*100)}%)"
+            return f"The rotas are {'similar' if is_low else 'different'} (rank = {int(property_rank_range[0]*100)}% ~ {int(property_rank_range[1]*100)}%)"
         elif property_name == "local_fitness":
-            return f"The rotas {'' if is_low else 'do not'} complement each other (rank = {int(property_rank_range[0]*100)}% ~ {int(property_rank_range[1]*100)})%"
+            return f"The rotas {'' if is_low else 'do not '}complement each other (rank = {int(property_rank_range[0]*100)}% ~ {int(property_rank_range[1]*100)}%)"

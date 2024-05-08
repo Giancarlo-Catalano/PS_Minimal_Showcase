@@ -207,3 +207,8 @@ def as_float_tuple(items: Iterable) -> tuple:
 
 def make_folder_if_not_present(file_path: str):
     os.makedirs(os.path.dirname(file_path), exist_ok=True)
+
+
+
+def repr_with_precision(iterable: Iterable, significant_digits: int) -> str:
+    return "["+", ".join(f"{v:.{significant_digits}}" for v in iterable) + "]"

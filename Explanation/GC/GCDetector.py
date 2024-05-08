@@ -11,7 +11,7 @@ from Explanation.BT.cohort_measurements import get_hamming_distances, get_ranges
 from Explanation.Detector import Detector
 
 
-class BTDetector(Detector):
+class GCDetector(Detector):
     problem: GraphColouring
 
     def __init__(self,
@@ -25,7 +25,7 @@ class BTDetector(Detector):
         control_ps_file = os.path.join(folder, "control_ps.npz")
         properties_file = os.path.join(folder, "ps_properties.csv")
 
-        super(BTDetector, self).__init__(problem = problem,
+        super(GCDetector, self).__init__(problem = problem,
                                        pRef_file = pRef_file,
                                        ps_file = ps_file,
                                        control_ps_file = control_ps_file,

@@ -13,6 +13,7 @@ from Core.EvaluatedFS import EvaluatedFS
 from Core.EvaluatedPS import EvaluatedPS
 from Core.PRef import PRef
 from Core.PS import PS, contains
+from Core.PSMetric.Classic3 import Classic3PSMetrics
 from Explanation.detection_utils import generate_control_PSs
 from PSMiners.AbstractPSMiner import AbstractPSMiner
 from PSMiners.Mining import get_history_pRef, get_ps_miner, write_evaluated_pss_to_file, load_pss, write_pss_to_file
@@ -30,23 +31,23 @@ class Detector:
     """usage: this class requires you to make some files first, and then you can use it by loading those files"""
     """ 
             Run this first
-            detector = BTDetector(problem = problem,
+            BTDetector = BTDetector(problem = problem,
                           folder=experimental_directory,
                           speciality_threshold=0.1,
                           verbose=True)
-            detector.generate_files_with_default_settings()
+            BTDetector.generate_files_with_default_settings()
             
             
             Then you can just do this to run the explainer as many times as you want:
-            detector = BTDetector(problem = problem,
+            BTDetector = BTDetector(problem = problem,
                           folder=experimental_directory,
                           speciality_threshold=0.1,
                           verbose=True)
 
-            detector.explanation_loop(amount_of_fs_to_propose=6, ps_show_limit=12)
+            BTDetector.explanation_loop(amount_of_fs_to_propose=6, ps_show_limit=12)
             
             
-            detector.explanation_loop(amount_of_fs_to_propose=6, ps_show_limit=12)
+            BTDetector.explanation_loop(amount_of_fs_to_propose=6, ps_show_limit=12)
     """
 
     problem: BenchmarkProblem
@@ -65,6 +66,8 @@ class Detector:
     cached_pss: Optional[list[PS]]
     cached_control_pss: Optional[list[PS]]
     cached_properties: Optional[pd.DataFrame]
+
+    search_metrics_evaluator: Optional[Classic3PSMetrics]
 
     speciality_threshold: float
 
@@ -91,6 +94,7 @@ class Detector:
         self.cached_pss = None
         self.cached_control_pss = None
         self.cached_properties = None
+        self.search_metrics_evaluator = None
 
 
     @classmethod
@@ -112,6 +116,12 @@ class Detector:
                    speciality_threshold = speciality_threshold,
                    verbose=verbose)
 
+
+    def set_cached_pRef(self, new_pRef: PRef):
+        self.cached_pRef = new_pRef
+        self.cached_pRef_mean = np.average(self.cached_pRef.fitness_array)
+        self.search_metrics_evaluator = Classic3PSMetrics(self.cached_pRef)
+
     def generate_pRef(self,
                       sample_size: int,
                       which_algorithm: Literal["uniform", "GA", "SA", "GA_best", "SA_best"]):
@@ -123,15 +133,13 @@ class Detector:
                                      verbose=self.verbose)
         pRef.save(file=self.pRef_file)
 
-        self.cached_pRef = pRef
-        self.cached_pRef_mean = np.average(pRef.fitness_array)
+        self.set_cached_pRef(pRef)
 
     @property
     def pRef(self) -> PRef:
         if self.cached_pRef is None:
             with announce(f"Loading the cached pRef from {self.pRef_file}"):
-                self.cached_pRef = PRef.load(self.pRef_file)
-                self.cached_pRef_mean = np.average(self.cached_pRef.fitness_array)
+                self.set_cached_pRef(PRef.load(self.pRef_file))
         return self.cached_pRef
 
     @property
@@ -246,6 +254,10 @@ class Detector:
         p_value = 1 - t.cdf(abs(t_score), df=n - 1)
         return p_value, sample_mean
 
+
+    def get_atomicity_contributions(self, ps: PS) -> np.ndarray:
+        return self.search_metrics_evaluator.get_atomicity_contributions(ps, normalised=True)
+
     def get_average_when_present_and_absent(self, ps: PS) -> (float, float):
         p_value, _ = self.t_test_for_mean_with_ps(ps)
         observations, not_observations = self.pRef.fitnesses_of_observations_and_complement(ps)
@@ -291,6 +303,9 @@ class Detector:
                                      f"avg when absent = {avg_when_absent:.2f}")
                                      #f"p-value = {p_value:e}")
 
+        contributions = -self.get_atomicity_contributions(ps)
+        contribution_str = "contributions: " + utils.repr_with_precision(contributions, 2)
+
         def repr_property(kvr) -> str:
             key, value, rank_range = kvr
             return self.repr_property(key, value, rank_range)
@@ -298,7 +313,7 @@ class Detector:
 
         properties_str = "\n".join(repr_property(kvr) for kvr in significant_properties)
 
-        return utils.indent(avg_with_and_without_str + "\n"+properties_str)
+        return utils.indent("\n".join([avg_with_and_without_str, properties_str, contribution_str]))
 
 
 
@@ -390,11 +405,11 @@ class Detector:
 
     def generate_files_with_default_settings(self):
 
-        self.generate_pRef(sample_size=30000,
+        self.generate_pRef(sample_size=10000,
                            which_algorithm="SA")
 
         self.generate_pss(ps_miner_method="NSGA_experimental_crowding",
-                          ps_budget = 30000)
+                          ps_budget = 10000)
 
         self.generate_control_pss()
 

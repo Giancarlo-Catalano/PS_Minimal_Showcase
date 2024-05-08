@@ -194,7 +194,26 @@ class Classic3PSMetrics:
                                                           excluding_one)
         return simplicity, mean_fitness, atomicity
 
+    def get_atomicity_contributions(self, ps: PS, normalised = False) -> np.ndarray:
+        """ this function is used for explainability purposes, mainly"""
+        self.used_evaluations +=1
 
+        rows_of_all_fixed, except_for_one = self.get_relevant_rows_for_ps(ps)
+        pAB = self.normalised_mf_of_rows(rows_of_all_fixed)
+        if pAB == 0.0:
+            return np.array([0 for _ in ps.get_fixed_variable_positions()])
+
+        isolated = self.get_relevant_isolated_benefits(ps)
+        excluded = np.array([self.normalised_mf_of_rows(rows) for rows in except_for_one])
+
+        if len(isolated) == 0:  # ie we have the empty ps
+            return np.array([])
+
+        coefficients = np.log2(pAB / isolated * excluded)
+        if normalised:
+            return coefficients
+        else:
+            return pAB * coefficients
 
 
 def test_classic3(benchmark_problem: BenchmarkProblem,sample_size: int):
@@ -232,6 +251,9 @@ def test_classic3(benchmark_problem: BenchmarkProblem,sample_size: int):
     for ps, c, e in zip(pss_to_evaluate, control_results, experimental_results):
         if significant_difference(c, e):
             print(f"The {ps} has a significant error: {c} vs {e}")
+
+
+
 
 
 
