@@ -45,7 +45,7 @@ def get_history_pRef(benchmark_problem: BenchmarkProblem,
 
 
 def get_ps_miner(pRef: PRef,
-                 which: Literal["classic", "NSGA_experimental_crowding", "NSGA"]):
+                 which: Literal["classic", "NSGA_experimental_crowding", "NSGA", "SPEA2"]):
     match which:
         case "classic": return ArchivePSMiner.with_default_settings(pRef)
         case "NSGA": return NSGAPSMiner(population_size = 300,
@@ -54,6 +54,10 @@ def get_ps_miner(pRef: PRef,
         case "NSGA_experimental_crowding":  return NSGAPSMiner(population_size = 300,
                                             uses_custom_crowding = True,
                                             pRef = pRef)
+        case "SPEA2": return NSGAPSMiner(population_size = 300,
+                                        uses_custom_crowding = True,
+                                        pRef = pRef,
+                                         use_spea=True)
         case _: raise ValueError
 
 def write_pss_to_file(pss: list[PS], file: str):

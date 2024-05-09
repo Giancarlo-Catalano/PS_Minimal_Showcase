@@ -18,9 +18,11 @@
 """
 import os
 
+import utils
 from BenchmarkProblems.BenchmarkProblem import BenchmarkProblem
 from BenchmarkProblems.EfficientBTProblem.EfficientBTProblem import EfficientBTProblem
 from BenchmarkProblems.GraphColouring import GraphColouring
+from BenchmarkProblems.RoyalRoad import RoyalRoad
 from BenchmarkProblems.Trapk import Trapk
 from Core import TerminationCriteria
 from Core.Explainer import Explainer
@@ -29,7 +31,9 @@ from FSStochasticSearch.Operators import SinglePointFSMutation
 from FSStochasticSearch.SA import SA
 from PSMiners.DEAP.NSGAPSMiner import NSGAPSMiner
 from PSMiners.Mining import get_history_pRef
+from PSMiners.PyMoo.PSPyMooProblem import test_pymoo
 from utils import announce, indent
+import pandas as pd
 
 
 def show_overall_system(benchmark_problem: BenchmarkProblem):
@@ -93,7 +97,7 @@ def show_overall_system(benchmark_problem: BenchmarkProblem):
     print("And that concludes the showcase")
 
 def get_bt_explainer() -> Detector:
-    experimental_directory = r"C:\Users\gac8\PycharmProjects\PS-PDF\Experimentation\BTDetector"
+    experimental_directory = r"C:\Users\gac8\PycharmProjects\PS-PDF\Experimentation\BTDetectorTemp"
     problem = EfficientBTProblem.from_default_files()
     return Detector.from_folder(problem=problem,
                           folder=experimental_directory,
@@ -109,7 +113,6 @@ def get_faulty_bt_explainer():
                           speciality_threshold=0.25,
                           verbose=True)
 
-
 def get_gc_explainer():
     experimental_directory = r"C:\Users\gac8\PycharmProjects\PS-PDF\Experimentation\GCDetector"
     problem_file = os.path.join(experimental_directory, "islets.json")
@@ -120,8 +123,20 @@ def get_gc_explainer():
                                   speciality_threshold=0.25,
                                   verbose=True)
 
-if __name__ == '__main__':
-    detector = get_bt_explainer()
 
+def get_trapk_explainer():
+    experimental_directory = r"C:\Users\gac8\PycharmProjects\PS-PDF\Experimentation\Other"
+    problem = RoyalRoad(4, 5)
+    return Detector.from_folder(folder = experimental_directory,
+                                  problem = problem,
+                                  speciality_threshold=0.25,
+                                  verbose=True)
+
+
+if __name__ == '__main__':
+    detector = get_trapk_explainer()
     detector.generate_files_with_default_settings()
-    # detector.explanation_loop(amount_of_fs_to_propose=6, ps_show_limit=12)
+    #detector.explanation_loop(amount_of_fs_to_propose=6, ps_show_limit=12)
+
+    # problem = RoyalRoad(5, 5)
+    # test_pymoo(problem)

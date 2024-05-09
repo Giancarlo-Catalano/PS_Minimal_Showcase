@@ -5,7 +5,7 @@ import deap.base
 import matplotlib.pyplot as plt
 import numpy as np
 from deap import algorithms, creator, base, tools
-from deap.tools import selNSGA2, uniform_reference_points, selNSGA3WithMemory
+from deap.tools import selNSGA2, uniform_reference_points, selNSGA3WithMemory, selSPEA2
 
 from BenchmarkProblems.BenchmarkProblem import BenchmarkProblem
 from Core.EvaluatedPS import EvaluatedPS
@@ -96,7 +96,8 @@ def nsgaiii_pure_functionality(toolbox, mu, ngen, cxpb, mutpb):
 
 def get_toolbox_for_problem(pRef: PRef,
                             classic3_evaluator: Classic3PSMetrics,
-                            uses_experimental_crowding = True):
+                            uses_experimental_crowding = True,
+                            use_spea = False):
     creator.create("FitnessMax", base.Fitness, weights=[1.0, 1.0, 1.0])
     creator.create("DEAPPSIndividual", PS,
                    fitness=creator.FitnessMax)
@@ -131,7 +132,10 @@ def get_toolbox_for_problem(pRef: PRef,
 
 
     ref_points = uniform_reference_points(nobj=3, p=12)
-    selection_method = GC_selNSGA3WithMemory(ref_points) if uses_experimental_crowding else selNSGA3WithMemory(ref_points)
+    if not use_spea:
+        selection_method = GC_selNSGA3WithMemory(ref_points) if uses_experimental_crowding else selNSGA3WithMemory(ref_points)
+    else:
+        selection_method = selSPEA2
     toolbox.register("select", selection_method)
     return toolbox
 

@@ -212,3 +212,29 @@ def make_folder_if_not_present(file_path: str):
 
 def repr_with_precision(iterable: Iterable, significant_digits: int) -> str:
     return "["+", ".join(f"{v:.{significant_digits}}" for v in iterable) + "]"
+
+
+
+def make_joined_bt_dataset():
+
+
+    # Paths to your CSV files
+    faulty_csv = r"C:\Users\gac8\PycharmProjects\PS-PDF\Experimentation\FaultyBT\ps_properties.csv"
+    correct_csv = r"C:\Users\gac8\PycharmProjects\PS-PDF\Experimentation\BTDetector\ps_properties.csv"
+
+    # Read the CSV files into DataFrames
+    faulty_df = pd.read_csv(faulty_csv)
+    correct_df = pd.read_csv(correct_csv)
+
+    # Add a new column "Faulty" with True for the first DataFrame and False for the second
+    faulty_df['Faulty'] = True
+    correct_df['Faulty'] = False
+
+    # Concatenate the two DataFrames
+    concatenated_df = pd.concat([faulty_df, correct_df], ignore_index=True)
+
+    # Export the concatenated DataFrame to a new CSV file
+    output_csv_file = r"C:\Users\gac8\PycharmProjects\PS-PDF\Experimentation\FaultyBT\ps_properties_both.csv"
+    concatenated_df.to_csv(output_csv_file, index=False)
+
+    print("CSV files have been concatenated and a 'Faulty' column has been added.")

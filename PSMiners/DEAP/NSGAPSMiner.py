@@ -25,7 +25,8 @@ class NSGAPSMiner(AbstractPSMiner):
     def __init__(self,
                  pRef: PRef,
                  population_size: int,
-                 uses_custom_crowding: bool):
+                 uses_custom_crowding: bool,
+                 use_spea = False):
         super().__init__(pRef=pRef)
         self.population_size = population_size
         self.uses_experimental_crowding = uses_custom_crowding
@@ -33,7 +34,8 @@ class NSGAPSMiner(AbstractPSMiner):
         self.classic3_evaluator = Classic3PSMetrics(self.pRef)  # replaces simplicity, mean fitness, atomicity
         self.toolbox = get_toolbox_for_problem(pRef,
                                                classic3_evaluator=self.classic3_evaluator,
-                                               uses_experimental_crowding=self.uses_experimental_crowding)
+                                               uses_experimental_crowding=self.uses_experimental_crowding,
+                                               use_spea=use_spea)
         self.stats = get_stats_object()
 
     def __repr__(self):

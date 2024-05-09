@@ -150,7 +150,7 @@ class Detector:
 
 
     def generate_pss(self,
-                     ps_miner_method : Literal["classic", "NSGA", "NSGA_experimental_crowding"] = "NSGA_experimental_crowding",
+                     ps_miner_method : Literal["classic", "NSGA", "NSGA_experimental_crowding", "SPEA2"] = "NSGA_experimental_crowding",
                      ps_budget: int = 10000):
         algorithm = get_ps_miner(self.pRef, which=ps_miner_method)
 
@@ -389,7 +389,7 @@ class Detector:
         self.generate_pRef(sample_size=10000,
                            which_algorithm="SA")
 
-        self.generate_pss(ps_miner_method="NSGA_experimental_crowding",
+        self.generate_pss(ps_miner_method="NSGA_experimental_crowding",  #TODO put this back to NSGA3
                           ps_budget = 10000)
 
         self.generate_control_pss()
