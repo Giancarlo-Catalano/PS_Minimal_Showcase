@@ -66,8 +66,10 @@ class CohortMember:
     def get_amount_of_skills(self) -> int:
         return len(self.worker.available_skills)
 
-    def get_amount_of_working_hours(self) -> int:
-        return int(np.sum(self.chosen_rota_extended))
+    def get_mean_weekly_working_days(self) -> int:
+        total_working_days = np.sum(self.chosen_rota_extended)
+        total_weeks = len(self.chosen_rota_extended) // 7
+        return total_working_days / total_weeks
 
 
     def get_amount_of_choices(self) -> int:
@@ -199,12 +201,12 @@ class EfficientBTProblem(BTProblem):
         cohort = ps_to_cohort(self, ps)
 
         mean_rota_choice_amount = np.average([member.get_amount_of_choices() for member in cohort])
-        mean_amount_of_hours = np.average([member.get_amount_of_working_hours() for member in cohort])
+        mean_weekly_working_days = np.average([member.get_mean_weekly_working_days() for member in cohort])
         mean_hamming_distance = np.average(get_hamming_distances(cohort))
         local_fitness = np.average(get_ranges_in_weekdays(cohort))
 
         return {"mean_rota_choice_quantity": mean_rota_choice_amount,
-                "mean_amount_of_hours": mean_amount_of_hours,
+                "mean_weekly_working_days": mean_weekly_working_days,
                 "mean_difference_in_rotas": mean_hamming_distance,
                 "local_fitness": local_fitness}
 
@@ -213,10 +215,12 @@ class EfficientBTProblem(BTProblem):
         is_low = lower_rank < 0.5
         if property_name == "mean_rota_choice_quantity":
             return f"They have relatively {'few' if is_low else 'many'} rota choices (mean = {property_value:.2f})"
-        elif property_name == "mean_amount_of_hours":
-            return f"The working hour amounts are {'low' if is_low else 'high'} (mean = {property_value:.2f})"
+        elif property_name == "mean_weekly_working_days":
+            return f"The workers work for {'few' if is_low else 'many'} days a week (mean = {property_value:.2f})"
         elif property_name == "mean_difference_in_rotas":
             return f"The rotas are generally {'similar' if is_low else 'different'} (rank = {int(property_rank_range[0]*100)}% ~ {int(property_rank_range[1]*100)}%)"
         elif property_name == "local_fitness":
             return f"The rotas {'' if is_low else 'do not '}complement each other (rank = {int(property_rank_range[0]*100)}% ~ {int(property_rank_range[1]*100)}%)"
+        else:
+            raise ValueError(f"The property {property_name} was not recognised")
 

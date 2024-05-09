@@ -92,58 +92,36 @@ def show_overall_system(benchmark_problem: BenchmarkProblem):
 
     print("And that concludes the showcase")
 
-def explanation_loop_for_bt():
+def get_bt_explainer() -> Detector:
     experimental_directory = r"C:\Users\gac8\PycharmProjects\PS-PDF\Experimentation\BTDetector"
     problem = EfficientBTProblem.from_default_files()
-    detector = Detector.from_folder(problem=problem,
+    return Detector.from_folder(problem=problem,
                           folder=experimental_directory,
                           speciality_threshold=0.25,
                           verbose=True)
 
-    # only run this on the first run
-    # detector.generate_files_with_default_settings()
-    detector.explanation_loop(amount_of_fs_to_propose=6, ps_show_limit=12)
-
-
-
-def explanation_loop_for_faulty_bt():
+def get_faulty_bt_explainer():
     experimental_directory = r"C:\Users\gac8\PycharmProjects\PS-PDF\Experimentation\FaultyBT"
     problem = EfficientBTProblem.from_default_files()
-    #problem.use_faulty_fitness_function = True
-    detector = Detector.from_folder(problem=problem,
+    problem.use_faulty_fitness_function = True
+    return Detector.from_folder(problem=problem,
                           folder=experimental_directory,
                           speciality_threshold=0.25,
                           verbose=True)
 
-    # only run this on the first run
-    detector.generate_files_with_default_settings()
-    #detector.explanation_loop(amount_of_fs_to_propose=6, ps_show_limit=12)
 
-
-def explanation_loop_for_gc():
+def get_gc_explainer():
     experimental_directory = r"C:\Users\gac8\PycharmProjects\PS-PDF\Experimentation\GCDetector"
     problem_file = os.path.join(experimental_directory, "islets.json")
     problem = GraphColouring.from_file(problem_file)
     problem.view()
-    detector = Detector.from_folder(folder = experimental_directory,
+    return Detector.from_folder(folder = experimental_directory,
                                   problem = problem,
                                   speciality_threshold=0.25,
                                   verbose=True)
-    # only run this on the first run
-    #detector.generate_files_with_default_settings()
-    detector.explanation_loop(amount_of_fs_to_propose=6, ps_show_limit=12)
-
-
-def explanation_loop_for_problem(problem: BenchmarkProblem):
-    experimental_directory = r"C:\Users\gac8\PycharmProjects\PS-PDF\Experimentation\Other"
-    detector = Detector.from_folder(folder = experimental_directory,
-                                    problem = problem,
-                                    speciality_threshold=0.25,
-                                    verbose=True)
-    # only run this on the first run
-    #detector.generate_files_with_default_settings()
-    detector.explanation_loop(amount_of_fs_to_propose=6, ps_show_limit=12)
-
 
 if __name__ == '__main__':
-    explanation_loop_for_bt()
+    detector = get_bt_explainer()
+
+    detector.generate_files_with_default_settings()
+    # detector.explanation_loop(amount_of_fs_to_propose=6, ps_show_limit=12)
