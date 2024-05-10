@@ -76,6 +76,11 @@ class CohortMember:
         return len(self.worker.available_rotas)
 
 
+
+    def get_proportion_of_working_saturdays(self) -> float:
+        return np.average(self.chosen_rota_extended.reshape((-1, 7))[:, 5])
+
+
 Cohort: TypeAlias = list[CohortMember]
 def ps_to_cohort(problem: BTProblem, ps: PS) -> Cohort:
     def fixed_var_to_cohort_member(var: int, val: int) -> CohortMember:
@@ -121,21 +126,17 @@ def get_hamming_distances(cohort: Cohort) -> list[int]:
                for a, b in itertools.combinations(cohort, 2)]
 
 
-def get_ranges_in_weekdays(cohort: Cohort) -> np.ndarray:
+def get_ranges_in_weekdays(cohort: Cohort, range_score_function) -> np.ndarray:
     total_pattern: np.ndarray = np.array(sum(member.chosen_rota_extended for member in cohort))
     total_pattern = total_pattern.reshape((-1, 7))
-
-    def range_score(min_amount, max_amount):
-        if max_amount == 0:
-            return 0
-        return (max_amount - min_amount) / max_amount
     def range_for_column(column_index: int) -> float:
         values = total_pattern[:, column_index]
         min_value = min(values)
         max_values = max(values)
-        return range_score(min_value, max_values)
+        return range_score_function(min_value, max_values)
 
     return np.array([range_for_column(i) for i in range(7)])
+
 
 class EfficientBTProblem(BTProblem):
     extended_patterns: list[FullPatternOptions]
@@ -154,21 +155,14 @@ class EfficientBTProblem(BTProblem):
                                   for skill in self.all_skills}
         self.use_faulty_fitness_function = use_faulty_fitness_function
 
-    def get_ranges_for_weekdays_for_skill(self, chosen_patterns: list[ExtendedPattern], skill: Skill) -> WeekRanges:
+    def get_ranges_for_weekdays_for_skill(self, chosen_patterns: list[ExtendedPattern],
+                                          skill: Skill) -> WeekRanges:
         indexes = self.workers_by_skills[skill]
-        summed_patterns: ExtendedPattern = sum(chosen_patterns[index] for index in indexes)  # not np.sum because it doesn't support generators
+        summed_patterns: ExtendedPattern = np.sum([chosen_patterns[index] for index in indexes])  # not np.sum because it doesn't support generators
         summed_patterns = summed_patterns.reshape((-1, 7))
-        return get_range_scores(summed_patterns)
+        return get_range_scores(summed_patterns, self.use_faulty_fitness_function)
 
     def aggregate_range_scores(self, range_scores: WeekRanges) -> float:
-        return float(np.sum(day_range * weight for day_range, weight in zip(range_scores, self.weights)))
-
-    def faulty_aggregate_range_scores(self, range_scores: WeekRanges) -> float:
-        # this is the fault
-        for index, day_range in enumerate(range_scores):
-            if day_range == 1:
-                range_scores[index]=0
-
         return float(np.sum(day_range * weight for day_range, weight in zip(range_scores, self.weights)))
 
 
@@ -177,24 +171,14 @@ class EfficientBTProblem(BTProblem):
 
 
     def fitness_function(self, fs: FullSolution) -> float:
-        if self.use_faulty_fitness_function:
-            return self.faulty_fitness_function(fs)
-        else:
-            return self.correct_fitness_function(fs)
-
-
-    def correct_fitness_function(self, fs: FullSolution) -> float:
         chosen_patterns = self.get_chosen_patterns_from_fs(fs)
-        total_score = np.sum(self.aggregate_range_scores(self.get_ranges_for_weekdays_for_skill(chosen_patterns, skill))
-                             for skill in self.all_skills)
-        return -total_score
 
+        def score_for_skill(skill) -> float:
+            ranges = self.get_ranges_for_weekdays_for_skill(chosen_patterns, skill)
+            return self.aggregate_range_scores(ranges)
 
-    def faulty_fitness_function(self, fs: FullSolution) -> float:
-        chosen_patterns = self.get_chosen_patterns_from_fs(fs)
-        total_score = np.sum(self.faulty_aggregate_range_scores(self.get_ranges_for_weekdays_for_skill(chosen_patterns, skill))
-                             for skill in self.all_skills)   # NOTE THAT we're using the faulty one
-        return -total_score
+        total_score = np.sum([score_for_skill(skill) for skill in self.all_skills])
+        return -total_score  # to convert it to a maximisation task
 
 
     def ps_to_properties(self, ps: PS) -> dict:
@@ -203,24 +187,31 @@ class EfficientBTProblem(BTProblem):
         mean_rota_choice_amount = np.average([member.get_amount_of_choices() for member in cohort])
         mean_weekly_working_days = np.average([member.get_mean_weekly_working_days() for member in cohort])
         mean_hamming_distance = np.average(get_hamming_distances(cohort))
-        local_fitness = np.average(get_ranges_in_weekdays(cohort))
+
+        range_score_function = pass
+        local_fitness = np.average(get_ranges_in_weekdays(cohort, range_score_function))
+        working_saturday_proportion = np.average([member.get_proportion_of_working_saturdays()  for member in cohort])
 
         return {"mean_rota_choice_quantity": mean_rota_choice_amount,
                 "mean_weekly_working_days": mean_weekly_working_days,
                 "mean_difference_in_rotas": mean_hamming_distance,
-                "local_fitness": local_fitness}
+                "local_fitness": local_fitness,
+                "working_saturday_proportion": working_saturday_proportion}
 
     def repr_property(self, property_name:str, property_value:str, property_rank_range:str):
         lower_rank, upper_rank = property_rank_range
         is_low = lower_rank < 0.5
+        rank_str =  f"(rank = {int(property_rank_range[0]*100)}% ~ {int(property_rank_range[1]*100)}%)"
         if property_name == "mean_rota_choice_quantity":
-            return f"They have relatively {'few' if is_low else 'many'} rota choices (mean = {property_value:.2f})"
+            return f"They have relatively {'FEW' if is_low else 'MANY'} rota choices (mean = {property_value:.2f})"
         elif property_name == "mean_weekly_working_days":
-            return f"The workers work for {'few' if is_low else 'many'} days a week (mean = {property_value:.2f})"
+            return f"The workers work for {'FEW' if is_low else 'MANY'} days a week (mean = {property_value:.2f})"
         elif property_name == "mean_difference_in_rotas":
-            return f"The rotas are generally {'similar' if is_low else 'different'} (rank = {int(property_rank_range[0]*100)}% ~ {int(property_rank_range[1]*100)}%)"
+            return f"The rotas are generally {'SIMILAR' if is_low else 'DIFFERENT'} {rank_str}"
         elif property_name == "local_fitness":
-            return f"The rotas {'' if is_low else 'do not '}complement each other (rank = {int(property_rank_range[0]*100)}% ~ {int(property_rank_range[1]*100)}%)"
+            return f"The rotas {'' if is_low else 'do NOT '}complement each other {rank_str}"#
+        elif property_name == "working_saturday_proportion":
+            return f"Saturdays are usually {'NOT ' if is_low else ''} covered {rank_str}"
         else:
             raise ValueError(f"The property {property_name} was not recognised")
 

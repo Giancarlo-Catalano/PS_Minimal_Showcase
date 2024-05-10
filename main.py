@@ -97,7 +97,7 @@ def show_overall_system(benchmark_problem: BenchmarkProblem):
     print("And that concludes the showcase")
 
 def get_bt_explainer() -> Detector:
-    experimental_directory = r"C:\Users\gac8\PycharmProjects\PS-PDF\Experimentation\BTDetectorTemp"
+    experimental_directory = r"C:\Users\gac8\PycharmProjects\PS-PDF\Experimentation\BTDetector"
     problem = EfficientBTProblem.from_default_files()
     return Detector.from_folder(problem=problem,
                           folder=experimental_directory,
@@ -134,9 +134,9 @@ def get_trapk_explainer():
 
 
 if __name__ == '__main__':
-    detector = get_trapk_explainer()
-    detector.generate_files_with_default_settings()
-    #detector.explanation_loop(amount_of_fs_to_propose=6, ps_show_limit=12)
+    detector = get_bt_explainer()
+    #detector.generate_files_with_default_settings()
+    detector.explanation_loop(amount_of_fs_to_propose=6, ps_show_limit=12)
 
     # problem = RoyalRoad(5, 5)
     # test_pymoo(problem)

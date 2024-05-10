@@ -274,10 +274,12 @@ class Detector:
     def get_ps_description(self, ps: PS, ps_properties: dict) -> str:
         p_value, _ = self.t_test_for_mean_with_ps(ps)
         avg_when_present, avg_when_absent = self.get_average_when_present_and_absent(ps)
+        delta = avg_when_present - avg_when_absent
         significant_properties = self.only_significant_properties(ps_properties)
 
 
-        avg_with_and_without_str =  (f"avg when present = {avg_when_present:.2f}, "
+        avg_with_and_without_str =  (f"delta = {delta:.2f},"
+                                     f"avg when present = {avg_when_present:.2f}, "
                                      f"avg when absent = {avg_when_absent:.2f}")
                                      #f"p-value = {p_value:e}")
 
