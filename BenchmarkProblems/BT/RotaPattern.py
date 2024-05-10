@@ -130,11 +130,12 @@ def range_score(min_amount, max_amount):
 
 def faulty_range_score(min_amount, max_amount):
     if min_amount == 0:   # NOTE THE DIFFERENCE
-        return 1
+        return 0
     return ((max_amount - min_amount) / max_amount) ** 2
 
 
 def get_range_scores(workers_per_weekday: np.ndarray, use_faulty_range_score = False):
+    """assumes that the input is already a matrix with 7 columns"""
     mins = np.min(workers_per_weekday, axis=0)
     maxs = np.max(workers_per_weekday, axis=0)
 

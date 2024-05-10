@@ -126,16 +126,10 @@ def get_hamming_distances(cohort: Cohort) -> list[int]:
                for a, b in itertools.combinations(cohort, 2)]
 
 
-def get_ranges_in_weekdays(cohort: Cohort, range_score_function) -> np.ndarray:
+def get_ranges_in_weekdays(cohort: Cohort, use_faulty_fitness_function = False) -> np.ndarray:
     total_pattern: np.ndarray = np.array(sum(member.chosen_rota_extended for member in cohort))
     total_pattern = total_pattern.reshape((-1, 7))
-    def range_for_column(column_index: int) -> float:
-        values = total_pattern[:, column_index]
-        min_value = min(values)
-        max_values = max(values)
-        return range_score_function(min_value, max_values)
-
-    return np.array([range_for_column(i) for i in range(7)])
+    return get_range_scores(total_pattern, use_faulty_fitness_function)
 
 
 class EfficientBTProblem(BTProblem):
@@ -158,7 +152,7 @@ class EfficientBTProblem(BTProblem):
     def get_ranges_for_weekdays_for_skill(self, chosen_patterns: list[ExtendedPattern],
                                           skill: Skill) -> WeekRanges:
         indexes = self.workers_by_skills[skill]
-        summed_patterns: ExtendedPattern = np.sum([chosen_patterns[index] for index in indexes])  # not np.sum because it doesn't support generators
+        summed_patterns: ExtendedPattern = np.sum([chosen_patterns[index] for index in indexes], axis=0)  # not np.sum because it doesn't support generators
         summed_patterns = summed_patterns.reshape((-1, 7))
         return get_range_scores(summed_patterns, self.use_faulty_fitness_function)
 
@@ -188,8 +182,7 @@ class EfficientBTProblem(BTProblem):
         mean_weekly_working_days = np.average([member.get_mean_weekly_working_days() for member in cohort])
         mean_hamming_distance = np.average(get_hamming_distances(cohort))
 
-        range_score_function = pass
-        local_fitness = np.average(get_ranges_in_weekdays(cohort, range_score_function))
+        local_fitness = np.average(get_ranges_in_weekdays(cohort, self.use_faulty_fitness_function))
         working_saturday_proportion = np.average([member.get_proportion_of_working_saturdays()  for member in cohort])
 
         return {"mean_rota_choice_quantity": mean_rota_choice_amount,
