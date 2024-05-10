@@ -390,11 +390,11 @@ class Detector:
 
     def generate_files_with_default_settings(self):
 
-        self.generate_pRef(sample_size=10000,
+        self.generate_pRef(sample_size=100000,
                            which_algorithm="SA")
 
         self.generate_pss(ps_miner_method="NSGA_experimental_crowding",  #TODO put this back to NSGA3
-                          ps_budget = 10000)
+                          ps_budget = 100000)
 
         self.generate_control_pss()
 
