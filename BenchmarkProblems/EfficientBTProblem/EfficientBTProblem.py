@@ -4,6 +4,7 @@ from typing import TypeAlias
 
 import numpy as np
 
+import utils
 from BenchmarkProblems.BT.BTProblem import BTProblem
 from BenchmarkProblems.BT.RotaPattern import RotaPattern, get_range_scores
 from BenchmarkProblems.BT.Worker import Worker, Skill
@@ -110,6 +111,11 @@ def get_skill_variation(cohort: Cohort) -> float:
     return len(all_skills) / sum_of_available_skills
 
 
+def get_skill_coverage(cohort: Cohort) -> float:
+    all_skills = set(skill for component in cohort
+                     for skill in component.worker.available_skills)
+    return len(all_skills)
+
 def get_hamming_distances(cohort: Cohort) -> list[int]:
 
     def hamming_distance(component_a: CohortMember, component_b: CohortMember) -> int:
@@ -130,6 +136,21 @@ def get_ranges_in_weekdays(cohort: Cohort, use_faulty_fitness_function = False) 
     total_pattern: np.ndarray = np.array(sum(member.chosen_rota_extended for member in cohort))
     total_pattern = total_pattern.reshape((-1, 7))
     return get_range_scores(total_pattern, use_faulty_fitness_function)
+
+
+def get_mins_and_maxs_for_weekdays(cohort: Cohort) -> list[(int, int)]:
+    total_pattern: np.ndarray = np.array(sum(member.chosen_rota_extended for member in cohort))
+    total_pattern = total_pattern.reshape((-1, 7))
+    mins = np.min(total_pattern, axis=0)
+    maxs = np.max(total_pattern, axis=0)
+    return list(zip(mins, maxs))
+
+
+def get_coverage(cohort: Cohort) -> float:
+    """returns the proportion of days in the calendar with at least one worker"""
+    total_pattern = np.array(sum(member.chosen_rota_extended for member in cohort))
+    total_pattern = np.minimum(total_pattern, 1)
+    return np.average(total_pattern)   # happens to be equal to quantity_working_days / quantity_days
 
 
 class EfficientBTProblem(BTProblem):
@@ -178,33 +199,64 @@ class EfficientBTProblem(BTProblem):
     def ps_to_properties(self, ps: PS) -> dict:
         cohort = ps_to_cohort(self, ps)
 
-        mean_rota_choice_amount = np.average([member.get_amount_of_choices() for member in cohort])
-        mean_weekly_working_days = np.average([member.get_mean_weekly_working_days() for member in cohort])
-        mean_hamming_distance = np.average(get_hamming_distances(cohort))
+        choice_amounts = [member.get_amount_of_choices() for member in cohort]
+        weekly_working_days = [member.get_mean_weekly_working_days() for member in cohort]
+        rota_differences = get_hamming_distances(cohort)
+        working_saturday_proportions = [member.get_proportion_of_working_saturdays() for member in cohort]
+        skill_quantities = [len(member.worker.available_skills) for member in cohort]
 
+        #the local fitness is not a good metric to use
         local_fitness = np.average(get_ranges_in_weekdays(cohort, self.use_faulty_fitness_function))
-        working_saturday_proportion = np.average([member.get_proportion_of_working_saturdays()  for member in cohort])
 
-        return {"mean_rota_choice_quantity": mean_rota_choice_amount,
-                "mean_weekly_working_days": mean_weekly_working_days,
-                "mean_difference_in_rotas": mean_hamming_distance,
-                "local_fitness": local_fitness,
-                "working_saturday_proportion": working_saturday_proportion}
 
-    def repr_property(self, property_name:str, property_value:str, property_rank_range:str):
+        mean_RCQ, mean_error_RCQ = utils.get_mean_and_mean_error(choice_amounts)
+        mean_WWD, mean_error_WWD = utils.get_mean_and_mean_error(weekly_working_days)
+        mean_RD, mean_error_RD = utils.get_mean_and_mean_error(rota_differences)
+        mean_WSP, mean_error_WSP = utils.get_mean_and_mean_error(working_saturday_proportions)
+        mean_SQ, mean_error_SQ = utils.get_mean_and_mean_error(working_saturday_proportions)
+
+
+        coverage = get_coverage(cohort)
+        skill_diversity = get_skill_variation(cohort)
+        skill_coverage = get_skill_coverage(cohort)
+
+        return {"mean_RCQ" : mean_RCQ,
+                "mean_error_RCQ" : mean_error_RCQ,
+                "mean_WWD" : mean_WWD,
+                "mean_error_WWD" : mean_error_WWD,
+                "mean_RD" : mean_RD,
+                #"mean_error_RD" : mean_error_RD,
+                "mean_WSP" : mean_WSP,
+                #"mean_error_WSP" : mean_error_WSP,
+                "mean_SQ": mean_SQ,
+                "mean_error_SQ": mean_error_SQ,
+                "skill_diversity": skill_diversity,
+                "skill_coverage": skill_coverage,
+                "day_coverage": coverage}
+
+
+    def repr_extra_ps_info(self, ps: PS):
+        cohort = ps_to_cohort(self, ps)
+        mins_maxs = get_mins_and_maxs_for_weekdays(cohort)
+        weekdays = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
+        return f"The ranges are "+(", ".join(f"{weekday}:{min_max}" for weekday, min_max in zip(weekdays, mins_maxs)))
+
+    def repr_property_custom(self, property_name:str, property_value:float, property_rank_range:str):
         lower_rank, upper_rank = property_rank_range
         is_low = lower_rank < 0.5
         rank_str =  f"(rank = {int(property_rank_range[0]*100)}% ~ {int(property_rank_range[1]*100)}%)"
         if property_name == "mean_rota_choice_quantity":
-            return f"They have relatively {'FEW' if is_low else 'MANY'} rota choices (mean = {property_value:.2f})"
+            return f"They have relatively {'FEW' if is_low else 'MANY'} rota choices (mean = {property_value:.2f}) {rank_str}"
         elif property_name == "mean_weekly_working_days":
-            return f"The workers work for {'FEW' if is_low else 'MANY'} days a week (mean = {property_value:.2f})"
+            return f"The workers work for {'FEW' if is_low else 'MANY'} days a week (mean = {property_value:.2f}) {rank_str}"
         elif property_name == "mean_difference_in_rotas":
-            return f"The rotas are generally {'SIMILAR' if is_low else 'DIFFERENT'} {rank_str}"
+            return f"The rotas are generally {'SIMILAR' if is_low else 'DIFFERENT'} (mean difference = {property_value:.1f} days) {rank_str}"
         elif property_name == "local_fitness":
-            return f"The rotas {'' if is_low else 'do NOT '}complement each other {rank_str}"#
+            return f"" # The local fitness is {'GOOD' if is_low else 'BAD'} {rank_str}"
         elif property_name == "working_saturday_proportion":
-            return f"Saturdays are usually {'NOT ' if is_low else ''} covered {rank_str}"
+            return f"Saturdays are usually {'NOT ' if is_low else ''}covered {rank_str}"
+        elif property_name == "coverage":
+            return f"The rotas {'do NOT ' if is_low else ''}complement each other (coverage = {int(property_value*100)}%)"#
         else:
             raise ValueError(f"The property {property_name} was not recognised")
 

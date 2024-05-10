@@ -121,7 +121,7 @@ class BTProblem(BenchmarkProblem):
         def repr_skills(available_skills):
             integers = [int(skill.removeprefix("SKILL_")) for skill in available_skills]
             return f"{sorted(integers)}"
-        return utils.indent("\n".join(f"{w.name} (Skills {repr_skills(w.available_skills)}): rota#{wv.which_rota}"
+        return utils.indent("\n".join(f"{w.name} (Skills {repr_skills(w.available_skills)}, #rotas = {len(w.available_rotas)}): rota#{wv.which_rota}"
                                       for w, wv in zip(self.workers, variables)
                                       if wv.which_rota is not None))
 

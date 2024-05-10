@@ -101,16 +101,17 @@ def get_bt_explainer() -> Detector:
     problem = EfficientBTProblem.from_default_files()
     return Detector.from_folder(problem=problem,
                           folder=experimental_directory,
-                          speciality_threshold=0.25,
+                          speciality_threshold=0.1,
                           verbose=True)
 
 def get_faulty_bt_explainer():
-    experimental_directory = r"C:\Users\gac8\PycharmProjects\PS-PDF\Experimentation\FaultyBT"
+    experimental_directory = r"C:\Users\gac8\PycharmProjects\PS-PDF\Experimentation\FaultyerBT"
+    print("Using the FAULTY problem")
     problem = EfficientBTProblem.from_default_files()
-    #problem.use_faulty_fitness_function = True
+    problem.use_faulty_fitness_function = True
     return Detector.from_folder(problem=problem,
                           folder=experimental_directory,
-                          speciality_threshold=0.25,
+                          speciality_threshold=0.1,
                           verbose=True)
 
 def get_gc_explainer():
@@ -134,9 +135,16 @@ def get_trapk_explainer():
 
 
 if __name__ == '__main__':
-    detector = get_faulty_bt_explainer()
-    detector.generate_files_with_default_settings()
-    #detector.explanation_loop(amount_of_fs_to_propose=6, ps_show_limit=12)
+    detector = get_bt_explainer()
+    # detector.generate_files_with_default_settings()
+    detector.explanation_loop(amount_of_fs_to_propose=6, ps_show_limit=12)
+
+    # utils.make_joined_bt_dataset()
 
     # problem = RoyalRoad(5, 5)
     # test_pymoo(problem)
+
+
+    # get_bt_explainer().generate_properties_csv_file()
+    # get_faulty_bt_explainer().generate_properties_csv_file()
+

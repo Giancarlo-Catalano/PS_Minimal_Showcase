@@ -278,7 +278,7 @@ class Detector:
         significant_properties = self.only_significant_properties(ps_properties)
 
 
-        avg_with_and_without_str =  (f"delta = {delta:.2f},"
+        avg_with_and_without_str =  (f"delta = {delta:.2f}, "
                                      f"avg when present = {avg_when_present:.2f}, "
                                      f"avg when absent = {avg_when_absent:.2f}")
                                      #f"p-value = {p_value:e}")
@@ -293,7 +293,9 @@ class Detector:
 
         properties_str = "\n".join(repr_property(kvr) for kvr in significant_properties)
 
-        return utils.indent("\n".join([avg_with_and_without_str, properties_str, contribution_str]))
+        ps_details = self.problem.repr_extra_ps_info(ps)
+
+        return utils.indent("\n".join([ps_details, avg_with_and_without_str, properties_str, contribution_str]))
 
 
 
@@ -396,6 +398,10 @@ class Detector:
 
         self.generate_control_pss()
 
+        self.generate_properties_csv_file()
+
+
+    def update_properties(self):
         self.generate_properties_csv_file()
 
 

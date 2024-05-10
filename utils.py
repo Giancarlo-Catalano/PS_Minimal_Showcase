@@ -138,7 +138,7 @@ def merge_csv_files(first_file_name: str, second_file_name: str, output_file_nam
 
 def get_mean_error(values: Iterable) -> float:
     if len(values) < 1:
-        raise ValueError
+        return np.nan
     mean = np.average(values)
     return sum(abs(x - mean) for x in values) / len(values)
 
@@ -215,11 +215,19 @@ def repr_with_precision(iterable: Iterable, significant_digits: int) -> str:
 
 
 
+def get_mean_and_mean_error(iterable: Iterable) -> (float, float):
+    mean = np.mean(iterable)
+    mean_error = get_mean_error(iterable)
+    return mean, mean_error
+
+
+
+
 def make_joined_bt_dataset():
 
 
     # Paths to your CSV files
-    faulty_csv = r"C:\Users\gac8\PycharmProjects\PS-PDF\Experimentation\FaultyBT\ps_properties.csv"
+    faulty_csv = r"C:\Users\gac8\PycharmProjects\PS-PDF\Experimentation\FaultyerBT\ps_properties.csv"
     correct_csv = r"C:\Users\gac8\PycharmProjects\PS-PDF\Experimentation\BTDetector\ps_properties.csv"
 
     # Read the CSV files into DataFrames
@@ -234,7 +242,7 @@ def make_joined_bt_dataset():
     concatenated_df = pd.concat([faulty_df, correct_df], ignore_index=True)
 
     # Export the concatenated DataFrame to a new CSV file
-    output_csv_file = r"C:\Users\gac8\PycharmProjects\PS-PDF\Experimentation\FaultyBT\ps_properties_both.csv"
+    output_csv_file = r"C:\Users\gac8\PycharmProjects\PS-PDF\Experimentation\FaultyBT\ps_properties_coverage.csv"
     concatenated_df.to_csv(output_csv_file, index=False)
 
     print("CSV files have been concatenated and a 'Faulty' column has been added.")

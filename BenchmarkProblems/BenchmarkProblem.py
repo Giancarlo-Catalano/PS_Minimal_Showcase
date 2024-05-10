@@ -66,6 +66,10 @@ class BenchmarkProblem:
         elif rank_lower_bound > 0.5:
             end = f"relatively high (top {int((1-rank_upper_bound)*100)}% ~ {int((1-rank_lower_bound)*100)}%)"
         else:
-            end = f"relatively low (bottom {int(rank_lower_bound*100)}% ~ bottom {int(rank_upper_bound*100)}%)"
+            end = f"relatively low (bottom {int(rank_lower_bound*100)}% ~ {int(rank_upper_bound*100)}%)"
 
         return start + end
+
+
+    def repr_extra_ps_info(self, ps: PS):
+        return f"PS has {ps.fixed_count()} fixed variables"
