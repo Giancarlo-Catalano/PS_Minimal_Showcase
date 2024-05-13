@@ -13,7 +13,7 @@ from Core.EvaluatedFS import EvaluatedFS
 from Core.EvaluatedPS import EvaluatedPS
 from Core.PRef import PRef
 from Core.PS import PS, contains, STAR
-from Core.PSMetric.Classic3 import Classic3PSMetrics
+from Core.PSMetric.Classic3 import Classic3PSEvaluator
 from Explanation.detection_utils import generate_control_PSs
 from PSMiners.AbstractPSMiner import AbstractPSMiner
 from PSMiners.Mining import get_history_pRef, get_ps_miner, write_evaluated_pss_to_file, load_pss, write_pss_to_file
@@ -67,7 +67,7 @@ class Detector:
     cached_control_pss: Optional[list[PS]]
     cached_properties: Optional[pd.DataFrame]
 
-    search_metrics_evaluator: Optional[Classic3PSMetrics]
+    search_metrics_evaluator: Optional[Classic3PSEvaluator]
 
     speciality_threshold: float
 
@@ -120,7 +120,7 @@ class Detector:
     def set_cached_pRef(self, new_pRef: PRef):
         self.cached_pRef = new_pRef
         self.cached_pRef_mean = np.average(self.cached_pRef.fitness_array)
-        self.search_metrics_evaluator = Classic3PSMetrics(self.cached_pRef)
+        self.search_metrics_evaluator = Classic3PSEvaluator(self.cached_pRef)
 
     def generate_pRef(self,
                       sample_size: int,
@@ -276,6 +276,14 @@ class Detector:
         avg_when_present, avg_when_absent = self.get_average_when_present_and_absent(ps)
         delta = avg_when_present - avg_when_absent
         significant_properties = self.only_significant_properties(ps_properties)
+
+        def get_rank_significance(kvr):
+            lower, upper = kvr[2]
+            pillar = lower if lower < 1-upper else upper
+            return abs(pillar-0.5)*2
+
+        significant_properties.sort(key=get_rank_significance, reverse=True)
+
 
 
         avg_with_and_without_str =  (f"delta = {delta:.2f}, "

@@ -87,7 +87,7 @@ class RowsOfPRef:
 
 
 
-class Classic3PSMetrics:
+class Classic3PSEvaluator:
     pRef: PRef
     normalised_fitnesses: ArrayOfFloats
     cached_isolated_benefits: list[list[float]]
@@ -222,7 +222,7 @@ def test_classic3(benchmark_problem: BenchmarkProblem,sample_size: int):
     metrics = [Simplicity(), MeanFitness(), Atomicity()]
     for metric in metrics:
         metric.set_pRef(pRef)
-    classic3 = Classic3PSMetrics(pRef)
+    classic3 = Classic3PSEvaluator(pRef)
 
 
     def get_control_values(ps: PS) -> (float, float, float):

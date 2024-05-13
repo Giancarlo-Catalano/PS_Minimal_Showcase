@@ -16,7 +16,7 @@ from pymoo.visualization.scatter import Scatter
 from BenchmarkProblems.BenchmarkProblem import BenchmarkProblem
 from Core.PRef import PRef
 from Core.PS import PS
-from Core.PSMetric.Classic3 import Classic3PSMetrics
+from Core.PSMetric.Classic3 import Classic3PSEvaluator
 from Core.SearchSpace import SearchSpace
 from PSMiners.Mining import get_history_pRef
 from PSMiners.PyMoo.Operators import PSPolynomialMutation, PSGeometricSampling, PSSimulatedBinaryCrossover
@@ -24,13 +24,13 @@ from PSMiners.PyMoo.Operators import PSPolynomialMutation, PSGeometricSampling, 
 
 class PSPyMooProblem(ElementwiseProblem):
     pRef: PRef
-    objectives_evaluator: Classic3PSMetrics
+    objectives_evaluator: Classic3PSEvaluator
 
 
     def __init__(self,
                  pRef: PRef):
         self.pRef = pRef
-        self.objectives_evaluator = Classic3PSMetrics(self.pRef)
+        self.objectives_evaluator = Classic3PSEvaluator(self.pRef)
 
         lower_bounds = np.full(shape=self.search_space.amount_of_parameters, fill_value=-1)  # the stars
         upper_bounds = self.search_space.cardinalities - 1

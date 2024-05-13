@@ -11,13 +11,14 @@ from BenchmarkProblems.BenchmarkProblem import BenchmarkProblem
 from Core.EvaluatedPS import EvaluatedPS
 from Core.PRef import PRef
 from Core.ArchivePSMiner import ArchivePSMiner
+from Core.SearchSpace import SearchSpace
 from Core.TerminationCriteria import TerminationCriteria
 from PSMiners.AbstractPSMiner import AbstractPSMiner
 from PSMiners.DEAP.CustomCrowdingMechanism import gc_selNSGA2, GC_selNSGA3WithMemory
 from FSStochasticSearch.HistoryPRefs import uniformly_random_distribution_pRef, pRef_from_GA, pRef_from_SA
 from Core.PS import PS
 from Core.PSMetric.Atomicity import Atomicity
-from Core.PSMetric.Classic3 import Classic3PSMetrics
+from Core.PSMetric.Classic3 import Classic3PSEvaluator
 from Core.PSMetric.MeanFitness import MeanFitness
 from Core.PSMetric.Metric import Metric
 from Core.PSMetric.Simplicity import Simplicity
@@ -30,7 +31,7 @@ def nsga(toolbox,
          termination_criteria: TerminationCriteria,
          cxpb,
          mutpb,
-         classic3_evaluator: Classic3PSMetrics,
+         classic3_evaluator: Classic3PSEvaluator,
          verbose=False):
     logbook = tools.Logbook()
     logbook.header = "gen", "evals", "min", "avg", "max"
@@ -94,8 +95,22 @@ def nsgaiii_pure_functionality(toolbox, mu, ngen, cxpb, mutpb):
         pop = toolbox.select(pop + offspring, mu)
     return pop
 
+def geometric_distribution_values_of_ps(search_space: SearchSpace) -> np.ndarray:
+    result = PS.empty(search_space)
+    chance_of_success = 0.79
+    while random.random() < chance_of_success:
+        var_index = random.randrange(search_space.amount_of_parameters)
+        value = random.randrange(search_space.cardinalities[var_index])
+        result = result.with_fixed_value(var_index, value)
+    return result
+
+
+def make_random_deap_individual(search_space: SearchSpace):
+    result = geometric_distribution_values_of_ps(search_space)
+    return creator.DEAPPSIndividual(result)
+
 def get_toolbox_for_problem(pRef: PRef,
-                            classic3_evaluator: Classic3PSMetrics,
+                            classic3_evaluator: Classic3PSEvaluator,
                             uses_experimental_crowding = True,
                             use_spea = False):
     creator.create("FitnessMax", base.Fitness, weights=[1.0, 1.0, 1.0])
@@ -104,19 +119,12 @@ def get_toolbox_for_problem(pRef: PRef,
     toolbox = base.Toolbox()
 
     search_space = pRef.search_space
-    def geometric_distribution_ps():
-        result = PS.empty(search_space)
-        chance_of_success = 0.79
-        while random.random() < chance_of_success:
-            var_index = random.randrange(search_space.amount_of_parameters)
-            value = random.randrange(search_space.cardinalities[var_index])
-            result = result.with_fixed_value(var_index, value)
-        return creator.DEAPPSIndividual(result)
+
 
 
 
     toolbox.register("make_random_ps",
-                     geometric_distribution_ps)
+                     geometric_distribution_values_of_ps)
     def evaluate(ps) -> tuple:
         return classic3_evaluator.get_S_MF_A(ps)  # experimental
 

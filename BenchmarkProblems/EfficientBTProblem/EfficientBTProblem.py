@@ -213,7 +213,7 @@ class EfficientBTProblem(BTProblem):
         mean_WWD, mean_error_WWD = utils.get_mean_and_mean_error(weekly_working_days)
         mean_RD, mean_error_RD = utils.get_mean_and_mean_error(rota_differences)
         mean_WSP, mean_error_WSP = utils.get_mean_and_mean_error(working_saturday_proportions)
-        mean_SQ, mean_error_SQ = utils.get_mean_and_mean_error(working_saturday_proportions)
+        mean_SQ, mean_error_SQ = utils.get_mean_and_mean_error(skill_quantities)
 
 
         coverage = get_coverage(cohort)

@@ -30,6 +30,7 @@ from Explanation.Detector import Detector
 from FSStochasticSearch.Operators import SinglePointFSMutation
 from FSStochasticSearch.SA import SA
 from PSMiners.DEAP.NSGAPSMiner import NSGAPSMiner
+from PSMiners.MOEAD.testing import test_moead_on_problem
 from PSMiners.Mining import get_history_pRef
 from PSMiners.PyMoo.PSPyMooProblem import test_pymoo
 from utils import announce, indent
@@ -101,7 +102,7 @@ def get_bt_explainer() -> Detector:
     problem = EfficientBTProblem.from_default_files()
     return Detector.from_folder(problem=problem,
                           folder=experimental_directory,
-                          speciality_threshold=0.1,
+                          speciality_threshold=0.30,
                           verbose=True)
 
 def get_faulty_bt_explainer():
@@ -134,6 +135,10 @@ def get_trapk_explainer():
                                   verbose=True)
 
 
+
+
+
+
 if __name__ == '__main__':
     detector = get_bt_explainer()
     #detector.generate_files_with_default_settings()
@@ -145,6 +150,10 @@ if __name__ == '__main__':
     # test_pymoo(problem)
 
 
-    # get_bt_explainer().generate_properties_csv_file()
+    #get_bt_explainer().generate_properties_csv_file()
     # get_faulty_bt_explainer().generate_properties_csv_file()
+
+    #problem = RoyalRoad(3, 5)
+    #test_moead_on_problem(problem, sample_size=5000)
+
 
